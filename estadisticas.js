@@ -1,7 +1,6 @@
 // Funciones para estadísticas de tuneos
 
-// Zona horaria de Perú
-const TIMEZONE_PERU = 'America/Lima';
+// TIMEZONE_PERU ya está definido en fichaje.js, no lo redeclaramos aquí
 
 /**
  * Verifica que db esté disponible
@@ -142,7 +141,8 @@ async function obtenerDatosActividad() {
             .where('completado', '==', true)
             .get();
         
-        const TIMEZONE_PERU = 'America/Lima';
+        // TIMEZONE_PERU ya está definido en fichaje.js
+        const TIMEZONE_PERU_LOCAL = typeof TIMEZONE_PERU !== 'undefined' ? TIMEZONE_PERU : 'America/Lima';
         
         // Función para convertir timestamp a fecha de Perú
         function toPeruDate(timestamp) {
@@ -150,7 +150,7 @@ async function obtenerDatosActividad() {
                 const date = timestamp.toDate();
                 // Obtener componentes en hora de Perú
                 const peruString = date.toLocaleString('en-US', { 
-                    timeZone: TIMEZONE_PERU,
+                    timeZone: TIMEZONE_PERU_LOCAL,
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit',
@@ -182,14 +182,14 @@ async function obtenerDatosActividad() {
             fecha.setDate(fecha.getDate() - i);
             fecha.setHours(0, 0, 0, 0);
             const fechaKey = fecha.toLocaleDateString('es-PE', { 
-                timeZone: TIMEZONE_PERU,
+                timeZone: TIMEZONE_PERU_LOCAL,
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit'
             });
             porDiasMap[fechaKey] = {
                 fecha: fecha.toLocaleDateString('es-PE', { 
-                    timeZone: TIMEZONE_PERU,
+                    timeZone: TIMEZONE_PERU_LOCAL,
                     month: 'short',
                     day: 'numeric'
                 }),
@@ -219,7 +219,7 @@ async function obtenerDatosActividad() {
             
             // Agregar a días
             const fechaEntradaKey = entrada.toLocaleDateString('es-PE', { 
-                timeZone: TIMEZONE_PERU,
+                timeZone: TIMEZONE_PERU_LOCAL,
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit'
@@ -239,7 +239,7 @@ async function obtenerDatosActividad() {
                 const horasDia2 = horasTotales - horasDia1;
                 
                 const fechaDia2Key = fechaSalida.toLocaleDateString('es-PE', { 
-                    timeZone: TIMEZONE_PERU,
+                    timeZone: TIMEZONE_PERU_LOCAL,
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit'
