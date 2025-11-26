@@ -18,6 +18,8 @@
                 <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Fichaje</a>
                 <a href="horas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Horas</a>
                 <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Calculador</a>
+                <a href="estadisticas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Estadísticas</a>
+                <a href="admin.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem; background: #059669;">Admin</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
@@ -35,16 +37,18 @@
         </div>
 
         <div class="stats-card" style="margin-top: 2rem;">
-            <h3>Actividad por Días (Últimos 30 días)</h3>
+            <h3>Actividad por Horas del Día</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Distribución de horas trabajadas según la hora del día (0-23 horas)</p>
             <div style="position: relative; height: 400px;">
-                <canvas id="actividadDiasChart"></canvas>
+                <canvas id="actividadHorasChart"></canvas>
             </div>
         </div>
 
         <div class="stats-card" style="margin-top: 2rem;">
-            <h3>Actividad por Horas del Día</h3>
+            <h3>Actividad por Días (Últimos 30 días)</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Horas trabajadas por día en los últimos 30 días</p>
             <div style="position: relative; height: 400px;">
-                <canvas id="actividadHorasChart"></canvas>
+                <canvas id="actividadDiasChart"></canvas>
             </div>
         </div>
     </div>

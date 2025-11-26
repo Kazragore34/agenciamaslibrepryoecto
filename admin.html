@@ -32,6 +32,7 @@
     <script src="firebase-config.js"></script>
     <script src="crypto-utils.js"></script>
     <script src="auth.js"></script>
+    <script src="fichaje.js"></script>
     <script src="admin.js"></script>
     <script>
         requireAuth();
@@ -49,11 +50,12 @@
 
         async function cargarUsuarios() {
             try {
+                await ensureDb();
                 const usuarios = await obtenerTodosUsuarios();
                 mostrarUsuarios(usuarios);
             } catch (error) {
                 console.error('Error cargando usuarios:', error);
-                document.getElementById('usuariosTable').innerHTML = '<p style="color: #dc2626;">Error al cargar usuarios</p>';
+                document.getElementById('usuariosTable').innerHTML = `<p style="color: #dc2626;">Error al cargar usuarios: ${error.message}</p>`;
             }
         }
 

@@ -1,10 +1,26 @@
 // Funciones de administración para asignar roles
 
 /**
+ * Verifica que db esté disponible
+ */
+async function ensureDb() {
+    let attempts = 0;
+    while (typeof db === 'undefined' && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+    if (typeof db === 'undefined' || !db) {
+        throw new Error('Firebase no está inicializado. Por favor, recarga la página.');
+    }
+    return db;
+}
+
+/**
  * Obtiene todos los usuarios
  * @returns {Promise<Array>} - Array de usuarios
  */
 async function obtenerTodosUsuarios() {
+    await ensureDb();
     try {
         const usersRef = db.collection('users');
         const snapshot = await usersRef.orderBy('nombre').get();
@@ -26,6 +42,7 @@ async function obtenerTodosUsuarios() {
  * @returns {Promise<void>}
  */
 async function actualizarRolUsuario(userId, nuevoRol) {
+    await ensureDb();
     try {
         const rolesValidos = ['jefe', 'encargado', 'empleado'];
         if (!rolesValidos.includes(nuevoRol)) {
