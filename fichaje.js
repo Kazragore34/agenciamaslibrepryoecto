@@ -172,7 +172,9 @@ async function ficharEntrada(userId) {
             completado: false
         };
         
+        console.log('Creando fichaje con datos:', fichajeData);
         const docRef = await db.collection('fichajes').add(fichajeData);
+        console.log('Fichaje creado con ID:', docRef.id);
         
         return {
             id: docRef.id,
@@ -318,20 +320,37 @@ async function getFichajesHoy(userId) {
             .get();
         
         // Filtrar por fecha de hoy en memoria
-        const hoyTimestamp = firebase.firestore.Timestamp.fromDate(hoy);
-        const mananaTimestamp = firebase.firestore.Timestamp.fromDate(manana);
-        
         const fichajes = snapshot.docs
-            .map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }))
+            .map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data
+                };
+            })
             .filter(fichaje => {
-                if (!fichaje.entrada) return false;
-                const entradaTimestamp = fichaje.entrada.toDate ? fichaje.entrada.toDate() : fichaje.entrada;
-                const entradaDate = entradaTimestamp instanceof Date ? entradaTimestamp : new Date(entradaTimestamp);
-                return entradaDate >= hoy && entradaDate < manana;
+                if (!fichaje.entrada) {
+                    console.log('Fichaje sin entrada:', fichaje);
+                    return false;
+                }
+                
+                let entradaDate;
+                if (fichaje.entrada.toDate) {
+                    entradaDate = fichaje.entrada.toDate();
+                } else if (fichaje.entrada instanceof Date) {
+                    entradaDate = fichaje.entrada;
+                } else {
+                    entradaDate = new Date(fichaje.entrada);
+                }
+                
+                // Comparar solo la fecha (sin hora)
+                const entradaSoloFecha = new Date(entradaDate.getFullYear(), entradaDate.getMonth(), entradaDate.getDate());
+                const hoySoloFecha = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+                
+                return entradaSoloFecha.getTime() === hoySoloFecha.getTime();
             });
+        
+        console.log(`Fichajes encontrados para hoy (${hoy.toLocaleDateString('es-PE')}):`, fichajes.length);
         
         // Ordenar por fecha de entrada descendente
         fichajes.sort((a, b) => {

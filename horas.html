@@ -144,11 +144,6 @@
                 
                 const fichajes = fichajesRaw;
 
-                const fichajes = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
                 mostrarHoras(horasTotales, fichajes, semanaInicio, semanaFin);
             } catch (error) {
                 console.error('Error cargando horas:', error);
@@ -184,15 +179,29 @@
                 fichajes.forEach(fichaje => {
                     const entrada = formatDate(fichaje.entrada);
                     const salida = fichaje.salida ? formatDate(fichaje.salida) : 'En curso';
-                    const horas = fichaje.completado 
-                        ? formatHoras(fichaje.horasSemanaActual + fichaje.horasSemanaSiguiente)
-                        : '-';
+                    
+                    let horas = '-';
+                    if (fichaje.completado && fichaje.horasSemanaActual !== undefined) {
+                        const horasTotales = (fichaje.horasSemanaActual || 0) + (fichaje.horasSemanaSiguiente || 0);
+                        horas = formatHoras(horasTotales);
+                    } else if (fichaje.entrada) {
+                        // Calcular horas en tiempo real para fichajes en curso
+                        let entradaDate = fichaje.entrada;
+                        if (entradaDate && entradaDate.toDate) {
+                            entradaDate = entradaDate.toDate();
+                        } else {
+                            entradaDate = new Date(entradaDate);
+                        }
+                        const ahora = new Date();
+                        const diferencia = (ahora - entradaDate) / (1000 * 60 * 60);
+                        horas = formatHoras(Math.max(0, diferencia));
+                    }
                     
                     html += `
                         <tr>
                             <td>${entrada}</td>
                             <td>${salida}</td>
-                            <td>${horas}</td>
+                            <td><strong>${horas}</strong></td>
                         </tr>
                     `;
                 });

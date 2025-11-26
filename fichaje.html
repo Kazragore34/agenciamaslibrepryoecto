@@ -54,6 +54,7 @@
         const currentUser = getCurrentUser();
         if (currentUser) {
             document.getElementById('userName').textContent = `${currentUser.nombre} ${currentUser.apellido} (${currentUser.username})`;
+            console.log('Usuario actual:', currentUser);
         }
 
         let fichajeActivo = null;
@@ -113,15 +114,33 @@
             
             if (!fichajeActivo || !fichajeActivo.entrada) return;
             
+            // Guardar timestamp de entrada en milisegundos para calcular correctamente
+            let entradaTimestamp = fichajeActivo.entrada;
+            if (entradaTimestamp && entradaTimestamp.toDate) {
+                entradaTimestamp = entradaTimestamp.toDate().getTime();
+            } else if (entradaTimestamp) {
+                entradaTimestamp = new Date(entradaTimestamp).getTime();
+            } else {
+                return;
+            }
+            
             const actualizarTiempo = () => {
                 if (!fichajeActivo || !fichajeActivo.entrada) {
                     detenerCronometro();
                     return;
                 }
                 
-                const entrada = fichajeActivo.entrada.toDate ? fichajeActivo.entrada.toDate() : new Date(fichajeActivo.entrada);
-                const ahora = new Date();
-                const diferencia = ahora - entrada;
+                // Obtener hora actual
+                const ahora = Date.now();
+                
+                // Calcular diferencia en milisegundos
+                const diferencia = ahora - entradaTimestamp;
+                
+                // Si la diferencia es negativa, mostrar 00:00:00
+                if (diferencia < 0) {
+                    document.getElementById('tiempoTranscurrido').textContent = '00:00:00';
+                    return;
+                }
                 
                 const horas = Math.floor(diferencia / (1000 * 60 * 60));
                 const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
@@ -152,7 +171,9 @@
                 }
 
                 mostrarMensaje('Fichando entrada...', 'info');
+                console.log('Fichando entrada para usuario ID:', user.id);
                 fichajeActivo = await ficharEntrada(user.id);
+                console.log('Fichaje activo creado:', fichajeActivo);
                 actualizarUI();
                 await cargarFichajesHoy();
                 iniciarCronometro();
@@ -201,14 +222,21 @@
                     const salida = fichaje.salida ? formatDate(fichaje.salida) : 'En curso...';
                     
                     let horas = '-';
-                    if (fichaje.completado) {
-                        horas = formatHoras(fichaje.horasSemanaActual + fichaje.horasSemanaSiguiente);
+                    if (fichaje.completado && fichaje.horasSemanaActual !== undefined) {
+                        // Fichaje completado: sumar horas de ambas semanas
+                        const horasTotales = (fichaje.horasSemanaActual || 0) + (fichaje.horasSemanaSiguiente || 0);
+                        horas = formatHoras(horasTotales);
                     } else if (fichaje.entrada) {
-                        // Calcular horas en tiempo real para fichajes en curso
-                        const entradaDate = fichaje.entrada.toDate ? fichaje.entrada.toDate() : new Date(fichaje.entrada);
+                        // Fichaje en curso: calcular horas en tiempo real
+                        let entradaDate = fichaje.entrada;
+                        if (entradaDate && entradaDate.toDate) {
+                            entradaDate = entradaDate.toDate();
+                        } else {
+                            entradaDate = new Date(entradaDate);
+                        }
                         const ahora = new Date();
                         const diferencia = (ahora - entradaDate) / (1000 * 60 * 60); // en horas
-                        horas = formatHoras(diferencia);
+                        horas = formatHoras(Math.max(0, diferencia));
                     }
                     
                     return `
