@@ -1,11 +1,21 @@
 // Funciones de autenticación con username
 
 /**
+ * Verifica que db esté disponible
+ */
+function ensureDb() {
+    if (typeof db === 'undefined') {
+        throw new Error('Firebase no está inicializado. Por favor, recarga la página.');
+    }
+}
+
+/**
  * Verifica si un username ya existe
  * @param {string} username - Username a verificar
  * @returns {Promise<boolean>} - true si existe, false si no
  */
 async function usernameExists(username) {
+    ensureDb();
     try {
         const usersRef = db.collection('users');
         const snapshot = await usersRef.where('username', '==', username).get();
@@ -25,6 +35,7 @@ async function usernameExists(username) {
  * @returns {Promise<Object>} - Datos del usuario creado
  */
 async function registrarUsuario(nombre, apellido, username, password) {
+    ensureDb();
     try {
         // Verificar que el username no exista
         const exists = await usernameExists(username);
@@ -65,6 +76,7 @@ async function registrarUsuario(nombre, apellido, username, password) {
  * @returns {Promise<Object>} - Datos del usuario si el login es exitoso
  */
 async function login(username, password) {
+    ensureDb();
     try {
         // Buscar usuario por username
         const usersRef = db.collection('users');
