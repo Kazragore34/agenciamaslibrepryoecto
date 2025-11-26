@@ -25,6 +25,12 @@
             <h2>Estado de Fichaje</h2>
             <div id="statusIndicator" class="status-indicator inactivo">No fichado</div>
             <div id="fichajeInfo" style="margin-top: 1rem; color: #6b7280;"></div>
+            <div id="cronometro" style="margin-top: 1rem; font-size: 1.5rem; font-weight: 700; color: #059669; display: none;">
+                <div style="text-align: center;">
+                    <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Tiempo trabajando:</div>
+                    <div id="tiempoTranscurrido">00:00:00</div>
+                </div>
+            </div>
             <div class="fichaje-actions">
                 <button id="btnEntrada" class="btn-fichar entrada" onclick="ficharEntradaClick()">Fichar Entrada</button>
                 <button id="btnSalida" class="btn-fichar salida" onclick="ficharSalidaClick()" style="display: none;">Fichar Salida</button>
@@ -51,6 +57,7 @@
         }
 
         let fichajeActivo = null;
+        let cronometroInterval = null;
 
         // Cargar estado inicial
         async function cargarEstado() {
@@ -61,6 +68,13 @@
                 fichajeActivo = await getFichajeActivo(user.id);
                 actualizarUI();
                 await cargarFichajesHoy();
+                
+                // Iniciar cronómetro si hay fichaje activo
+                if (fichajeActivo) {
+                    iniciarCronometro();
+                } else {
+                    detenerCronometro();
+                }
             } catch (error) {
                 console.error('Error cargando estado:', error);
                 // No mostrar error si es solo un problema de índice
@@ -75,20 +89,58 @@
             const fichajeInfo = document.getElementById('fichajeInfo');
             const btnEntrada = document.getElementById('btnEntrada');
             const btnSalida = document.getElementById('btnSalida');
+            const cronometro = document.getElementById('cronometro');
 
             if (fichajeActivo) {
                 statusIndicator.textContent = 'Fichado - En trabajo';
                 statusIndicator.className = 'status-indicator activo';
                 fichajeInfo.textContent = `Entrada: ${formatDate(fichajeActivo.entrada)}`;
+                cronometro.style.display = 'block';
                 btnEntrada.style.display = 'none';
                 btnSalida.style.display = 'block';
             } else {
                 statusIndicator.textContent = 'No fichado';
                 statusIndicator.className = 'status-indicator inactivo';
                 fichajeInfo.textContent = '';
+                cronometro.style.display = 'none';
                 btnEntrada.style.display = 'block';
                 btnSalida.style.display = 'none';
             }
+        }
+
+        function iniciarCronometro() {
+            detenerCronometro(); // Asegurarse de que no hay otro cronómetro corriendo
+            
+            if (!fichajeActivo || !fichajeActivo.entrada) return;
+            
+            const actualizarTiempo = () => {
+                if (!fichajeActivo || !fichajeActivo.entrada) {
+                    detenerCronometro();
+                    return;
+                }
+                
+                const entrada = fichajeActivo.entrada.toDate ? fichajeActivo.entrada.toDate() : new Date(fichajeActivo.entrada);
+                const ahora = new Date();
+                const diferencia = ahora - entrada;
+                
+                const horas = Math.floor(diferencia / (1000 * 60 * 60));
+                const minutos = Math.floor((diferencia % (1000 * 60 * 60)) / (1000 * 60));
+                const segundos = Math.floor((diferencia % (1000 * 60)) / 1000);
+                
+                const tiempoFormateado = `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+                document.getElementById('tiempoTranscurrido').textContent = tiempoFormateado;
+            };
+            
+            actualizarTiempo(); // Actualizar inmediatamente
+            cronometroInterval = setInterval(actualizarTiempo, 1000); // Actualizar cada segundo
+        }
+
+        function detenerCronometro() {
+            if (cronometroInterval) {
+                clearInterval(cronometroInterval);
+                cronometroInterval = null;
+            }
+            document.getElementById('tiempoTranscurrido').textContent = '00:00:00';
         }
 
         async function ficharEntradaClick() {
@@ -102,7 +154,8 @@
                 mostrarMensaje('Fichando entrada...', 'info');
                 fichajeActivo = await ficharEntrada(user.id);
                 actualizarUI();
-                cargarFichajesHoy();
+                await cargarFichajesHoy();
+                iniciarCronometro();
                 mostrarMensaje('Entrada fichada correctamente', 'success');
             } catch (error) {
                 console.error('Error fichando entrada:', error);
@@ -120,8 +173,9 @@
                 mostrarMensaje('Fichando salida...', 'info');
                 await ficharSalida(fichajeActivo.id);
                 fichajeActivo = null;
+                detenerCronometro();
                 actualizarUI();
-                cargarFichajesHoy();
+                await cargarFichajesHoy();
                 mostrarMensaje('Salida fichada correctamente', 'success');
             } catch (error) {
                 console.error('Error fichando salida:', error);
@@ -145,9 +199,17 @@
                 listContainer.innerHTML = fichajes.map(fichaje => {
                     const entrada = formatDate(fichaje.entrada);
                     const salida = fichaje.salida ? formatDate(fichaje.salida) : 'En curso...';
-                    const horas = fichaje.completado 
-                        ? formatHoras(fichaje.horasSemanaActual + fichaje.horasSemanaSiguiente)
-                        : '-';
+                    
+                    let horas = '-';
+                    if (fichaje.completado) {
+                        horas = formatHoras(fichaje.horasSemanaActual + fichaje.horasSemanaSiguiente);
+                    } else if (fichaje.entrada) {
+                        // Calcular horas en tiempo real para fichajes en curso
+                        const entradaDate = fichaje.entrada.toDate ? fichaje.entrada.toDate() : new Date(fichaje.entrada);
+                        const ahora = new Date();
+                        const diferencia = (ahora - entradaDate) / (1000 * 60 * 60); // en horas
+                        horas = formatHoras(diferencia);
+                    }
                     
                     return `
                         <div class="fichaje-item">
@@ -192,7 +254,16 @@
         init();
 
         // Actualizar cada minuto
-        setInterval(cargarEstado, 60000);
+        setInterval(async () => {
+            await cargarEstado();
+        }, 60000);
+        
+        // Actualizar fichajes de hoy cada 30 segundos para ver el tiempo en tiempo real
+        setInterval(async () => {
+            if (fichajeActivo) {
+                await cargarFichajesHoy();
+            }
+        }, 30000);
     </script>
 </body>
 </html>

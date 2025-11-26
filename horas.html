@@ -118,18 +118,24 @@
 
                 // También buscar fichajes individuales de esa semana
                 const fichajesRef = db.collection('fichajes');
-                // Quitar orderBy para evitar necesidad de índice
+                // Obtener todos los fichajes del usuario y filtrar por semana en memoria
                 const snapshot = await fichajesRef
                     .where('userId', '==', userId)
-                    .where('semanaInicio', '==', semanaInicioTimestamp)
                     .get();
                 
-                // Ordenar en memoria
-                const fichajesRaw = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                // Filtrar por semana en memoria
+                const fichajesRaw = snapshot.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                    .filter(fichaje => {
+                        if (!fichaje.semanaInicio) return false;
+                        const fichajeSemanaInicio = fichaje.semanaInicio.toDate ? fichaje.semanaInicio.toDate() : new Date(fichaje.semanaInicio);
+                        return fichajeSemanaInicio.getTime() === semanaInicio.getTime();
+                    });
                 
+                // Ordenar en memoria
                 fichajesRaw.sort((a, b) => {
                     const fechaA = a.entrada && a.entrada.toDate ? a.entrada.toDate() : new Date(0);
                     const fechaB = b.entrada && b.entrada.toDate ? b.entrada.toDate() : new Date(0);

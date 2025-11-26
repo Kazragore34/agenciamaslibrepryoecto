@@ -311,19 +311,29 @@ async function getFichajesHoy(userId) {
         manana.setDate(manana.getDate() + 1);
         
         const fichajesRef = db.collection('fichajes');
-        // Quitar orderBy para evitar necesidad de índice compuesto
+        // Obtener todos los fichajes del usuario y filtrar por fecha en memoria
+        // Esto evita necesidad de índices compuestos
         const snapshot = await fichajesRef
             .where('userId', '==', userId)
-            .where('entrada', '>=', firebase.firestore.Timestamp.fromDate(hoy))
-            .where('entrada', '<', firebase.firestore.Timestamp.fromDate(manana))
             .get();
         
-        // Ordenar por fecha de entrada descendente en memoria
-        const fichajes = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        // Filtrar por fecha de hoy en memoria
+        const hoyTimestamp = firebase.firestore.Timestamp.fromDate(hoy);
+        const mananaTimestamp = firebase.firestore.Timestamp.fromDate(manana);
         
+        const fichajes = snapshot.docs
+            .map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }))
+            .filter(fichaje => {
+                if (!fichaje.entrada) return false;
+                const entradaTimestamp = fichaje.entrada.toDate ? fichaje.entrada.toDate() : fichaje.entrada;
+                const entradaDate = entradaTimestamp instanceof Date ? entradaTimestamp : new Date(entradaTimestamp);
+                return entradaDate >= hoy && entradaDate < manana;
+            });
+        
+        // Ordenar por fecha de entrada descendente
         fichajes.sort((a, b) => {
             const fechaA = a.entrada && a.entrada.toDate ? a.entrada.toDate() : new Date(0);
             const fechaB = b.entrada && b.entrada.toDate ? b.entrada.toDate() : new Date(0);
