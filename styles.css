@@ -224,9 +224,10 @@ body {
 
 .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
     margin-top: 3rem;
+    align-items: stretch;
 }
 
 .pricing-card {
@@ -236,6 +237,9 @@ body {
     padding: 2rem;
     position: relative;
     transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .pricing-card:hover {
@@ -305,8 +309,27 @@ body {
 
 .pricing-features {
     list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+}
+
+.pricing-features-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
     margin: 2rem 0;
-    min-height: 200px;
+}
+
+.pricing-features-left,
+.pricing-features-right {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .pricing-features-container {
+        grid-template-columns: 1fr;
+    }
 }
 
 .pricing-features li {
@@ -340,6 +363,7 @@ body {
     font-weight: 600;
     transition: background 0.3s;
     width: 100%;
+    margin-top: auto;
 }
 
 .btn-pricing:hover {

@@ -10,37 +10,38 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-    <div class="fichaje-container">
+    <div class="stats-container">
         <div class="fichaje-header">
-            <div class="user-info">
-                <span id="userName">Usuario</span>
-                <a href="horas.html" class="btn-primary">Ver Horas</a>
+            <h1>Fichaje</h1>
+            <div>
+                <a href="fichaje.html" class="btn-primary">Fichaje</a>
+                <a href="horas.html" class="btn-primary">Horas</a>
                 <a href="calculador.html" class="btn-primary">Calculador</a>
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-            </div>
-            <div>
-                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Panel Admin</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
 
-        <div class="fichaje-status">
-            <h2>Estado de Fichaje</h2>
-            <div id="statusIndicator" class="status-indicator inactivo">No fichado</div>
-            <div id="fichajeInfo" style="margin-top: 1rem; color: #6b7280;"></div>
-            <div id="cronometro" style="margin-top: 1rem; font-size: 1.5rem; font-weight: 700; color: #059669; display: none;">
-                <div style="text-align: center;">
-                    <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Tiempo trabajando:</div>
-                    <div id="tiempoTranscurrido">00:00:00</div>
+        <div class="stats-card" style="margin-top: 2rem;">
+            <h2 style="margin-bottom: 1.5rem; color: #1f2937;">Estado de Fichaje</h2>
+            <div style="text-align: center;">
+                <div id="statusIndicator" class="status-indicator inactivo" style="margin-bottom: 1rem;">No fichado</div>
+                <div id="fichajeInfo" style="margin-top: 1rem; color: #6b7280; margin-bottom: 1rem;"></div>
+                <div id="cronometro" style="margin-top: 1rem; font-size: 1.5rem; font-weight: 700; color: #059669; display: none; margin-bottom: 1rem;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Tiempo trabajando:</div>
+                        <div id="tiempoTranscurrido">00:00:00</div>
+                    </div>
                 </div>
-            </div>
-            <div class="fichaje-actions">
-                <button id="btnEntrada" class="btn-fichar entrada" onclick="ficharEntradaClick()">Fichar Entrada</button>
-                <button id="btnSalida" class="btn-fichar salida" onclick="ficharSalidaClick()" style="display: none;">Fichar Salida</button>
+                <div class="fichaje-actions">
+                    <button id="btnEntrada" class="btn-fichar entrada" onclick="ficharEntradaClick()">Fichar Entrada</button>
+                    <button id="btnSalida" class="btn-fichar salida" onclick="ficharSalidaClick()" style="display: none;">Fichar Salida</button>
+                </div>
             </div>
         </div>
 
-        <div class="fichajes-list">
+        <div class="stats-card" style="margin-top: 2rem;">
             <h3>Fichajes de Hoy</h3>
             <div id="fichajesHoyList"></div>
         </div>
@@ -56,10 +57,7 @@
         requireAuth();
         
         const currentUser = getCurrentUser();
-        if (currentUser) {
-            document.getElementById('userName').textContent = `${currentUser.nombre} ${currentUser.apellido} (${currentUser.username})`;
-            console.log('Usuario actual:', currentUser);
-        }
+        console.log('Usuario actual:', currentUser);
 
         let fichajeActivo = null;
         let cronometroInterval = null;
