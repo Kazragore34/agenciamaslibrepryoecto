@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agencia Más Libre - IA y Marketing Digital</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar">
+            <div class="container">
+                <div class="nav-brand">
+                    <a href="#" class="logo">Agencia Más Libre</a>
+                </div>
+                <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="#servicios">Servicios</a></li>
+                    <li><a href="#beneficios">Beneficios</a></li>
+                    <li><a href="#planes">Planes</a></li>
+                    <li><a href="#testimonios">Testimonios</a></li>
+                    <li><a href="#contacto" class="btn-demo">Solicita tu Demo</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1 class="hero-title">Impulsa tu Negocio con IA y Marketing Digital</h1>
+            <p class="hero-subtitle">Creamos chatbots inteligentes y estrategias de marketing digital que transforman la interacción con tus clientes y disparan tus resultados.</p>
+            <a href="#contacto" class="btn-primary">Agenda una Asesoría Gratuita</a>
+        </div>
+    </section>
+
+    <!-- Casos de Uso y Beneficios -->
+    <section id="beneficios" class="benefits">
+        <div class="container">
+            <h2 class="section-title">Descubre cómo nuestros chatbots pueden revolucionar la operativa de tu negocio.</h2>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Captación de Leads Mejorada</h3>
+                    <p>Nuestros chatbots califican prospectos y los dirigen al equipo de ventas eficientemente.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Atención al Cliente 24/7</h3>
+                    <p>Ofrece soporte continuo y resuelve dudas frecuentes incluso fuera de horario laboral.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <h3>Optimización para Ecommerce</h3>
+                    <p>Guía a los usuarios en el proceso de compra y recupera carritos abandonados.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <h3>Automatización de Reservas</h3>
+                    <p>Permite que tus clientes agenden citas o servicios directamente desde el chat.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Planes y Precios -->
+    <section id="planes" class="pricing">
+        <div class="container">
+            <h2 class="section-title">Planes y Precios</h2>
+            <p class="section-subtitle">Elige el plan que mejor se adapte a las necesidades y escala de tu negocio.</p>
+            <div class="pricing-grid">
+                <!-- Plan Starter -->
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Starter</h3>
+                        <p class="pricing-subtitle">Ideal para microemprendedores</p>
+                    </div>
+                    <div class="pricing-price">
+                        <span class="price-old">€60</span>
+                        <span class="price-current">€49</span>
+                        <span class="price-period">Monthly</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>1 canal (WhatsApp o Instagram)</li>
+                        <li>Preguntas frecuentes con IA</li>
+                        <li>Hasta 200 conversaciones al mes</li>
+                        <li>Soporte por correo (respuesta en 72h)</li>
+                    </ul>
+                    <a href="#contacto" class="btn-pricing">Empezar ahora</a>
+                </div>
+
+                <!-- Plan Básico -->
+                <div class="pricing-card popular">
+                    <div class="popular-badge">Popular</div>
+                    <div class="pricing-header">
+                        <h3>Plan Básico</h3>
+                        <p class="pricing-subtitle">Ideal para: Emprendedores y negocios pequeños que quieren empezar a automatizar su atención al cliente.</p>
+                    </div>
+                    <div class="pricing-price">
+                        <span class="price-old">€99</span>
+                        <span class="price-current">€79</span>
+                        <span class="price-period">Mensual</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>Canal único: WhatsApp o Instagram.</li>
+                        <li>Respuestas automáticas a preguntas frecuentes mediante IA.</li>
+                        <li>Hasta 500 conversaciones al mes</li>
+                        <li>Soporte por correo electrónico (respuesta en 48 horas).</li>
+                    </ul>
+                    <a href="#contacto" class="btn-pricing">Empezar Ahora</a>
+                </div>
+
+                <!-- Plan Profesional -->
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Plan Profesional</h3>
+                        <p class="pricing-subtitle">Ideal para: Negocios en crecimiento que quieren captar más leads y ofrecer atención 24/7.</p>
+                    </div>
+                    <div class="pricing-price">
+                        <span class="price-old">€149</span>
+                        <span class="price-current">€99</span>
+                        <span class="price-period">Mensual</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>Canales: WhatsApp e Instagram.</li>
+                        <li>Respuestas automáticas con IA.</li>
+                        <li>Transcripción de audios y respuestas automatizadas.</li>
+                        <li>Agendamiento de citas o reservas.</li>
+                        <li>Derivación de leads inteligentes</li>
+                        <li>Hasta 1,000 conversaciones mensuales.</li>
+                        <li>Soporte prioritario (respuesta en 24h)</li>
+                    </ul>
+                    <a href="#contacto" class="btn-pricing">Empezar Ahora</a>
+                </div>
+
+                <!-- Plan Empresarial -->
+                <div class="pricing-card popular">
+                    <div class="popular-badge">Popular</div>
+                    <div class="pricing-header">
+                        <h3>Plan Empresarial</h3>
+                        <p class="pricing-subtitle">Ideal para: Empresas que quieren una solución avanzada, personalizada y con automatizaciones completas.</p>
+                    </div>
+                    <div class="pricing-price">
+                        <span class="price-old">€349</span>
+                        <span class="price-current">€99</span>
+                        <span class="price-period">Mensual</span>
+                    </div>
+                    <ul class="pricing-features">
+                        <li>Todos los canales disponibles (WhatsApp, Instagram, Web).</li>
+                        <li>Respuestas automáticas con IA.</li>
+                        <li>Transcripción de audios y respuestas automatizadas.</li>
+                        <li>Agendamiento de citas o reservas.</li>
+                        <li>Derivación de leads inteligentes</li>
+                        <li>Derivación de usuarios según tipo (clientes potenciales, información, soporte).</li>
+                        <li>Integración con CRM o Google Sheets.</li>
+                        <li>Consultoría mensual</li>
+                        <li>Hasta 5,000 conversaciones mensuales.</li>
+                        <li>Soporte dedicado (respuesta en menos de 12h)</li>
+                    </ul>
+                    <a href="#contacto" class="btn-pricing">Empezar Ahora</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonios -->
+    <section id="testimonios" class="testimonials">
+        <div class="container">
+            <h2 class="section-title">Lo que Dicen Nuestros Clientes</h2>
+            <p class="section-subtitle">Descubre cómo nuestros chatbots pueden revolucionar la operativa de tu negocio.</p>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <p>"Con el chatbot que nos implementó Agencia Más Libre, pasamos de atender 20 mensajes diarios a automatizar más de 200 interacciones sin perder calidad."</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <strong>Laura Méndez</strong>
+                        <span>Gerente de Marketing – Vía Verde Spa</span>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <p>"Nos ayudaron a captar leads de forma automática y filtrar clientes potenciales con precisión. El equipo es muy profesional y se nota que dominan la inteligencia artificial aplicada a ventas."</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <strong>Javier Ortega</strong>
+                        <span>Director Comercial – AutoExpertos</span>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <p>"Gracias a su estrategia y al chatbot que instalaron en nuestra web, nuestras reservas se triplicaron. El soporte fue cercano, claro y súper eficaz. ¡Los recomiendo totalmente!"</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <strong>Mariana Rojas</strong>
+                        <span>Fundadora – Tienda Equilibrio Natural</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section id="contacto" class="cta">
+        <div class="container">
+            <h2 class="cta-title">¿Listo para Automatizar y Crecer?</h2>
+            <p class="cta-subtitle">Da el siguiente paso hacia la eficiencia y el éxito. Contáctanos hoy mismo.</p>
+            <a href="#contacto" class="btn-primary">Solicita tu demo</a>
+            <div class="social-links">
+                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="mailto:hola@agenciamaslibre.com" aria-label="Email"><i class="fas fa-envelope"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Transformando negocios con IA y marketing digital.</h3>
+                </div>
+                <div class="footer-section">
+                    <h4>Enlaces Rápidos</h4>
+                    <ul class="footer-links">
+                        <li><a href="#servicios">Servicios</a></li>
+                        <li><a href="#beneficios">Beneficios</a></li>
+                        <li><a href="#planes">Planes</a></li>
+                        <li><a href="#testimonios">Testimonios</a></li>
+                        <li><a href="#contacto">Solicita tu Demo</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contacto</h4>
+                    <ul class="footer-contact">
+                        <li><i class="fas fa-phone"></i> +34 601 50 82 04</li>
+                        <li><i class="fas fa-envelope"></i> hola@agenciamaslibre.com</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Barcelona,</li>
+                        <li><i class="fas fa-clock"></i> Lun.-Vier : 10-20 Sab. : 12-16</li>
+                    </ul>
+                    <div class="footer-social">
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Agenciamaslibre</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
