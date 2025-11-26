@@ -57,6 +57,11 @@
                         <label for="registerPassword">Contraseña</label>
                         <input type="password" id="registerPassword" name="password" required minlength="6">
                     </div>
+                    <div class="form-group">
+                        <label for="registerPasswordConfirm">Confirmar Contraseña</label>
+                        <input type="password" id="registerPasswordConfirm" name="passwordConfirm" required minlength="6">
+                        <small id="passwordMatchError" style="color: #dc2626; display: none;">Las contraseñas no coinciden</small>
+                    </div>
                     <button type="submit" class="btn-primary">Registrarse</button>
                 </form>
             </div>
@@ -116,6 +121,30 @@
             }
         });
 
+        // Validar que las contraseñas coincidan en tiempo real
+        document.getElementById('registerPasswordConfirm').addEventListener('input', function() {
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = this.value;
+            const errorElement = document.getElementById('passwordMatchError');
+            
+            if (passwordConfirm.length > 0 && password !== passwordConfirm) {
+                errorElement.style.display = 'block';
+            } else {
+                errorElement.style.display = 'none';
+            }
+        });
+
+        document.getElementById('registerPassword').addEventListener('input', function() {
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            const errorElement = document.getElementById('passwordMatchError');
+            
+            if (passwordConfirm.length > 0 && this.value !== passwordConfirm) {
+                errorElement.style.display = 'block';
+            } else {
+                errorElement.style.display = 'none';
+            }
+        });
+
         // Manejo del formulario de registro
         document.getElementById('registerFormElement').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -123,6 +152,20 @@
             const apellido = document.getElementById('registerApellido').value;
             const username = document.getElementById('registerUsername').value;
             const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+            // Validar que las contraseñas coincidan
+            if (password !== passwordConfirm) {
+                showMessage('Las contraseñas no coinciden', 'error');
+                document.getElementById('passwordMatchError').style.display = 'block';
+                return;
+            }
+
+            // Validar longitud mínima
+            if (password.length < 6) {
+                showMessage('La contraseña debe tener al menos 6 caracteres', 'error');
+                return;
+            }
 
             try {
                 showMessage('Registrando usuario...', 'info');
@@ -131,6 +174,9 @@
                 // Cambiar a tab de login
                 document.querySelector('[data-tab="login"]').click();
                 document.getElementById('loginUsername').value = username;
+                // Limpiar formulario
+                document.getElementById('registerFormElement').reset();
+                document.getElementById('passwordMatchError').style.display = 'none';
             } catch (error) {
                 showMessage(error.message || 'Error al registrar usuario', 'error');
             }
