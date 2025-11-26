@@ -13,7 +13,7 @@ var db;
 
 // Función para inicializar Firebase
 function initializeFirebase() {
-    if (typeof firebase !== 'undefined') {
+    if (typeof firebase !== 'undefined' && typeof firebase.firestore !== 'undefined') {
         try {
             // Verificar si ya está inicializado
             if (!firebase.apps || firebase.apps.length === 0) {
@@ -21,23 +21,34 @@ function initializeFirebase() {
             }
             db = firebase.firestore();
             console.log('Firebase inicializado correctamente');
+            return true;
         } catch (error) {
             console.error('Error inicializando Firebase:', error);
+            return false;
         }
-    } else {
-        console.error("Firebase SDK no está cargado. Asegúrate de incluir los scripts de Firebase.");
     }
+    return false;
+}
+
+// Función para esperar a que Firebase esté disponible
+function waitForFirebase(callback, maxAttempts = 50) {
+    let attempts = 0;
+    const checkFirebase = setInterval(function() {
+        attempts++;
+        if (initializeFirebase()) {
+            clearInterval(checkFirebase);
+            if (callback) callback();
+        } else if (attempts >= maxAttempts) {
+            clearInterval(checkFirebase);
+            console.error('Firebase no se pudo inicializar después de varios intentos');
+        }
+    }, 100);
 }
 
 // Intentar inicializar inmediatamente
-initializeFirebase();
-
-// Si no funcionó, intentar cuando el DOM esté listo
-if (typeof db === 'undefined') {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeFirebase);
-    } else {
-        // DOM ya está listo, intentar de nuevo después de un breve delay
-        setTimeout(initializeFirebase, 100);
-    }
+if (!initializeFirebase()) {
+    // Si no funcionó, esperar a que Firebase esté disponible
+    waitForFirebase(function() {
+        console.log('Firebase inicializado después de esperar');
+    });
 }
