@@ -3,11 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro - Agencia Más Libre</title>
+    <title>Registro y Login - Sistema de Fichaje</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-fichaje.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
 </head>
 <body>
-    
+    <div class="auth-container">
+        <div class="auth-box">
+            <!-- Tabs -->
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="login">Iniciar Sesión</button>
+                <button class="tab-btn" data-tab="register">Registrarse</button>
+            </div>
+
+            <!-- Mensaje de error/éxito -->
+            <div id="authMessage" class="auth-message"></div>
+
+            <!-- Formulario de Login -->
+            <div id="loginForm" class="auth-form active">
+                <h2>Iniciar Sesión</h2>
+                <form id="loginFormElement">
+                    <div class="form-group">
+                        <label for="loginUsername">Username</label>
+                        <input type="text" id="loginUsername" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Contraseña</label>
+                        <input type="password" id="loginPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Iniciar Sesión</button>
+                </form>
+            </div>
+
+            <!-- Formulario de Registro -->
+            <div id="registerForm" class="auth-form">
+                <h2>Registrarse</h2>
+                <form id="registerFormElement">
+                    <div class="form-group">
+                        <label for="registerNombre">Nombre</label>
+                        <input type="text" id="registerNombre" name="nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerApellido">Apellido</label>
+                        <input type="text" id="registerApellido" name="apellido" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerUsername">Username</label>
+                        <input type="text" id="registerUsername" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Contraseña</label>
+                        <input type="password" id="registerPassword" name="password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn-primary">Registrarse</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="crypto-utils.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        // Verificar si ya está logueado
+        if (isAuthenticated()) {
+            window.location.href = 'fichaje.html';
+        }
+
+        // Manejo de tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                
+                // Actualizar botones
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Mostrar/ocultar formularios
+                document.getElementById('loginForm').classList.toggle('active', tab === 'login');
+                document.getElementById('registerForm').classList.toggle('active', tab === 'register');
+                
+                // Limpiar mensajes
+                showMessage('', '');
+            });
+        });
+
+        // Función para mostrar mensajes
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('authMessage');
+            messageEl.textContent = message;
+            messageEl.className = `auth-message ${type}`;
+            messageEl.style.display = message ? 'block' : 'none';
+        }
+
+        // Manejo del formulario de login
+        document.getElementById('loginFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                showMessage('Iniciando sesión...', 'info');
+                const user = await login(username, password);
+                showMessage('¡Login exitoso! Redirigiendo...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'fichaje.html';
+                }, 1000);
+            } catch (error) {
+                showMessage(error.message || 'Error al iniciar sesión', 'error');
+            }
+        });
+
+        // Manejo del formulario de registro
+        document.getElementById('registerFormElement').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nombre = document.getElementById('registerNombre').value;
+            const apellido = document.getElementById('registerApellido').value;
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+
+            try {
+                showMessage('Registrando usuario...', 'info');
+                await registrarUsuario(nombre, apellido, username, password);
+                showMessage('¡Registro exitoso! Por favor inicia sesión.', 'success');
+                // Cambiar a tab de login
+                document.querySelector('[data-tab="login"]').click();
+                document.getElementById('loginUsername').value = username;
+            } catch (error) {
+                showMessage(error.message || 'Error al registrar usuario', 'error');
+            }
+        });
+    </script>
 </body>
 </html>
-

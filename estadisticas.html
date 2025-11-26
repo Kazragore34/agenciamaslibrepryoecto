@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas - Sistema de Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-fichaje.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="stats-container">
+        <div class="fichaje-header">
+            <h1>Estadísticas de Tuneos</h1>
+            <div>
+                <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Fichaje</a>
+                <a href="horas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Horas</a>
+                <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Calculador</a>
+                <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stats-card">
+                <h3>Quién Tuneó Más</h3>
+                <div id="tuneosMasTable"></div>
+            </div>
+
+            <div class="stats-card">
+                <h3>Quién Recaudó Más</h3>
+                <div id="recaudoMasTable"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="crypto-utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="estadisticas.js"></script>
+    <script>
+        requireAuth();
+
+        async function cargarEstadisticas() {
+            try {
+                // Cargar quién tuneó más
+                const tuneosMas = await obtenerQuienTuneoMas();
+                mostrarTuneosMas(tuneosMas);
+
+                // Cargar quién recaudó más
+                const recaudoMas = await obtenerQuienRecaudoMas();
+                mostrarRecaudoMas(recaudoMas);
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+                document.getElementById('tuneosMasTable').innerHTML = '<p style="color: #dc2626;">Error al cargar estadísticas</p>';
+                document.getElementById('recaudoMasTable').innerHTML = '<p style="color: #dc2626;">Error al cargar estadísticas</p>';
+            }
+        }
+
+        function mostrarTuneosMas(datos) {
+            const container = document.getElementById('tuneosMasTable');
+            
+            if (datos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay tuneos registrados</p>';
+                return;
+            }
+
+            let html = `
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Usuario</th>
+                            <th>Tuneos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            datos.forEach((item, index) => {
+                const rankClass = index === 0 ? 'oro' : index === 1 ? 'plata' : index === 2 ? 'bronce' : '';
+                html += `
+                    <tr>
+                        <td>
+                            <span class="rank-badge ${rankClass}">${index + 1}</span>
+                        </td>
+                        <td>${item.nombre} ${item.apellido}<br><small style="color: #6b7280;">${item.username}</small></td>
+                        <td><strong>${item.cantidad}</strong></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function mostrarRecaudoMas(datos) {
+            const container = document.getElementById('recaudoMasTable');
+            
+            if (datos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay recaudación registrada</p>';
+                return;
+            }
+
+            let html = `
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Usuario</th>
+                            <th>Recaudación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            datos.forEach((item, index) => {
+                const rankClass = index === 0 ? 'oro' : index === 1 ? 'plata' : index === 2 ? 'bronce' : '';
+                html += `
+                    <tr>
+                        <td>
+                            <span class="rank-badge ${rankClass}">${index + 1}</span>
+                        </td>
+                        <td>${item.nombre} ${item.apellido}<br><small style="color: #6b7280;">${item.username}</small></td>
+                        <td><strong>${formatPrecio(item.recaudacion)}</strong></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Cargar estadísticas al iniciar
+        cargarEstadisticas();
+
+        // Actualizar cada 30 segundos
+        setInterval(cargarEstadisticas, 30000);
+    </script>
+</body>
+</html>
+

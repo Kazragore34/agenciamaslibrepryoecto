@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horas Trabajadas - Sistema de Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-fichaje.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="stats-container">
+        <div class="fichaje-header">
+            <h1>Horas Trabajadas</h1>
+            <div>
+                <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Fichaje</a>
+                <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Calculador</a>
+                <a href="estadisticas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Estadísticas</a>
+                <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="stats-card" style="margin-top: 2rem;">
+            <h3>Filtros</h3>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label>Usuario (solo jefes/encargados)</label>
+                    <select id="userFilter" class="form-group select">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label>Semana</label>
+                    <input type="week" id="weekFilter" class="input-number">
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <h3>Resumen de Horas por Semana</h3>
+            <div id="horasTable"></div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="crypto-utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="fichaje.js"></script>
+    <script>
+        requireAuth();
+        
+        const currentUser = getCurrentUser();
+        const userFilter = document.getElementById('userFilter');
+        const weekFilter = document.getElementById('weekFilter');
+        
+        // Configurar semana actual por defecto
+        const hoy = new Date();
+        const semanaActual = getWeekStart(hoy);
+        const year = semanaActual.getFullYear();
+        const week = getWeekNumber(semanaActual);
+        weekFilter.value = `${year}-W${week.toString().padStart(2, '0')}`;
+
+        // Cargar usuarios si es jefe o encargado
+        if (currentUser && (currentUser.rol === 'jefe' || currentUser.rol === 'encargado')) {
+            cargarUsuarios();
+        } else {
+            userFilter.style.display = 'none';
+            userFilter.parentElement.style.display = 'none';
+        }
+
+        // Event listeners
+        userFilter.addEventListener('change', cargarHoras);
+        weekFilter.addEventListener('change', cargarHoras);
+
+        async function cargarUsuarios() {
+            try {
+                const usersRef = db.collection('users');
+                const snapshot = await usersRef.orderBy('nombre').get();
+                
+                snapshot.docs.forEach(doc => {
+                    const user = doc.data();
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = `${user.nombre} ${user.apellido} (${user.username})`;
+                    userFilter.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando usuarios:', error);
+            }
+        }
+
+        async function cargarHoras() {
+            try {
+                const userId = userFilter.value || currentUser.id;
+                const weekValue = weekFilter.value;
+                
+                if (!weekValue) {
+                    document.getElementById('horasTable').innerHTML = '<p>Selecciona una semana</p>';
+                    return;
+                }
+
+                // Parsear semana
+                const [year, week] = weekValue.split('-W').map(Number);
+                const semanaInicio = getDateFromWeek(year, week);
+                const semanaFin = getWeekEnd(semanaInicio);
+                
+                const semanaInicioTimestamp = firebase.firestore.Timestamp.fromDate(semanaInicio);
+                
+                // Buscar resumen de semana
+                const semanaRef = db.collection('semanas').doc(`${userId}_${semanaInicioTimestamp.toMillis()}`);
+                const semanaDoc = await semanaRef.get();
+                
+                let horasTotales = 0;
+                if (semanaDoc.exists()) {
+                    horasTotales = semanaDoc.data().horasTotales || 0;
+                }
+
+                // También buscar fichajes individuales de esa semana
+                const fichajesRef = db.collection('fichajes');
+                const snapshot = await fichajesRef
+                    .where('userId', '==', userId)
+                    .where('semanaInicio', '==', semanaInicioTimestamp)
+                    .orderBy('entrada', 'desc')
+                    .get();
+
+                const fichajes = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                mostrarHoras(horasTotales, fichajes, semanaInicio, semanaFin);
+            } catch (error) {
+                console.error('Error cargando horas:', error);
+                document.getElementById('horasTable').innerHTML = '<p style="color: #dc2626;">Error al cargar las horas</p>';
+            }
+        }
+
+        function mostrarHoras(horasTotales, fichajes, semanaInicio, semanaFin) {
+            const tableContainer = document.getElementById('horasTable');
+            
+            let html = `
+                <div style="margin-bottom: 1rem; padding: 1rem; background: #f3f4f6; border-radius: 0.5rem;">
+                    <strong>Semana:</strong> ${formatDate(semanaInicio)} - ${formatDate(semanaFin)}<br>
+                    <strong>Total de horas:</strong> ${formatHoras(horasTotales)}
+                </div>
+            `;
+
+            if (fichajes.length === 0) {
+                html += '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay fichajes registrados en esta semana</p>';
+            } else {
+                html += `
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Entrada</th>
+                                <th>Salida</th>
+                                <th>Horas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                fichajes.forEach(fichaje => {
+                    const entrada = formatDate(fichaje.entrada);
+                    const salida = fichaje.salida ? formatDate(fichaje.salida) : 'En curso';
+                    const horas = fichaje.completado 
+                        ? formatHoras(fichaje.horasSemanaActual + fichaje.horasSemanaSiguiente)
+                        : '-';
+                    
+                    html += `
+                        <tr>
+                            <td>${entrada}</td>
+                            <td>${salida}</td>
+                            <td>${horas}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            }
+
+            tableContainer.innerHTML = html;
+        }
+
+        function getWeekNumber(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        }
+
+        function getDateFromWeek(year, week) {
+            const simple = new Date(year, 0, 1 + (week - 1) * 7);
+            const dow = simple.getDay();
+            const ISOweekStart = simple;
+            if (dow <= 4) {
+                ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+            } else {
+                ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+            }
+            return ISOweekStart;
+        }
+
+        // Cargar horas al iniciar
+        cargarHoras();
+    </script>
+</body>
+</html>
+

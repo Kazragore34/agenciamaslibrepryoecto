@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fichaje - Sistema de Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-fichaje.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="fichaje-container">
+        <div class="fichaje-header">
+            <div class="user-info">
+                <span id="userName">Usuario</span>
+                <a href="horas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Ver Horas</a>
+                <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Calculador</a>
+                <a href="estadisticas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Estadísticas</a>
+            </div>
+            <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+        </div>
+
+        <div class="fichaje-status">
+            <h2>Estado de Fichaje</h2>
+            <div id="statusIndicator" class="status-indicator inactivo">No fichado</div>
+            <div id="fichajeInfo" style="margin-top: 1rem; color: #6b7280;"></div>
+            <div class="fichaje-actions">
+                <button id="btnEntrada" class="btn-fichar entrada" onclick="ficharEntrada()">Fichar Entrada</button>
+                <button id="btnSalida" class="btn-fichar salida" onclick="ficharSalida()" style="display: none;">Fichar Salida</button>
+            </div>
+        </div>
+
+        <div class="fichajes-list">
+            <h3>Fichajes de Hoy</h3>
+            <div id="fichajesHoyList"></div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="crypto-utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="fichaje.js"></script>
+    <script>
+        // Verificar autenticación
+        requireAuth();
+        
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+            document.getElementById('userName').textContent = `${currentUser.nombre} ${currentUser.apellido} (${currentUser.username})`;
+        }
+
+        let fichajeActivo = null;
+
+        // Cargar estado inicial
+        async function cargarEstado() {
+            try {
+                const user = getCurrentUser();
+                if (!user) return;
+
+                fichajeActivo = await getFichajeActivo(user.id);
+                actualizarUI();
+                cargarFichajesHoy();
+            } catch (error) {
+                console.error('Error cargando estado:', error);
+                mostrarMensaje('Error al cargar el estado', 'error');
+            }
+        }
+
+        function actualizarUI() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const fichajeInfo = document.getElementById('fichajeInfo');
+            const btnEntrada = document.getElementById('btnEntrada');
+            const btnSalida = document.getElementById('btnSalida');
+
+            if (fichajeActivo) {
+                statusIndicator.textContent = 'Fichado - En trabajo';
+                statusIndicator.className = 'status-indicator activo';
+                fichajeInfo.textContent = `Entrada: ${formatDate(fichajeActivo.entrada)}`;
+                btnEntrada.style.display = 'none';
+                btnSalida.style.display = 'block';
+            } else {
+                statusIndicator.textContent = 'No fichado';
+                statusIndicator.className = 'status-indicator inactivo';
+                fichajeInfo.textContent = '';
+                btnEntrada.style.display = 'block';
+                btnSalida.style.display = 'none';
+            }
+        }
+
+        async function ficharEntrada() {
+            try {
+                const user = getCurrentUser();
+                if (!user) {
+                    window.location.href = 'registro.html';
+                    return;
+                }
+
+                mostrarMensaje('Fichando entrada...', 'info');
+                fichajeActivo = await ficharEntrada(user.id);
+                actualizarUI();
+                cargarFichajesHoy();
+                mostrarMensaje('Entrada fichada correctamente', 'success');
+            } catch (error) {
+                console.error('Error fichando entrada:', error);
+                mostrarMensaje(error.message || 'Error al fichar entrada', 'error');
+            }
+        }
+
+        async function ficharSalida() {
+            try {
+                if (!fichajeActivo) {
+                    mostrarMensaje('No hay fichaje activo', 'error');
+                    return;
+                }
+
+                mostrarMensaje('Fichando salida...', 'info');
+                await ficharSalida(fichajeActivo.id);
+                fichajeActivo = null;
+                actualizarUI();
+                cargarFichajesHoy();
+                mostrarMensaje('Salida fichada correctamente', 'success');
+            } catch (error) {
+                console.error('Error fichando salida:', error);
+                mostrarMensaje(error.message || 'Error al fichar salida', 'error');
+            }
+        }
+
+        async function cargarFichajesHoy() {
+            try {
+                const user = getCurrentUser();
+                if (!user) return;
+
+                const fichajes = await getFichajesHoy(user.id);
+                const listContainer = document.getElementById('fichajesHoyList');
+
+                if (fichajes.length === 0) {
+                    listContainer.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 2rem;">No hay fichajes registrados hoy</p>';
+                    return;
+                }
+
+                listContainer.innerHTML = fichajes.map(fichaje => {
+                    const entrada = formatDate(fichaje.entrada);
+                    const salida = fichaje.salida ? formatDate(fichaje.salida) : 'En curso...';
+                    const horas = fichaje.completado 
+                        ? formatHoras(fichaje.horasSemanaActual + fichaje.horasSemanaSiguiente)
+                        : '-';
+                    
+                    return `
+                        <div class="fichaje-item">
+                            <div>
+                                <div class="fichaje-time">Entrada: ${entrada}</div>
+                                <div class="fichaje-time">Salida: ${salida}</div>
+                            </div>
+                            <div class="fichaje-duration">${horas}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error cargando fichajes:', error);
+            }
+        }
+
+        function mostrarMensaje(mensaje, tipo) {
+            // Crear elemento de mensaje si no existe
+            let mensajeEl = document.getElementById('mensajeGlobal');
+            if (!mensajeEl) {
+                mensajeEl = document.createElement('div');
+                mensajeEl.id = 'mensajeGlobal';
+                mensajeEl.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 1rem; border-radius: 0.5rem; z-index: 10000; max-width: 300px;';
+                document.body.appendChild(mensajeEl);
+            }
+
+            mensajeEl.textContent = mensaje;
+            mensajeEl.className = `auth-message ${tipo}`;
+            mensajeEl.style.display = 'block';
+
+            setTimeout(() => {
+                mensajeEl.style.display = 'none';
+            }, 3000);
+        }
+
+        // Cargar estado al iniciar
+        cargarEstado();
+
+        // Actualizar cada minuto
+        setInterval(cargarEstado, 60000);
+    </script>
+</body>
+</html>
+

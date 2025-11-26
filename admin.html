@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración - Sistema de Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-fichaje.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <div class="stats-container">
+        <div class="fichaje-header">
+            <h1>Administración de Usuarios</h1>
+            <div>
+                <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Fichaje</a>
+                <a href="horas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Horas</a>
+                <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Calculador</a>
+                <a href="estadisticas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Estadísticas</a>
+                <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="stats-card" style="margin-top: 2rem;">
+            <h3>Gestión de Roles</h3>
+            <p style="color: #6b7280; margin-bottom: 1.5rem;">Solo los jefes pueden asignar roles. Los encargados pueden ver pero no modificar.</p>
+            <div id="usuariosTable"></div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="crypto-utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+    <script>
+        requireAuth();
+
+        const currentUser = getCurrentUser();
+        if (!esJefe()) {
+            document.body.innerHTML = `
+                <div style="padding: 2rem; text-align: center;">
+                    <h2>Acceso Denegado</h2>
+                    <p>No tienes permisos para acceder a esta página.</p>
+                    <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-top: 1rem; display: inline-block;">Volver</a>
+                </div>
+            `;
+        }
+
+        async function cargarUsuarios() {
+            try {
+                const usuarios = await obtenerTodosUsuarios();
+                mostrarUsuarios(usuarios);
+            } catch (error) {
+                console.error('Error cargando usuarios:', error);
+                document.getElementById('usuariosTable').innerHTML = '<p style="color: #dc2626;">Error al cargar usuarios</p>';
+            }
+        }
+
+        function mostrarUsuarios(usuarios) {
+            const container = document.getElementById('usuariosTable');
+            
+            if (usuarios.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay usuarios registrados</p>';
+                return;
+            }
+
+            let html = `
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Rol Actual</th>
+                            <th>Cambiar Rol</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            usuarios.forEach(usuario => {
+                html += `
+                    <tr>
+                        <td>
+                            <strong>${usuario.nombre} ${usuario.apellido}</strong><br>
+                            <small style="color: #6b7280;">${usuario.username}</small>
+                        </td>
+                        <td>
+                            <span style="padding: 0.25rem 0.75rem; border-radius: 1rem; background: #dbeafe; color: #1e40af; font-weight: 600;">
+                                ${usuario.rol}
+                            </span>
+                        </td>
+                        <td>
+                            <select id="rol_${usuario.id}" class="form-group select" style="width: 150px;">
+                                <option value="empleado" ${usuario.rol === 'empleado' ? 'selected' : ''}>Empleado</option>
+                                <option value="encargado" ${usuario.rol === 'encargado' ? 'selected' : ''}>Encargado</option>
+                                <option value="jefe" ${usuario.rol === 'jefe' ? 'selected' : ''}>Jefe</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn-primary" onclick="actualizarRol('${usuario.id}')" style="padding: 0.5rem 1rem;">
+                                Actualizar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        async function actualizarRol(userId) {
+            try {
+                const select = document.getElementById(`rol_${userId}`);
+                const nuevoRol = select.value;
+
+                if (!confirm(`¿Estás seguro de cambiar el rol a "${nuevoRol}"?`)) {
+                    return;
+                }
+
+                await actualizarRolUsuario(userId, nuevoRol);
+                alert('Rol actualizado correctamente');
+                cargarUsuarios();
+            } catch (error) {
+                console.error('Error actualizando rol:', error);
+                alert('Error al actualizar el rol: ' + error.message);
+            }
+        }
+
+        // Cargar usuarios al iniciar
+        cargarUsuarios();
+    </script>
+</body>
+</html>
+

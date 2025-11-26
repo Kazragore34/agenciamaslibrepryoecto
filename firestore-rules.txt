@@ -1,0 +1,67 @@
+// Reglas de seguridad de Firestore
+// Copia estas reglas en Firebase Console > Firestore Database > Rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function para verificar autenticación
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function para obtener datos del usuario desde la sesión
+    // Nota: Estas reglas asumen que usas Firebase Auth. Si usas autenticación manual,
+    // necesitarás ajustar las reglas o usar Cloud Functions para validación.
+    
+    // Colección de usuarios
+    match /users/{userId} {
+      // Cualquiera puede leer (para búsquedas de username)
+      allow read: if true;
+      // Solo el mismo usuario puede actualizar su propio perfil (excepto rol)
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'apellido']);
+      // Cualquiera puede crear (registro)
+      allow create: if true;
+    }
+    
+    // Colección de fichajes
+    match /fichajes/{fichajeId} {
+      // Usuarios autenticados pueden leer sus propios fichajes
+      // Jefes y encargados pueden leer todos
+      allow read: if true; // Simplificado - ajustar según necesidad
+      // Solo usuarios autenticados pueden crear fichajes
+      allow create: if true;
+      // Solo el usuario que creó el fichaje puede actualizarlo
+      allow update: if true; // Simplificado - ajustar según necesidad
+    }
+    
+    // Colección de semanas
+    match /semanas/{semanaId} {
+      // Usuarios autenticados pueden leer sus propias semanas
+      // Jefes y encargados pueden leer todas
+      allow read: if true; // Simplificado - ajustar según necesidad
+      // Solo el sistema puede crear/actualizar semanas
+      allow create, update: if true; // Simplificado - ajustar según necesidad
+    }
+    
+    // Colección de tuneos
+    match /tuneos/{tuneoId} {
+      // Todos pueden leer (para estadísticas)
+      allow read: if true;
+      // Solo usuarios autenticados pueden crear tuneos
+      allow create: if true;
+      // Nadie puede actualizar o eliminar tuneos (son registros históricos)
+      allow update, delete: if false;
+    }
+  }
+}
+
+// NOTA IMPORTANTE:
+// Estas reglas están simplificadas para facilitar el desarrollo.
+// En producción, deberías:
+// 1. Implementar validación más estricta basada en roles
+// 2. Usar Cloud Functions para validar autenticación manual
+// 3. Agregar validación de estructura de datos
+// 4. Implementar rate limiting
+// 5. Agregar logging y auditoría
+
