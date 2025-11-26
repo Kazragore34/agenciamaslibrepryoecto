@@ -14,12 +14,12 @@
     <div class="stats-container">
         <div class="fichaje-header">
             <h1>Estadísticas de Tuneos</h1>
-            <div>
-                <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Fichaje</a>
-                <a href="horas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Horas</a>
-                <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Calculador</a>
-                <a href="estadisticas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Estadísticas</a>
-                <a href="admin.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem; background: #059669;">Admin</a>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Fichaje</a>
+                <a href="horas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Horas</a>
+                <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Calculador</a>
+                <a href="estadisticas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Estadísticas</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; background: #059669; display: none;">Admin</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
@@ -56,10 +56,22 @@
     <script src="firebase-config.js"></script>
     <script src="crypto-utils.js"></script>
     <script src="auth.js"></script>
+    <script src="admin.js"></script>
     <script src="fichaje.js"></script>
     <script src="estadisticas.js"></script>
     <script>
         requireAuth();
+        
+        // Mostrar/ocultar botón Panel Admin según el rol del usuario
+        function actualizarBotonAdmin() {
+            const btnPanelAdmin = document.getElementById('btnPanelAdmin');
+            if (btnPanelAdmin && esJefe()) {
+                btnPanelAdmin.style.display = 'inline-block';
+            } else if (btnPanelAdmin) {
+                btnPanelAdmin.style.display = 'none';
+            }
+        }
+        actualizarBotonAdmin();
 
         let actividadDiasChart = null;
         let actividadHorasChart = null;

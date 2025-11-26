@@ -18,7 +18,10 @@
                 <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Calculador</a>
                 <a href="estadisticas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Estadísticas</a>
             </div>
-            <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; background: #059669; display: none;">Panel Admin</a>
+                <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+            </div>
         </div>
 
         <div class="fichaje-status">
@@ -46,6 +49,7 @@
     <script src="firebase-config.js"></script>
     <script src="crypto-utils.js"></script>
     <script src="auth.js"></script>
+    <script src="admin.js"></script>
     <script src="fichaje.js"></script>
     <script>
         // Verificar autenticación
@@ -286,11 +290,23 @@
             }, 3000);
         }
 
+        // Mostrar/ocultar botón Panel Admin según el rol del usuario
+        function actualizarBotonAdmin() {
+            const btnPanelAdmin = document.getElementById('btnPanelAdmin');
+            if (btnPanelAdmin && esJefe()) {
+                btnPanelAdmin.style.display = 'inline-block';
+            } else if (btnPanelAdmin) {
+                btnPanelAdmin.style.display = 'none';
+            }
+        }
+
         // Esperar a que Firebase esté listo antes de cargar estado
         async function init() {
             // Esperar un momento para que Firebase se inicialice
             await new Promise(resolve => setTimeout(resolve, 500));
             await cargarEstado();
+            // Actualizar visibilidad del botón admin
+            actualizarBotonAdmin();
         }
         init();
 

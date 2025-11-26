@@ -13,10 +13,12 @@
     <div class="stats-container">
         <div class="fichaje-header">
             <h1>Horas Trabajadas</h1>
-            <div>
-                <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Fichaje</a>
-                <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Calculador</a>
-                <a href="estadisticas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-right: 0.5rem;">Estadísticas</a>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Fichaje</a>
+                <a href="horas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Horas</a>
+                <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Calculador</a>
+                <a href="estadisticas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Estadísticas</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; background: #059669; display: none;">Admin</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
@@ -46,6 +48,7 @@
     <script src="firebase-config.js"></script>
     <script src="crypto-utils.js"></script>
     <script src="auth.js"></script>
+    <script src="admin.js"></script>
     <script src="fichaje.js"></script>
     <script>
         requireAuth();
@@ -107,7 +110,13 @@
                 
                 const semanaInicioTimestamp = firebase.firestore.Timestamp.fromDate(semanaInicio);
                 
-                // Buscar resumen de semana
+                // Si se seleccionó "Todos", mostrar vista resumida
+                if (!userFilter.value && (currentUser.rol === 'jefe' || currentUser.rol === 'encargado')) {
+                    await mostrarResumenTodos(semanaInicio, semanaFin, semanaInicioTimestamp);
+                    return;
+                }
+                
+                // Buscar resumen de semana para un usuario específico
                 const semanaRef = db.collection('semanas').doc(`${userId}_${semanaInicioTimestamp.toMillis()}`);
                 const semanaDoc = await semanaRef.get();
                 
@@ -148,6 +157,95 @@
             } catch (error) {
                 console.error('Error cargando horas:', error);
                 document.getElementById('horasTable').innerHTML = '<p style="color: #dc2626;">Error al cargar las horas</p>';
+            }
+        }
+
+        async function mostrarResumenTodos(semanaInicio, semanaFin, semanaInicioTimestamp) {
+            try {
+                // Obtener todos los usuarios
+                const usersRef = db.collection('users');
+                const usersSnapshot = await usersRef.get();
+                
+                // Obtener todas las semanas de esa fecha
+                const semanasRef = db.collection('semanas');
+                const semanasSnapshot = await semanasRef.get();
+                
+                const resumen = [];
+                
+                usersSnapshot.docs.forEach(userDoc => {
+                    const user = userDoc.data();
+                    const userId = userDoc.id;
+                    
+                    // Buscar semana de este usuario
+                    const semanaDoc = semanasSnapshot.docs.find(doc => {
+                        const data = doc.data();
+                        return data.userId === userId && 
+                               data.semanaInicio && 
+                               data.semanaInicio.toMillis() === semanaInicioTimestamp.toMillis();
+                    });
+                    
+                    let horasTotales = 0;
+                    if (semanaDoc && semanaDoc.exists) {
+                        horasTotales = semanaDoc.data().horasTotales || 0;
+                    }
+                    
+                    resumen.push({
+                        nombre: `${user.nombre} ${user.apellido}`,
+                        username: user.username,
+                        horas: horasTotales
+                    });
+                });
+                
+                // Ordenar por nombre
+                resumen.sort((a, b) => a.nombre.localeCompare(b.nombre));
+                
+                // Mostrar tabla resumida
+                const tableContainer = document.getElementById('horasTable');
+                let html = `
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: #f3f4f6; border-radius: 0.5rem;">
+                        <strong>Semana:</strong> ${formatDate(semanaInicio)} - ${formatDate(semanaFin)}<br>
+                        <strong>Vista:</strong> Resumen de todos los usuarios
+                    </div>
+                `;
+                
+                if (resumen.length === 0) {
+                    html += '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay datos para esta semana</p>';
+                } else {
+                    html += `
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Semana</th>
+                                    <th>Horas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    resumen.forEach(item => {
+                        html += `
+                            <tr>
+                                <td>
+                                    <strong>${item.nombre}</strong><br>
+                                    <small style="color: #6b7280;">${item.username}</small>
+                                </td>
+                                <td>${formatDate(semanaInicio)} - ${formatDate(semanaFin)}</td>
+                                <td><strong>${formatHoras(item.horas)}</strong></td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                }
+                
+                tableContainer.innerHTML = html;
+            } catch (error) {
+                console.error('Error mostrando resumen:', error);
+                document.getElementById('horasTable').innerHTML = '<p style="color: #dc2626;">Error al cargar el resumen</p>';
             }
         }
 
@@ -235,8 +333,19 @@
             return ISOweekStart;
         }
 
+        // Mostrar/ocultar botón Panel Admin según el rol del usuario
+        function actualizarBotonAdmin() {
+            const btnPanelAdmin = document.getElementById('btnPanelAdmin');
+            if (btnPanelAdmin && esJefe()) {
+                btnPanelAdmin.style.display = 'inline-block';
+            } else if (btnPanelAdmin) {
+                btnPanelAdmin.style.display = 'none';
+            }
+        }
+
         // Cargar horas al iniciar
         cargarHoras();
+        actualizarBotonAdmin();
     </script>
 </body>
 </html>
