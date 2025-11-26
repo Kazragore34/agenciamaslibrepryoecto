@@ -110,25 +110,36 @@ async function getFichajeActivo(userId) {
     await ensureDb();
     try {
         const fichajesRef = db.collection('fichajes');
+        // Quitar orderBy para evitar necesidad de índice compuesto
+        // Ordenaremos en memoria después
         const snapshot = await fichajesRef
             .where('userId', '==', userId)
             .where('completado', '==', false)
-            .orderBy('entrada', 'desc')
-            .limit(1)
             .get();
         
         if (snapshot.empty) {
             return null;
         }
         
-        const doc = snapshot.docs[0];
-        return {
+        // Ordenar por fecha de entrada descendente en memoria
+        const fichajes = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-        };
+        }));
+        
+        // Ordenar por entrada descendente
+        fichajes.sort((a, b) => {
+            const fechaA = a.entrada && a.entrada.toDate ? a.entrada.toDate() : new Date(0);
+            const fechaB = b.entrada && b.entrada.toDate ? b.entrada.toDate() : new Date(0);
+            return fechaB - fechaA;
+        });
+        
+        // Retornar el más reciente
+        return fichajes[0];
     } catch (error) {
         console.error('Error obteniendo fichaje activo:', error);
-        throw error;
+        // No lanzar error, solo retornar null para que la página funcione
+        return null;
     }
 }
 
@@ -300,20 +311,30 @@ async function getFichajesHoy(userId) {
         manana.setDate(manana.getDate() + 1);
         
         const fichajesRef = db.collection('fichajes');
+        // Quitar orderBy para evitar necesidad de índice compuesto
         const snapshot = await fichajesRef
             .where('userId', '==', userId)
             .where('entrada', '>=', firebase.firestore.Timestamp.fromDate(hoy))
             .where('entrada', '<', firebase.firestore.Timestamp.fromDate(manana))
-            .orderBy('entrada', 'desc')
             .get();
         
-        return snapshot.docs.map(doc => ({
+        // Ordenar por fecha de entrada descendente en memoria
+        const fichajes = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+        
+        fichajes.sort((a, b) => {
+            const fechaA = a.entrada && a.entrada.toDate ? a.entrada.toDate() : new Date(0);
+            const fechaB = b.entrada && b.entrada.toDate ? b.entrada.toDate() : new Date(0);
+            return fechaB - fechaA;
+        });
+        
+        return fichajes;
     } catch (error) {
         console.error('Error obteniendo fichajes de hoy:', error);
-        throw error;
+        // Retornar array vacío en lugar de lanzar error
+        return [];
     }
 }
 

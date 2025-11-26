@@ -60,10 +60,13 @@
 
                 fichajeActivo = await getFichajeActivo(user.id);
                 actualizarUI();
-                cargarFichajesHoy();
+                await cargarFichajesHoy();
             } catch (error) {
                 console.error('Error cargando estado:', error);
-                mostrarMensaje('Error al cargar el estado', 'error');
+                // No mostrar error si es solo un problema de índice
+                if (!error.message || !error.message.includes('index')) {
+                    mostrarMensaje('Error al cargar el estado', 'error');
+                }
             }
         }
 

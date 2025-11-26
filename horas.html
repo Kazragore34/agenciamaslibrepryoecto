@@ -112,17 +112,31 @@
                 const semanaDoc = await semanaRef.get();
                 
                 let horasTotales = 0;
-                if (semanaDoc.exists()) {
+                if (semanaDoc.exists) {
                     horasTotales = semanaDoc.data().horasTotales || 0;
                 }
 
                 // También buscar fichajes individuales de esa semana
                 const fichajesRef = db.collection('fichajes');
+                // Quitar orderBy para evitar necesidad de índice
                 const snapshot = await fichajesRef
                     .where('userId', '==', userId)
                     .where('semanaInicio', '==', semanaInicioTimestamp)
-                    .orderBy('entrada', 'desc')
                     .get();
+                
+                // Ordenar en memoria
+                const fichajesRaw = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                fichajesRaw.sort((a, b) => {
+                    const fechaA = a.entrada && a.entrada.toDate ? a.entrada.toDate() : new Date(0);
+                    const fechaB = b.entrada && b.entrada.toDate ? b.entrada.toDate() : new Date(0);
+                    return fechaB - fechaA;
+                });
+                
+                const fichajes = fichajesRaw;
 
                 const fichajes = snapshot.docs.map(doc => ({
                     id: doc.id,
