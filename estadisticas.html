@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="styles-fichaje.css">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <div class="stats-container">
@@ -32,14 +33,32 @@
                 <div id="recaudoMasTable"></div>
             </div>
         </div>
+
+        <div class="stats-card" style="margin-top: 2rem;">
+            <h3>Actividad por Días (Últimos 30 días)</h3>
+            <div style="position: relative; height: 400px;">
+                <canvas id="actividadDiasChart"></canvas>
+            </div>
+        </div>
+
+        <div class="stats-card" style="margin-top: 2rem;">
+            <h3>Actividad por Horas del Día</h3>
+            <div style="position: relative; height: 400px;">
+                <canvas id="actividadHorasChart"></canvas>
+            </div>
+        </div>
     </div>
 
     <script src="firebase-config.js"></script>
     <script src="crypto-utils.js"></script>
     <script src="auth.js"></script>
+    <script src="fichaje.js"></script>
     <script src="estadisticas.js"></script>
     <script>
         requireAuth();
+
+        let actividadDiasChart = null;
+        let actividadHorasChart = null;
 
         async function cargarEstadisticas() {
             try {
@@ -50,11 +69,152 @@
                 // Cargar quién recaudó más
                 const recaudoMas = await obtenerQuienRecaudoMas();
                 mostrarRecaudoMas(recaudoMas);
+
+                // Cargar gráficas de actividad
+                await cargarGraficasActividad();
             } catch (error) {
                 console.error('Error cargando estadísticas:', error);
                 document.getElementById('tuneosMasTable').innerHTML = '<p style="color: #dc2626;">Error al cargar estadísticas</p>';
                 document.getElementById('recaudoMasTable').innerHTML = '<p style="color: #dc2626;">Error al cargar estadísticas</p>';
             }
+        }
+
+        async function cargarGraficasActividad() {
+            try {
+                const datosActividad = await obtenerDatosActividad();
+                mostrarGraficaDias(datosActividad.porDias);
+                mostrarGraficaHoras(datosActividad.porHoras);
+            } catch (error) {
+                console.error('Error cargando gráficas de actividad:', error);
+            }
+        }
+
+        function mostrarGraficaDias(datos) {
+            const ctx = document.getElementById('actividadDiasChart').getContext('2d');
+            
+            // Destruir gráfica anterior si existe
+            if (actividadDiasChart) {
+                actividadDiasChart.destroy();
+            }
+
+            actividadDiasChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: datos.map(d => d.fecha),
+                    datasets: [{
+                        label: 'Horas Trabajadas',
+                        data: datos.map(d => d.horas),
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const horas = context.parsed.y;
+                                    const horasEnteras = Math.floor(horas);
+                                    const minutos = Math.round((horas - horasEnteras) * 60);
+                                    return `Horas: ${horasEnteras}h ${minutos}m`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Horas'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + 'h';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Fecha'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function mostrarGraficaHoras(datos) {
+            const ctx = document.getElementById('actividadHorasChart').getContext('2d');
+            
+            // Destruir gráfica anterior si existe
+            if (actividadHorasChart) {
+                actividadHorasChart.destroy();
+            }
+
+            actividadHorasChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: datos.map(d => d.hora + ':00'),
+                    datasets: [{
+                        label: 'Horas Trabajadas',
+                        data: datos.map(d => d.horas),
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const horas = context.parsed.y;
+                                    const horasEnteras = Math.floor(horas);
+                                    const minutos = Math.round((horas - horasEnteras) * 60);
+                                    return `Horas: ${horasEnteras}h ${minutos}m`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Horas'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + 'h';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Hora del Día'
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         function mostrarTuneosMas(datos) {

@@ -114,15 +114,22 @@
             
             if (!fichajeActivo || !fichajeActivo.entrada) return;
             
-            // Guardar timestamp de entrada en milisegundos para calcular correctamente
-            let entradaTimestamp = fichajeActivo.entrada;
-            if (entradaTimestamp && entradaTimestamp.toDate) {
-                entradaTimestamp = entradaTimestamp.toDate().getTime();
-            } else if (entradaTimestamp) {
-                entradaTimestamp = new Date(entradaTimestamp).getTime();
+            // Obtener la fecha de entrada correctamente - usar timestamp UTC directamente
+            let entradaDate;
+            if (fichajeActivo.entrada.toDate) {
+                entradaDate = fichajeActivo.entrada.toDate();
+            } else if (fichajeActivo.entrada instanceof Date) {
+                entradaDate = fichajeActivo.entrada;
             } else {
-                return;
+                entradaDate = new Date(fichajeActivo.entrada);
             }
+            
+            // Usar timestamp UTC directamente (sin conversión de zona horaria)
+            // Firestore guarda en UTC, así que usamos directamente
+            const entradaTimestamp = entradaDate.getTime();
+            
+            console.log('Iniciando cronómetro desde:', entradaDate.toISOString(), 'Timestamp UTC:', entradaTimestamp);
+            console.log('Hora actual:', new Date().toISOString(), 'Timestamp actual:', Date.now());
             
             const actualizarTiempo = () => {
                 if (!fichajeActivo || !fichajeActivo.entrada) {
@@ -130,11 +137,13 @@
                     return;
                 }
                 
-                // Obtener hora actual
-                const ahora = Date.now();
+                // Usar hora actual en UTC (Date.now() ya está en UTC)
+                const ahoraTimestamp = Date.now();
                 
                 // Calcular diferencia en milisegundos
-                const diferencia = ahora - entradaTimestamp;
+                const diferencia = ahoraTimestamp - entradaTimestamp;
+                
+                console.log('Diferencia calculada:', diferencia, 'ms =', Math.floor(diferencia / 1000), 'segundos');
                 
                 // Si la diferencia es negativa, mostrar 00:00:00
                 if (diferencia < 0) {
@@ -174,9 +183,13 @@
                 console.log('Fichando entrada para usuario ID:', user.id);
                 fichajeActivo = await ficharEntrada(user.id);
                 console.log('Fichaje activo creado:', fichajeActivo);
+                console.log('Fecha de entrada del fichaje:', fichajeActivo.entrada);
                 actualizarUI();
                 await cargarFichajesHoy();
-                iniciarCronometro();
+                // Esperar un momento antes de iniciar el cronómetro para asegurar que la UI esté actualizada
+                setTimeout(() => {
+                    iniciarCronometro();
+                }, 100);
                 mostrarMensaje('Entrada fichada correctamente', 'success');
             } catch (error) {
                 console.error('Error fichando entrada:', error);

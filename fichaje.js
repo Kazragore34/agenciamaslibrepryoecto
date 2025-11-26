@@ -22,8 +22,25 @@ async function ensureDb() {
  * @returns {Date} - Fecha en hora de Perú
  */
 function getCurrentDatePeru() {
+    // Obtener la hora actual en Perú
     const now = new Date();
-    const peruTime = new Date(now.toLocaleString('en-US', { timeZone: TIMEZONE_PERU }));
+    // Usar toLocaleString para obtener la hora en Perú y luego crear una nueva fecha
+    // Esto es más confiable que intentar parsear strings
+    const peruString = now.toLocaleString('en-US', { 
+        timeZone: TIMEZONE_PERU,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
+    // Parsear: formato "MM/DD/YYYY, HH:MM:SS"
+    const [datePart, timePart] = peruString.split(', ');
+    const [month, day, year] = datePart.split('/');
+    const [hour, minute, second] = timePart.split(':');
+    const peruTime = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute), parseInt(second));
     return peruTime;
 }
 
@@ -157,9 +174,12 @@ async function ficharEntrada(userId) {
             throw new Error('Ya tienes un fichaje activo. Debes fichar la salida primero.');
         }
         
-        const ahora = getCurrentDatePeru();
-        const semanaInicio = getWeekStart(ahora);
-        const semanaFin = getWeekEnd(ahora);
+        // Usar Date.now() directamente (UTC) para guardar
+        // Firestore guarda en UTC de todas formas, así que es más confiable
+        const ahora = new Date();
+        const ahoraPeru = getCurrentDatePeru(); // Solo para calcular semana
+        const semanaInicio = getWeekStart(ahoraPeru);
+        const semanaFin = getWeekEnd(ahoraPeru);
         
         const fichajeData = {
             userId: userId,
@@ -206,11 +226,16 @@ async function ficharSalida(fichajeId) {
             throw new Error('Este fichaje ya está completado');
         }
         
-        const ahora = getCurrentDatePeru();
+        // Usar Date.now() directamente (UTC) para guardar
+        const ahora = new Date();
         const entrada = fichajeData.entrada.toDate();
         
-        // Calcular horas con división
-        const horasCalculadas = calcularHorasConDivision(entrada, ahora);
+        // Para calcular horas, usar hora de Perú
+        const ahoraPeru = getCurrentDatePeru();
+        const entradaPeru = toPeruTime(entrada);
+        
+        // Calcular horas con división usando hora de Perú
+        const horasCalculadas = calcularHorasConDivision(entradaPeru, ahoraPeru);
         
         // Actualizar el fichaje
         await fichajeRef.update({
