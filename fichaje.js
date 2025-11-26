@@ -4,6 +4,20 @@
 const TIMEZONE_PERU = 'America/Lima';
 
 /**
+ * Verifica que db esté disponible
+ */
+async function ensureDb() {
+    let attempts = 0;
+    while (typeof db === 'undefined' && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+    if (typeof db === 'undefined') {
+        throw new Error('Firebase no está inicializado. Por favor, recarga la página.');
+    }
+}
+
+/**
  * Obtiene la fecha actual en hora de Perú
  * @returns {Date} - Fecha en hora de Perú
  */
@@ -93,6 +107,7 @@ function calcularHorasConDivision(entrada, salida) {
  * @returns {Promise<Object|null>} - Fichaje activo o null
  */
 async function getFichajeActivo(userId) {
+    await ensureDb();
     try {
         const fichajesRef = db.collection('fichajes');
         const snapshot = await fichajesRef
@@ -123,6 +138,7 @@ async function getFichajeActivo(userId) {
  * @returns {Promise<Object>} - Datos del fichaje creado
  */
 async function ficharEntrada(userId) {
+    await ensureDb();
     try {
         // Verificar que no tenga un fichaje activo
         const fichajeActivo = await getFichajeActivo(userId);
@@ -163,6 +179,7 @@ async function ficharEntrada(userId) {
  * @returns {Promise<Object>} - Datos del fichaje completado
  */
 async function ficharSalida(fichajeId) {
+    await ensureDb();
     try {
         const fichajeRef = db.collection('fichajes').doc(fichajeId);
         const fichajeDoc = await fichajeRef.get();
@@ -275,6 +292,7 @@ async function actualizarResumenSemanas(userId, semanaInicio, horasCalculadas, f
  * @returns {Promise<Array>} - Array de fichajes del día
  */
 async function getFichajesHoy(userId) {
+    await ensureDb();
     try {
         const hoy = getCurrentDatePeru();
         hoy.setHours(0, 0, 0, 0);

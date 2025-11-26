@@ -26,8 +26,8 @@
             <div id="statusIndicator" class="status-indicator inactivo">No fichado</div>
             <div id="fichajeInfo" style="margin-top: 1rem; color: #6b7280;"></div>
             <div class="fichaje-actions">
-                <button id="btnEntrada" class="btn-fichar entrada" onclick="ficharEntrada()">Fichar Entrada</button>
-                <button id="btnSalida" class="btn-fichar salida" onclick="ficharSalida()" style="display: none;">Fichar Salida</button>
+                <button id="btnEntrada" class="btn-fichar entrada" onclick="ficharEntradaClick()">Fichar Entrada</button>
+                <button id="btnSalida" class="btn-fichar salida" onclick="ficharSalidaClick()" style="display: none;">Fichar Salida</button>
             </div>
         </div>
 
@@ -88,7 +88,7 @@
             }
         }
 
-        async function ficharEntrada() {
+        async function ficharEntradaClick() {
             try {
                 const user = getCurrentUser();
                 if (!user) {
@@ -107,7 +107,7 @@
             }
         }
 
-        async function ficharSalida() {
+        async function ficharSalidaClick() {
             try {
                 if (!fichajeActivo) {
                     mostrarMensaje('No hay fichaje activo', 'error');
@@ -180,8 +180,13 @@
             }, 3000);
         }
 
-        // Cargar estado al iniciar
-        cargarEstado();
+        // Esperar a que Firebase esté listo antes de cargar estado
+        async function init() {
+            // Esperar un momento para que Firebase se inicialice
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await cargarEstado();
+        }
+        init();
 
         // Actualizar cada minuto
         setInterval(cargarEstado, 60000);
