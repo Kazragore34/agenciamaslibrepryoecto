@@ -62,6 +62,9 @@
 
         async function cargarEstadisticas() {
             try {
+                // Esperar a que Firebase esté listo
+                await ensureDb();
+                
                 // Cargar quién tuneó más
                 const tuneosMas = await obtenerQuienTuneoMas();
                 mostrarTuneosMas(tuneosMas);
@@ -74,8 +77,13 @@
                 await cargarGraficasActividad();
             } catch (error) {
                 console.error('Error cargando estadísticas:', error);
-                document.getElementById('tuneosMasTable').innerHTML = '<p style="color: #dc2626;">Error al cargar estadísticas</p>';
-                document.getElementById('recaudoMasTable').innerHTML = '<p style="color: #dc2626;">Error al cargar estadísticas</p>';
+                const errorMsg = error.message || 'Error desconocido';
+                if (document.getElementById('tuneosMasTable')) {
+                    document.getElementById('tuneosMasTable').innerHTML = `<p style="color: #dc2626;">Error al cargar estadísticas: ${errorMsg}</p>`;
+                }
+                if (document.getElementById('recaudoMasTable')) {
+                    document.getElementById('recaudoMasTable').innerHTML = `<p style="color: #dc2626;">Error al cargar estadísticas: ${errorMsg}</p>`;
+                }
             }
         }
 
@@ -299,11 +307,25 @@
             container.innerHTML = html;
         }
 
+        // Esperar a que Firebase esté listo antes de cargar estadísticas
+        async function iniciar() {
+            try {
+                await ensureDb();
+                await cargarEstadisticas();
+            } catch (error) {
+                console.error('Error inicializando:', error);
+                // Intentar de nuevo después de un momento
+                setTimeout(iniciar, 2000);
+            }
+        }
+
         // Cargar estadísticas al iniciar
-        cargarEstadisticas();
+        iniciar();
 
         // Actualizar cada 30 segundos
-        setInterval(cargarEstadisticas, 30000);
+        setInterval(() => {
+            cargarEstadisticas().catch(err => console.error('Error actualizando estadísticas:', err));
+        }, 30000);
     </script>
 </body>
 </html>

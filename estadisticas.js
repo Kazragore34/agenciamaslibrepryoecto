@@ -7,8 +7,10 @@ const TIMEZONE_PERU = 'America/Lima';
  * Verifica que db esté disponible
  */
 async function ensureDb() {
-    if (typeof waitForFirebase !== 'undefined') {
-        await waitForFirebase();
+    let attempts = 0;
+    while (typeof db === 'undefined' && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
     }
     if (typeof db === 'undefined' || !db) {
         throw new Error('Firebase no está inicializado. Por favor, recarga la página.');
