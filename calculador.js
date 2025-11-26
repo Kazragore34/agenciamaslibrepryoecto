@@ -146,19 +146,23 @@ function calcularPrecio(categoria, servicios, cantidadPiezas, tipoDescuento, por
 
     let precioBase = 0;
 
-    // Si está seleccionado Full Tuning, solo cuenta ese
+    // Si está seleccionado Full Tuning, solo cuenta ese (pack completo)
     if (servicios.fullTuning) {
         precioBase = preciosCategoria.fullTuning;
     } else {
-        // Sumar servicios individuales
+        // Si NO hay Full Tuning, sumar servicios individuales de rendimiento
         if (servicios.motor) precioBase += preciosCategoria.motor;
         if (servicios.frenos) precioBase += preciosCategoria.frenos;
         if (servicios.transmision) precioBase += preciosCategoria.transmision;
         if (servicios.turbo) precioBase += preciosCategoria.turbo;
-        if (servicios.suspension) precioBase += preciosCategoria.suspension;
     }
 
-    // Agregar precio de piezas
+    // Suspensión es independiente (siempre se puede agregar, incluso con Full Tuning)
+    if (servicios.suspension) {
+        precioBase += preciosCategoria.suspension;
+    }
+
+    // Agregar precio de piezas (estéticas, precio unitario × cantidad)
     precioBase += preciosCategoria.pieza * (cantidadPiezas || 0);
 
     // Calcular descuento

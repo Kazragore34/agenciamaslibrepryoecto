@@ -50,8 +50,8 @@
                     
                     <div class="checkbox-group">
                         <label>
-                            <input type="checkbox" id="fullTuning" onchange="calcular()">
-                            <span>Full Tuning</span>
+                            <input type="checkbox" id="fullTuning" onchange="toggleFullTuning()">
+                            <span><strong>Full Tuning</strong> (Pack completo)</span>
                         </label>
                     </div>
                     
@@ -83,10 +83,10 @@
                         </label>
                     </div>
                     
-                    <div class="checkbox-group">
+                    <div class="checkbox-group" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
                         <label>
                             <input type="checkbox" id="suspension" onchange="calcular()">
-                            <span>Suspensión</span>
+                            <span><strong>Suspensión</strong> (Independiente)</span>
                         </label>
                     </div>
                 </div>
@@ -181,6 +181,34 @@
             const slider = document.getElementById('porcentajeAmistad');
             const value = slider.value;
             document.getElementById('sliderValue').textContent = `${value}%`;
+            calcular();
+        }
+
+        function toggleFullTuning() {
+            const fullTuning = document.getElementById('fullTuning');
+            const motor = document.getElementById('motor');
+            const frenos = document.getElementById('frenos');
+            const transmision = document.getElementById('transmision');
+            const turbo = document.getElementById('turbo');
+            
+            if (fullTuning.checked) {
+                // Si se selecciona Full Tuning, deshabilitar y desmarcar las partes individuales
+                motor.checked = false;
+                frenos.checked = false;
+                transmision.checked = false;
+                turbo.checked = false;
+                motor.disabled = true;
+                frenos.disabled = true;
+                transmision.disabled = true;
+                turbo.disabled = true;
+            } else {
+                // Si se deselecciona Full Tuning, habilitar las partes individuales
+                motor.disabled = false;
+                frenos.disabled = false;
+                transmision.disabled = false;
+                turbo.disabled = false;
+            }
+            
             calcular();
         }
 
