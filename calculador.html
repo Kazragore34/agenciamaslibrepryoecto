@@ -13,12 +13,12 @@
     <div class="calculador-container">
         <div class="fichaje-header">
             <h1>Calculador de Precios</h1>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Fichaje</a>
-                <a href="horas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Horas</a>
-                <a href="calculador.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Calculador</a>
-                <a href="estadisticas.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem;">Estadísticas</a>
-                <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; background: #059669; display: none;">Admin</a>
+            <div>
+                <a href="fichaje.html" class="btn-primary">Fichaje</a>
+                <a href="horas.html" class="btn-primary">Horas</a>
+                <a href="calculador.html" class="btn-primary">Calculador</a>
+                <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
@@ -335,6 +335,28 @@
                 alert('Error al registrar el tuneo: ' + error.message);
             }
         }
+
+        // Mostrar/ocultar botón Panel Admin según el rol del usuario
+        function actualizarBotonAdmin() {
+            const btnPanelAdmin = document.getElementById('btnPanelAdmin');
+            if (btnPanelAdmin) {
+                if (esJefe()) {
+                    btnPanelAdmin.style.visibility = 'visible';
+                    btnPanelAdmin.style.width = 'auto';
+                    btnPanelAdmin.style.minWidth = '80px';
+                    btnPanelAdmin.style.padding = '0.5rem 1rem';
+                    btnPanelAdmin.style.margin = '0';
+                } else {
+                    btnPanelAdmin.style.visibility = 'hidden';
+                    btnPanelAdmin.style.width = '0';
+                    btnPanelAdmin.style.minWidth = '0';
+                    btnPanelAdmin.style.padding = '0.5rem 0';
+                    btnPanelAdmin.style.margin = '0';
+                    btnPanelAdmin.style.overflow = 'hidden';
+                }
+            }
+        }
+        actualizarBotonAdmin();
 
         // Inicializar
         mostrarCamposDescuento();
