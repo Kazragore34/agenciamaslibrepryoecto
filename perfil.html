@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Sistema de Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-fichaje.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="stats-container">
+        <div class="fichaje-header">
+            <h1>Mi Perfil</h1>
+            <div>
+                <a href="fichaje.html" class="btn-primary">Fichaje</a>
+                <a href="horas.html" class="btn-primary">Horas</a>
+                <a href="calculador.html" class="btn-primary">Calculador</a>
+                <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
+                <a href="perfil.html" class="btn-primary" style="background: #7c3aed;">Mi Perfil</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="stats-card" style="margin-top: 2rem;">
+            <h3>Información del Usuario</h3>
+            <div id="userInfo" style="margin-bottom: 2rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
+                <p><strong>Nombre:</strong> <span id="userNombre"></span></p>
+                <p><strong>Apellido:</strong> <span id="userApellido"></span></p>
+                <p><strong>Username:</strong> <span id="userUsername"></span></p>
+                <p><strong>Rol:</strong> <span id="userRol"></span></p>
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <h3>Cambiar Contraseña</h3>
+            <p style="color: #6b7280; margin-bottom: 1.5rem;">Ingresa tu contraseña actual y la nueva contraseña que deseas usar.</p>
+            
+            <div id="mensajeCambio" class="auth-message" style="display: none;"></div>
+
+            <form id="formCambioContrasena" onsubmit="cambiarContrasena(event)">
+                <div class="form-group">
+                    <label for="passwordActual">Contraseña Actual</label>
+                    <input type="password" id="passwordActual" class="form-group input" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="nuevaPassword">Nueva Contraseña</label>
+                    <input type="password" id="nuevaPassword" class="form-group input" required minlength="4">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmarPassword">Confirmar Nueva Contraseña</label>
+                    <input type="password" id="confirmarPassword" class="form-group input" required minlength="4">
+                </div>
+
+                <button type="submit" class="btn-primary" style="width: 100%; padding: 0.75rem; margin-top: 1rem;">
+                    Cambiar Contraseña
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="crypto-utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+    <script src="perfil.js"></script>
+    <script>
+        requireAuth();
+
+        // Cargar información del usuario
+        function cargarInfoUsuario() {
+            const user = getCurrentUser();
+            if (user) {
+                document.getElementById('userNombre').textContent = user.nombre || '-';
+                document.getElementById('userApellido').textContent = user.apellido || '-';
+                document.getElementById('userUsername').textContent = user.username || '-';
+                
+                const rolTexto = {
+                    'jefe': 'Jefe',
+                    'encargado': 'Encargado',
+                    'empleado': 'Empleado'
+                };
+                document.getElementById('userRol').textContent = rolTexto[user.rol] || user.rol || '-';
+            }
+        }
+
+        // Mostrar/ocultar botón Panel Admin según el rol del usuario
+        function actualizarBotonAdmin() {
+            const btnPanelAdmin = document.getElementById('btnPanelAdmin');
+            if (btnPanelAdmin) {
+                if (esJefe()) {
+                    btnPanelAdmin.style.visibility = 'visible';
+                    btnPanelAdmin.style.width = 'auto';
+                    btnPanelAdmin.style.minWidth = '80px';
+                    btnPanelAdmin.style.padding = '0.5rem 1rem';
+                    btnPanelAdmin.style.margin = '0';
+                } else {
+                    btnPanelAdmin.style.visibility = 'hidden';
+                    btnPanelAdmin.style.width = '0';
+                    btnPanelAdmin.style.minWidth = '0';
+                    btnPanelAdmin.style.padding = '0.5rem 0';
+                    btnPanelAdmin.style.margin = '0';
+                    btnPanelAdmin.style.overflow = 'hidden';
+                }
+            }
+        }
+
+        // Inicializar
+        cargarInfoUsuario();
+        actualizarBotonAdmin();
+    </script>
+</body>
+</html>
+

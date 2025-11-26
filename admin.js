@@ -77,3 +77,38 @@ function esJefe() {
     return user && user.rol === 'jefe';
 }
 
+/**
+ * Cambia la contraseña de un usuario (solo para jefes y encargados)
+ * @param {string} userId - ID del usuario
+ * @param {string} nuevaPassword - Nueva contraseña (sin hashear)
+ * @returns {Promise<void>}
+ */
+async function cambiarContrasenaUsuario(userId, nuevaPassword) {
+    await ensureDb();
+    
+    // Verificar permisos
+    const user = getCurrentUser();
+    if (!user || (user.rol !== 'jefe' && user.rol !== 'encargado')) {
+        throw new Error('No tienes permisos para cambiar contraseñas');
+    }
+
+    try {
+        // Validar longitud mínima
+        if (!nuevaPassword || nuevaPassword.length < 4) {
+            throw new Error('La contraseña debe tener al menos 4 caracteres');
+        }
+
+        // Hashear la nueva contraseña
+        const nuevaPasswordHash = await hashPassword(nuevaPassword);
+
+        // Actualizar la contraseña en Firestore
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update({
+            password: nuevaPasswordHash
+        });
+    } catch (error) {
+        console.error('Error cambiando contraseña de usuario:', error);
+        throw error;
+    }
+}
+

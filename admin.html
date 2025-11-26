@@ -18,14 +18,15 @@
                 <a href="horas.html" class="btn-primary">Horas</a>
                 <a href="calculador.html" class="btn-primary">Calculador</a>
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
+                <a href="perfil.html" class="btn-primary" style="background: #7c3aed;">Mi Perfil</a>
                 <a href="admin.html" class="btn-primary" style="background: #059669;">Admin</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
 
         <div class="stats-card" style="margin-top: 2rem;">
-            <h3>Gestión de Roles</h3>
-            <p style="color: #6b7280; margin-bottom: 1.5rem;">Solo los jefes pueden asignar roles. Los encargados pueden ver pero no modificar.</p>
+            <h3>Gestión de Usuarios</h3>
+            <p style="color: #6b7280; margin-bottom: 1.5rem;">Solo los jefes pueden asignar roles. Los jefes y encargados pueden restablecer contraseñas.</p>
             <div id="usuariosTable"></div>
         </div>
     </div>
@@ -35,6 +36,7 @@
     <script src="auth.js"></script>
     <script src="fichaje.js"></script>
     <script src="admin.js"></script>
+    <script src="perfil.js"></script>
     <script>
         requireAuth();
 
@@ -68,14 +70,17 @@
                 return;
             }
 
+            const puedeCambiarRoles = esJefe();
+            const puedeCambiarContrasenas = tienePermisosAdmin();
+
             let html = `
                 <table class="stats-table">
                     <thead>
                         <tr>
                             <th>Usuario</th>
                             <th>Rol Actual</th>
-                            <th>Cambiar Rol</th>
-                            <th>Acción</th>
+                            ${puedeCambiarRoles ? '<th>Cambiar Rol</th><th>Acción Rol</th>' : ''}
+                            ${puedeCambiarContrasenas ? '<th>Cambiar Contraseña</th>' : ''}
                         </tr>
                     </thead>
                     <tbody>
@@ -93,6 +98,7 @@
                                 ${usuario.rol}
                             </span>
                         </td>
+                        ${puedeCambiarRoles ? `
                         <td>
                             <select id="rol_${usuario.id}" class="form-group select" style="width: 150px;">
                                 <option value="empleado" ${usuario.rol === 'empleado' ? 'selected' : ''}>Empleado</option>
@@ -105,6 +111,14 @@
                                 Actualizar
                             </button>
                         </td>
+                        ` : ''}
+                        ${puedeCambiarContrasenas ? `
+                        <td>
+                            <button class="btn-primary" onclick="restablecerContrasena('${usuario.id}', '${usuario.nombre} ${usuario.apellido}')" style="padding: 0.5rem 1rem; background: #dc2626;">
+                                Restablecer
+                            </button>
+                        </td>
+                        ` : ''}
                     </tr>
                 `;
             });
@@ -132,6 +146,36 @@
             } catch (error) {
                 console.error('Error actualizando rol:', error);
                 alert('Error al actualizar el rol: ' + error.message);
+            }
+        }
+
+        async function restablecerContrasena(userId, nombreUsuario) {
+            try {
+                const nuevaPassword = prompt(
+                    `Restablecer contraseña para: ${nombreUsuario}\n\n` +
+                    `Ingresa la nueva contraseña (mínimo 4 caracteres):\n` +
+                    `(Esta será una contraseña temporal que el usuario deberá cambiar después de iniciar sesión)`
+                );
+
+                if (!nuevaPassword) {
+                    return; // Usuario canceló
+                }
+
+                if (nuevaPassword.length < 4) {
+                    alert('La contraseña debe tener al menos 4 caracteres');
+                    return;
+                }
+
+                if (!confirm(`¿Estás seguro de restablecer la contraseña para "${nombreUsuario}"?`)) {
+                    return;
+                }
+
+                await cambiarContrasenaUsuario(userId, nuevaPassword);
+                alert(`Contraseña restablecida correctamente para ${nombreUsuario}.\n\nLa nueva contraseña es: "${nuevaPassword}"\n\nComparte esta contraseña con el usuario para que pueda iniciar sesión.`);
+                cargarUsuarios();
+            } catch (error) {
+                console.error('Error restableciendo contraseña:', error);
+                alert('Error al restablecer la contraseña: ' + error.message);
             }
         }
 
