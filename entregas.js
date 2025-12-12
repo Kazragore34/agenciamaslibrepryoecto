@@ -217,15 +217,25 @@ async function obtenerEntregasPorVendedor(vendedorId) {
     await ensureDb();
     
     try {
+        // Obtener todas las entregas del vendedor y ordenar en el cliente
+        // para evitar problemas con índices compuestos
         const snapshot = await db.collection('entregas_productos')
             .where('vendedorId', '==', vendedorId)
-            .orderBy('fechaCreacion', 'desc')
             .get();
         
-        return snapshot.docs.map(doc => ({
+        const entregas = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+        
+        // Ordenar por fecha de creación (más recientes primero)
+        entregas.sort((a, b) => {
+            const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+            const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+            return fechaB - fechaA;
+        });
+        
+        return entregas;
     } catch (error) {
         console.error('Error obteniendo entregas por vendedor:', error);
         throw error;
