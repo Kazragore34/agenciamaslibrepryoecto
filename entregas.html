@@ -680,12 +680,158 @@
             }
         });
 
+        // Función para toggle del acordeón
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            const iconId = id === 'productosHistorial' ? 'iconProductos' : 'iconArmas';
+            const icon = document.getElementById(iconId);
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        // Cargar tickets pendientes de confirmar por el dealer
+        async function cargarTicketsPendientesDealer() {
+            if (!esDealer()) return;
+            
+            try {
+                const tickets = await obtenerTicketsPorDealer(currentUser.id);
+                const ticketsPendientes = tickets.filter(t => t.estado === 'pendiente_dealer');
+                
+                const listaEl = document.getElementById('listaTicketsPendientes');
+                
+                if (ticketsPendientes.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay tickets pendientes de confirmar</p>';
+                    return;
+                }
+                
+                let html = '<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin-bottom: 1rem; border-radius: 0.375rem;">';
+                html += `<strong>⚠️ Tienes ${ticketsPendientes.length} ticket(s) pendiente(s) de confirmar</strong>`;
+                html += '</div>';
+                
+                html += '<table class="data-table"><thead><tr><th>Ticket ID</th><th>Vendedor</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                
+                ticketsPendientes.forEach(ticket => {
+                    const fecha = ticket.fechaCreacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+                    
+                    html += `<tr style="background: #fef3c7;">
+                        <td><strong>${ticket.ticketId}</strong></td>
+                        <td>${ticket.vendedorNombre}</td>
+                        <td>${ticket.montoAprox ? '$' + ticket.montoAprox.toLocaleString() : 'N/A'}</td>
+                        <td><strong style="color: #10b981;">$${ticket.montoEntregado.toLocaleString()}</strong></td>
+                        <td>${fechaStr}</td>
+                        <td>
+                            <button class="btn-success btn-sm" onclick="confirmarTicketDealer('${ticket.id}')">Confirmar</button>
+                        </td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                listaEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando tickets pendientes:', error);
+            }
+        }
+
+        async function confirmarTicketDealer(ticketId) {
+            if (!confirm('¿Confirmas que recibiste este dinero del vendedor?')) return;
+            try {
+                mostrarMensaje('Confirmando ticket...', 'info');
+                await confirmarTicketDineroDealer(ticketId);
+                mostrarMensaje('Ticket confirmado correctamente', 'success');
+                cargarTicketsPendientesDealer();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+
+        // Cargar historial de productos
+        async function cargarHistorialProductos() {
+            if (!esDealer()) return;
+            
+            try {
+                const entregas = await obtenerEntregasPorDealer(currentUser.id);
+                const entregasConfirmadas = entregas.filter(e => e.estado === 'confirmado');
+                
+                const listaEl = document.getElementById('historialProductos');
+                
+                if (entregasConfirmadas.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas de productos confirmadas</p>';
+                    return;
+                }
+                
+                let html = '<table class="data-table"><thead><tr><th>Vendedor</th><th>Productos</th><th>Fecha</th></tr></thead><tbody>';
+                
+                entregasConfirmadas.forEach(entrega => {
+                    const fecha = entrega.fechaCreacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+                    
+                    html += `<tr>
+                        <td>${entrega.vendedorNombre}</td>
+                        <td>${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')}</td>
+                        <td>${fechaStr}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                listaEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando historial de productos:', error);
+            }
+        }
+
+        // Cargar historial de armas
+        async function cargarHistorialArmas() {
+            if (!esDealer()) return;
+            
+            try {
+                const armas = await obtenerArmasPorDealer(currentUser.id);
+                
+                const listaEl = document.getElementById('historialArmas');
+                
+                if (armas.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay armas entregadas</p>';
+                    return;
+                }
+                
+                let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>Vendedor</th><th>Balas</th><th>Chaleco</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>';
+                
+                armas.forEach(arma => {
+                    const fecha = arma.fechaCreacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+                    const estadoClass = arma.estado === 'activa' ? 'success' : 'error';
+                    
+                    html += `<tr>
+                        <td><strong>${arma.tipoArma}</strong></td>
+                        <td>${arma.vendedorNombre}</td>
+                        <td>${arma.cantidadBalasActual !== undefined ? arma.cantidadBalasActual : arma.cantidadBalasInicial || 0} / ${arma.cantidadBalasInicial || 0}</td>
+                        <td>${arma.chaleco ? 'Sí' : 'No'}</td>
+                        <td><span class="estado-badge ${estadoClass}">${arma.estado}</span></td>
+                        <td>${fechaStr}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                listaEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando historial de armas:', error);
+            }
+        }
+
         // Inicializar
         if (esDealer()) {
             cargarVendedores();
             cargarVendedoresArmas();
             cargarEntregas();
             cargarArmasEntregadas();
+            cargarTicketsPendientesDealer();
+            cargarHistorialProductos();
+            cargarHistorialArmas();
         }
     </script>
 </body>
