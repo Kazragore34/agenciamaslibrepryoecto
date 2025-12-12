@@ -241,16 +241,25 @@ async function obtenerEntregasPendientesVendedor(vendedorId) {
     await ensureDb();
     
     try {
+        // Primero obtener todas las entregas del vendedor y filtrar por estado en el cliente
+        // para evitar problemas con índices compuestos
         const snapshot = await db.collection('entregas_productos')
             .where('vendedorId', '==', vendedorId)
-            .where('estado', '==', 'pendiente')
-            .orderBy('fechaCreacion', 'desc')
             .get();
         
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        const entregas = snapshot.docs
+            .map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }))
+            .filter(entrega => entrega.estado === 'pendiente')
+            .sort((a, b) => {
+                const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+                const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+                return fechaB - fechaA; // Orden descendente
+            });
+        
+        return entregas;
     } catch (error) {
         console.error('Error obteniendo entregas pendientes:', error);
         throw error;

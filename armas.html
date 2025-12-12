@@ -51,6 +51,11 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="cantidadBalas">Cantidad de Balas Iniciales</label>
+                        <input type="number" id="cantidadBalas" min="0" value="0" required>
+                    </div>
+
+                    <div class="form-group">
                         <label style="display: flex; align-items: center;">
                             <input type="checkbox" id="chaleco" style="margin-right: 0.5rem;">
                             <span>Incluir Chaleco</span>
@@ -129,22 +134,31 @@
         async function cargarArmas() {
             try {
                 let armas = [];
+                let armasCreadas = [];
+                let armasRecibidas = [];
+                
                 if (esDealer()) {
-                    armas = await obtenerArmasPorDealer(currentUser.id);
-                    document.getElementById('tituloArmas').textContent = 'Armas Entregadas';
-                }
-                // Tanto dealers como vendedores pueden recibir armas
-                const armasRecibidas = await obtenerArmasPorVendedor(currentUser.id);
-                if (armasRecibidas.length > 0) {
-                    // Combinar armas entregadas y recibidas
-                    const armasIds = new Set(armas.map(a => a.id));
-                    armasRecibidas.forEach(arma => {
-                        if (!armasIds.has(arma.id)) {
-                            armas.push(arma);
+                    // Dealers ven tanto las que crearon como las que recibieron
+                    armasCreadas = await obtenerArmasPorDealer(currentUser.id);
+                    armasRecibidas = await obtenerArmasPorVendedor(currentUser.id);
+                    
+                    // Combinar sin duplicados
+                    const armasIds = new Set();
+                    armasCreadas.forEach(a => {
+                        armasIds.add(a.id);
+                        armas.push(a);
+                    });
+                    armasRecibidas.forEach(a => {
+                        if (!armasIds.has(a.id)) {
+                            armas.push(a);
                         }
                     });
-                }
-                if (!esDealer() || armasRecibidas.length > 0) {
+                    
+                    document.getElementById('tituloArmas').textContent = 'Mis Armas';
+                } else {
+                    // Vendedores solo ven las que recibieron
+                    armasRecibidas = await obtenerArmasPorVendedor(currentUser.id);
+                    armas = armasRecibidas;
                     document.getElementById('tituloArmas').textContent = 'Mis Armas';
                 }
                 
@@ -178,6 +192,11 @@
                                     ${esDealer() ? `Vendedor: ${arma.vendedorNombre}` : `Dealer: ${arma.dealerNombre}`}
                                 </p>
                                 <p style="margin: 0.25rem 0; color: #6b7280; font-size: 0.875rem;">${fechaStr}</p>
+                                ${arma.cantidadBalasInicial !== undefined ? `
+                                    <p style="margin: 0.25rem 0; color: #059669; font-size: 0.875rem;">
+                                        <strong>Balas:</strong> ${arma.cantidadBalasActual !== undefined ? arma.cantidadBalasActual : arma.cantidadBalasInicial} / ${arma.cantidadBalasInicial} (iniciales)
+                                    </p>
+                                ` : ''}
                             </div>
                             <div>
                                 <span class="estado-badge ${estadoClass}">${arma.estado}</span>
@@ -309,11 +328,12 @@
                 return;
             }
             
+            const cantidadBalas = parseInt(document.getElementById('cantidadBalas').value) || 0;
             const chaleco = document.getElementById('chaleco').checked;
             
             try {
                 mostrarMensaje('Creando entrega de arma...', 'info');
-                await crearEntregaArma(currentUser.id, vendedorId, tipoArma, chaleco);
+                await crearEntregaArma(currentUser.id, vendedorId, tipoArma, chaleco, cantidadBalas);
                 mostrarMensaje('Entrega de arma creada correctamente', 'success');
                 document.getElementById('formCrearArma').reset();
                 cargarArmas();

@@ -251,11 +251,27 @@
                 return;
             }
             
+            // Separar entregas pendientes de las demás
+            const entregasPendientes = entregas.filter(e => e.estado === 'pendiente');
+            const entregasOtras = entregas.filter(e => e.estado !== 'pendiente');
+            
+            // Ordenar: primero pendientes, luego las demás
+            const entregasOrdenadas = [...entregasPendientes, ...entregasOtras];
+            
             // Determinar columnas según el tipo de entregas
             const tieneEntregasCreadas = entregas.some(e => e.dealerId === currentUser.id);
             const tieneEntregasRecibidas = entregas.some(e => e.vendedorId === currentUser.id);
             
-            let html = '<table class="data-table"><thead><tr>';
+            let html = '';
+            
+            // Mostrar alerta si hay entregas pendientes
+            if (entregasPendientes.length > 0) {
+                html += `<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin-bottom: 1rem; border-radius: 0.375rem;">
+                    <strong>⚠️ Tienes ${entregasPendientes.length} entrega(s) pendiente(s) de confirmar</strong>
+                </div>`;
+            }
+            
+            html += '<table class="data-table"><thead><tr>';
             if (tieneEntregasCreadas && tieneEntregasRecibidas) {
                 html += '<th>Tipo</th><th>Usuario</th><th>Productos</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
             } else if (tieneEntregasCreadas) {
@@ -265,15 +281,19 @@
             }
             html += '</tr></thead><tbody>';
             
-            entregas.forEach(entrega => {
+            entregasOrdenadas.forEach(entrega => {
                 const fecha = entrega.fechaCreacion?.toDate();
                 const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
                 const estadoClass = entrega.estado === 'confirmado' ? 'success' : 
                                    entrega.estado === 'rechazado' ? 'error' : 'pendiente';
                 const esCreadaPorMi = entrega.dealerId === currentUser.id;
                 const esRecibidaPorMi = entrega.vendedorId === currentUser.id;
+                const esPendiente = entrega.estado === 'pendiente';
                 
-                html += `<tr>
+                // Resaltar filas pendientes
+                const rowStyle = esPendiente ? 'background: #fef3c7; font-weight: 500;' : '';
+                
+                html += `<tr style="${rowStyle}">
                     ${tieneEntregasCreadas && tieneEntregasRecibidas ? 
                         `<td>${esCreadaPorMi ? '<span style="color: #2563eb;">Creada</span>' : '<span style="color: #10b981;">Recibida</span>'}</td>
                          <td>${esCreadaPorMi ? entrega.vendedorNombre : entrega.dealerNombre}</td>` : 

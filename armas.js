@@ -6,9 +6,10 @@
  * @param {string} vendedorId - ID del vendedor
  * @param {string} tipoArma - Tipo de arma (SNS, MK2, VINTAGE, .50, AP_PISTOL)
  * @param {boolean} chaleco - Si se entrega chaleco
+ * @param {number} cantidadBalas - Cantidad de balas iniciales
  * @returns {Promise<string>} - ID de la entrega de arma creada
  */
-async function crearEntregaArma(dealerId, vendedorId, tipoArma, chaleco = false) {
+async function crearEntregaArma(dealerId, vendedorId, tipoArma, chaleco = false, cantidadBalas = 0) {
     await ensureDb();
     
     if (!esDealer()) {
@@ -39,6 +40,8 @@ async function crearEntregaArma(dealerId, vendedorId, tipoArma, chaleco = false)
             vendedorNombre: `${vendedorData.nombre} ${vendedorData.apellido}`,
             tipoArma,
             chaleco,
+            cantidadBalasInicial: cantidadBalas || 0,
+            cantidadBalasActual: cantidadBalas || 0,
             estado: 'activa',
             motivoPerdida: null,
             solicitudesBalas: [],
@@ -149,9 +152,14 @@ async function entregarBalas(armaId, solicitudIndex) {
         }
         
         solicitudesBalas[solicitudIndex].estado = 'entregada';
+        const cantidadEntregada = solicitudesBalas[solicitudIndex].cantidad || 0;
+        
+        // Actualizar cantidad de balas actual
+        const cantidadBalasActual = (armaData.cantidadBalasActual || armaData.cantidadBalasInicial || 0) + cantidadEntregada;
         
         await armaRef.update({
-            solicitudesBalas
+            solicitudesBalas,
+            cantidadBalasActual
         });
     } catch (error) {
         console.error('Error entregando balas:', error);
