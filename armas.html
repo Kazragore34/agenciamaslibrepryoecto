@@ -256,6 +256,14 @@
 
 
         // Inicializar
+        if (esSargento()) {
+            cargarProspectsArmas();
+            // Mostrar formulario de creación para sargentos
+            const formularioCrearArma = document.getElementById('formularioCrearArma');
+            if (formularioCrearArma) {
+                formularioCrearArma.style.display = 'block';
+            }
+        }
         cargarArmas();
     </script>
 </body>
