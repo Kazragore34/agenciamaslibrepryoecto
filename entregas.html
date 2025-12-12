@@ -105,24 +105,33 @@
         const currentUser = getCurrentUser();
         let todosVendedores = [];
 
-        // Cargar vendedores para el select
+        // Cargar vendedores para el select (todos los usuarios excepto el dealer actual)
         async function cargarVendedores() {
             if (!esDealer()) return;
             
             try {
                 await ensureDb();
+                // Obtener todos los usuarios y filtrar
                 const snapshot = await db.collection('users')
-                    .where('rol', '==', 'vendedor')
                     .orderBy('nombre')
                     .get();
                 
-                todosVendedores = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                const currentUser = getCurrentUser();
+                todosVendedores = snapshot.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                    .filter(user => user.id !== currentUser.id); // Excluir al dealer actual
                 
                 const select = document.getElementById('vendedorSelect');
                 select.innerHTML = '<option value="">Seleccionar vendedor...</option>';
+                
+                if (todosVendedores.length === 0) {
+                    select.innerHTML = '<option value="">No hay vendedores disponibles</option>';
+                    return;
+                }
+                
                 todosVendedores.forEach(v => {
                     const option = document.createElement('option');
                     option.value = v.id;
@@ -131,6 +140,7 @@
                 });
             } catch (error) {
                 console.error('Error cargando vendedores:', error);
+                alert('Error cargando vendedores: ' + error.message);
             }
         }
 
@@ -201,8 +211,26 @@
         async function cargarEntregas() {
             try {
                 let entregas = [];
+                let entregasCreadas = [];
+                let entregasRecibidas = [];
+                
                 if (esDealer()) {
-                    entregas = await obtenerEntregasPorDealer(currentUser.id);
+                    // Dealers ven tanto las que crearon como las que recibieron
+                    entregasCreadas = await obtenerEntregasPorDealer(currentUser.id);
+                    entregasRecibidas = await obtenerEntregasPorVendedor(currentUser.id);
+                    
+                    // Combinar sin duplicados
+                    const entregasIds = new Set();
+                    entregasCreadas.forEach(e => {
+                        entregasIds.add(e.id);
+                        entregas.push(e);
+                    });
+                    entregasRecibidas.forEach(e => {
+                        if (!entregasIds.has(e.id)) {
+                            entregas.push(e);
+                        }
+                    });
+                    
                     document.getElementById('tituloEntregas').textContent = 'Mis Entregas';
                 } else if (esVendedor()) {
                     entregas = await obtenerEntregasPorVendedor(currentUser.id);
@@ -223,31 +251,43 @@
                 return;
             }
             
+            // Determinar columnas según el tipo de entregas
+            const tieneEntregasCreadas = entregas.some(e => e.dealerId === currentUser.id);
+            const tieneEntregasRecibidas = entregas.some(e => e.vendedorId === currentUser.id);
+            
             let html = '<table class="data-table"><thead><tr>';
-            if (esDealer()) {
-                html += '<th>Vendedor</th>';
+            if (tieneEntregasCreadas && tieneEntregasRecibidas) {
+                html += '<th>Tipo</th><th>Usuario</th><th>Productos</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
+            } else if (tieneEntregasCreadas) {
+                html += '<th>Vendedor</th><th>Productos</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
             } else {
-                html += '<th>Dealer</th>';
+                html += '<th>Dealer</th><th>Productos</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
             }
-            html += '<th>Productos</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
+            html += '</tr></thead><tbody>';
             
             entregas.forEach(entrega => {
                 const fecha = entrega.fechaCreacion?.toDate();
                 const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
                 const estadoClass = entrega.estado === 'confirmado' ? 'success' : 
                                    entrega.estado === 'rechazado' ? 'error' : 'pendiente';
+                const esCreadaPorMi = entrega.dealerId === currentUser.id;
+                const esRecibidaPorMi = entrega.vendedorId === currentUser.id;
                 
                 html += `<tr>
-                    <td>${esDealer() ? entrega.vendedorNombre : entrega.dealerNombre}</td>
+                    ${tieneEntregasCreadas && tieneEntregasRecibidas ? 
+                        `<td>${esCreadaPorMi ? '<span style="color: #2563eb;">Creada</span>' : '<span style="color: #10b981;">Recibida</span>'}</td>
+                         <td>${esCreadaPorMi ? entrega.vendedorNombre : entrega.dealerNombre}</td>` : 
+                        (esCreadaPorMi ? `<td>${entrega.vendedorNombre}</td>` : `<td>${entrega.dealerNombre}</td>`)
+                    }
                     <td>${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')}</td>
                     <td><span class="estado-badge ${estadoClass}">${entrega.estado}</span></td>
                     <td>${fechaStr}</td>
                     <td>
-                        ${entrega.estado === 'pendiente' && esDealer() ? 
+                        ${entrega.estado === 'pendiente' && entrega.dealerId === currentUser.id ? 
                             `<button class="btn-danger btn-sm" onclick="eliminarEntregaConfirm('${entrega.id}')">Eliminar</button>` : 
                             ''
                         }
-                        ${entrega.estado === 'pendiente' && esVendedor() ? 
+                        ${entrega.estado === 'pendiente' && entrega.vendedorId === currentUser.id ? 
                             `<button class="btn-success btn-sm" onclick="confirmarEntregaConfirm('${entrega.id}')">Confirmar</button>
                              <button class="btn-danger btn-sm" onclick="rechazarEntregaConfirm('${entrega.id}')">Rechazar</button>` : 
                             ''

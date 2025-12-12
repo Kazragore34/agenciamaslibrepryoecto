@@ -93,11 +93,11 @@ async function crearTicketDinero(dealerId, vendedorId, montoAprox = null, entreg
 async function confirmarTicketDinero(ticketId, montoEntregado) {
     await ensureDb();
     
-    if (!esVendedor()) {
-        throw new Error('Solo los vendedores pueden confirmar tickets');
-    }
-    
+    // Tanto dealers como vendedores pueden confirmar tickets
     const currentUser = getCurrentUser();
+    if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+    }
     
     if (!montoEntregado || montoEntregado <= 0) {
         throw new Error('El monto debe ser mayor a 0');

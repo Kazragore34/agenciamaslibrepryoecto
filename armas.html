@@ -86,24 +86,33 @@
         const currentUser = getCurrentUser();
         let todosVendedores = [];
 
-        // Cargar vendedores
+        // Cargar usuarios (todos excepto el dealer actual)
         async function cargarVendedores() {
             if (!esDealer()) return;
             
             try {
                 await ensureDb();
+                // Obtener todos los usuarios y filtrar
                 const snapshot = await db.collection('users')
-                    .where('rol', '==', 'vendedor')
                     .orderBy('nombre')
                     .get();
                 
-                todosVendedores = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                const currentUser = getCurrentUser();
+                todosVendedores = snapshot.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                    .filter(user => user.id !== currentUser.id); // Excluir al dealer actual
                 
                 const select = document.getElementById('vendedorSelectArma');
-                select.innerHTML = '<option value="">Seleccionar vendedor...</option>';
+                select.innerHTML = '<option value="">Seleccionar usuario...</option>';
+                
+                if (todosVendedores.length === 0) {
+                    select.innerHTML = '<option value="">No hay usuarios disponibles</option>';
+                    return;
+                }
+                
                 todosVendedores.forEach(v => {
                     const option = document.createElement('option');
                     option.value = v.id;
@@ -111,7 +120,8 @@
                     select.appendChild(option);
                 });
             } catch (error) {
-                console.error('Error cargando vendedores:', error);
+                console.error('Error cargando usuarios:', error);
+                alert('Error cargando usuarios: ' + error.message);
             }
         }
 
@@ -122,8 +132,19 @@
                 if (esDealer()) {
                     armas = await obtenerArmasPorDealer(currentUser.id);
                     document.getElementById('tituloArmas').textContent = 'Armas Entregadas';
-                } else if (esVendedor()) {
-                    armas = await obtenerArmasPorVendedor(currentUser.id);
+                }
+                // Tanto dealers como vendedores pueden recibir armas
+                const armasRecibidas = await obtenerArmasPorVendedor(currentUser.id);
+                if (armasRecibidas.length > 0) {
+                    // Combinar armas entregadas y recibidas
+                    const armasIds = new Set(armas.map(a => a.id));
+                    armasRecibidas.forEach(arma => {
+                        if (!armasIds.has(arma.id)) {
+                            armas.push(arma);
+                        }
+                    });
+                }
+                if (!esDealer() || armasRecibidas.length > 0) {
                     document.getElementById('tituloArmas').textContent = 'Mis Armas';
                 }
                 

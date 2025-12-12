@@ -81,24 +81,33 @@
         let todosVendedores = [];
         let entregasConfirmadas = [];
 
-        // Cargar vendedores
+        // Cargar usuarios (todos excepto el dealer actual)
         async function cargarVendedores() {
             if (!esDealer()) return;
             
             try {
                 await ensureDb();
+                // Obtener todos los usuarios y filtrar
                 const snapshot = await db.collection('users')
-                    .where('rol', '==', 'vendedor')
                     .orderBy('nombre')
                     .get();
                 
-                todosVendedores = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                const currentUser = getCurrentUser();
+                todosVendedores = snapshot.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                    .filter(user => user.id !== currentUser.id); // Excluir al dealer actual
                 
                 const select = document.getElementById('vendedorSelectTicket');
-                select.innerHTML = '<option value="">Seleccionar vendedor...</option>';
+                select.innerHTML = '<option value="">Seleccionar usuario...</option>';
+                
+                if (todosVendedores.length === 0) {
+                    select.innerHTML = '<option value="">No hay usuarios disponibles</option>';
+                    return;
+                }
+                
                 todosVendedores.forEach(v => {
                     const option = document.createElement('option');
                     option.value = v.id;
@@ -106,7 +115,8 @@
                     select.appendChild(option);
                 });
             } catch (error) {
-                console.error('Error cargando vendedores:', error);
+                console.error('Error cargando usuarios:', error);
+                alert('Error cargando usuarios: ' + error.message);
             }
         }
 
@@ -148,9 +158,27 @@
         async function cargarTickets() {
             try {
                 let tickets = [];
+                let ticketsCreados = [];
+                let ticketsRecibidos = [];
+                
                 if (esDealer()) {
-                    tickets = await obtenerTicketsPorDealer(currentUser.id);
-                    document.getElementById('tituloTickets').textContent = 'Mis Tickets Creados';
+                    // Dealers ven tanto los que crearon como los que recibieron
+                    ticketsCreados = await obtenerTicketsPorDealer(currentUser.id);
+                    ticketsRecibidos = await obtenerTicketsPorVendedor(currentUser.id);
+                    
+                    // Combinar sin duplicados
+                    const ticketsIds = new Set();
+                    ticketsCreados.forEach(t => {
+                        ticketsIds.add(t.id);
+                        tickets.push(t);
+                    });
+                    ticketsRecibidos.forEach(t => {
+                        if (!ticketsIds.has(t.id)) {
+                            tickets.push(t);
+                        }
+                    });
+                    
+                    document.getElementById('tituloTickets').textContent = 'Mis Tickets';
                 } else if (esVendedor()) {
                     tickets = await obtenerTicketsPorVendedor(currentUser.id);
                     document.getElementById('tituloTickets').textContent = 'Mis Tickets';
@@ -170,8 +198,14 @@
                 return;
             }
             
+            // Determinar qué columnas mostrar
+            const tieneTicketsCreados = tickets.some(t => t.dealerId === currentUser.id);
+            const tieneTicketsRecibidos = tickets.some(t => t.vendedorId === currentUser.id);
+            
             let html = '<table class="data-table"><thead><tr>';
-            if (esDealer()) {
+            if (tieneTicketsCreados && tieneTicketsRecibidos) {
+                html += '<th>Tipo</th><th>Usuario</th><th>Ticket ID</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
+            } else if (tieneTicketsCreados) {
                 html += '<th>Vendedor</th><th>Ticket ID</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
             } else {
                 html += '<th>Ticket ID</th><th>Dealer</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
@@ -182,20 +216,26 @@
                 const fecha = ticket.fechaCreacion?.toDate();
                 const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
                 const estadoClass = ticket.estado === 'confirmado' ? 'success' : 'pendiente';
+                const esCreadoPorMi = ticket.dealerId === currentUser.id;
+                const esRecibidoPorMi = ticket.vendedorId === currentUser.id;
                 
                 html += `<tr>
-                    ${esDealer() ? `<td>${ticket.vendedorNombre}</td>` : ''}
+                    ${tieneTicketsCreados && tieneTicketsRecibidos ? 
+                        `<td>${esCreadoPorMi ? '<span style="color: #2563eb;">Creado</span>' : '<span style="color: #10b981;">Recibido</span>'}</td>
+                         <td>${esCreadoPorMi ? ticket.vendedorNombre : ticket.dealerNombre}</td>` : 
+                        (esCreadoPorMi ? `<td>${ticket.vendedorNombre}</td>` : `<td>${ticket.dealerNombre}</td>`)
+                    }
                     <td><strong>${ticket.ticketId}</strong></td>
-                    ${esDealer() ? `<td>${ticket.montoAprox ? '$' + ticket.montoAprox.toLocaleString() : 'N/A'}</td>` : ''}
+                    ${(tieneTicketsCreados || esCreadoPorMi) ? `<td>${ticket.montoAprox ? '$' + ticket.montoAprox.toLocaleString() : 'N/A'}</td>` : ''}
                     <td>${ticket.montoEntregado ? '$' + ticket.montoEntregado.toLocaleString() : '-'}</td>
                     <td><span class="estado-badge ${estadoClass}">${ticket.estado}</span></td>
                     <td>${fechaStr}</td>
                     <td>
-                        ${ticket.estado === 'pendiente' && esVendedor() ? 
+                        ${ticket.estado === 'pendiente' && esRecibidoPorMi ? 
                             `<button class="btn-success btn-sm" onclick="confirmarTicketModal('${ticket.id}')">Confirmar</button>` : 
                             ''
                         }
-                        ${esDealer() && ticket.estado === 'confirmado' && ticket.montoAprox ? 
+                        ${esCreadoPorMi && ticket.estado === 'confirmado' && ticket.montoAprox ? 
                             `<span style="color: ${ticket.montoEntregado >= ticket.montoAprox ? '#10b981' : '#ef4444'};">
                                 ${ticket.montoEntregado >= ticket.montoAprox ? '✓' : '⚠'} 
                                 ${((ticket.montoEntregado / ticket.montoAprox) * 100).toFixed(1)}%

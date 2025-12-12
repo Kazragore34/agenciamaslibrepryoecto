@@ -67,11 +67,11 @@ async function crearEntregaProductos(dealerId, vendedorId, productos, itemsAdici
 async function confirmarEntrega(entregaId) {
     await ensureDb();
     
-    if (!esVendedor()) {
-        throw new Error('Solo los vendedores pueden confirmar entregas');
-    }
-    
+    // Tanto dealers como vendedores pueden confirmar entregas
     const currentUser = getCurrentUser();
+    if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+    }
     
     try {
         const entregaRef = db.collection('entregas_productos').doc(entregaId);
@@ -110,11 +110,11 @@ async function confirmarEntrega(entregaId) {
 async function rechazarEntrega(entregaId, motivo) {
     await ensureDb();
     
-    if (!esVendedor()) {
-        throw new Error('Solo los vendedores pueden rechazar entregas');
-    }
-    
+    // Tanto dealers como vendedores pueden rechazar entregas
     const currentUser = getCurrentUser();
+    if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+    }
     
     try {
         const entregaRef = db.collection('entregas_productos').doc(entregaId);

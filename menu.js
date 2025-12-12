@@ -1,7 +1,7 @@
 // Funciones para la página principal (menu.html)
 
 /**
- * Carga el resumen de metas del usuario
+ * Carga el resumen de metas del usuario (tanto dealers como vendedores)
  */
 async function cargarResumenMetas() {
     const currentUser = getCurrentUser();
@@ -48,13 +48,14 @@ async function cargarResumenMetas() {
 }
 
 /**
- * Carga las entregas pendientes de confirmar (para vendedores)
+ * Carga las entregas pendientes de confirmar (para vendedores y dealers que reciben)
  */
 async function cargarEntregasPendientes() {
     const currentUser = getCurrentUser();
-    if (!currentUser || !esVendedor()) return;
+    if (!currentUser) return;
     
     try {
+        // Tanto vendedores como dealers pueden recibir entregas
         const entregas = await obtenerEntregasPendientesVendedor(currentUser.id);
         const entregasEl = document.getElementById('entregasPendientes');
         
@@ -97,13 +98,14 @@ async function cargarEntregasPendientes() {
 }
 
 /**
- * Carga los tickets de dinero pendientes (para vendedores)
+ * Carga los tickets de dinero pendientes (para vendedores y dealers que reciben)
  */
 async function cargarTicketsPendientes() {
     const currentUser = getCurrentUser();
-    if (!currentUser || !esVendedor()) return;
+    if (!currentUser) return;
     
     try {
+        // Tanto vendedores como dealers pueden recibir tickets
         const tickets = await obtenerTicketsPendientesVendedor(currentUser.id);
         const ticketsEl = document.getElementById('ticketsPendientes');
         
@@ -144,11 +146,11 @@ async function cargarTicketsPendientes() {
 }
 
 /**
- * Carga las estadísticas diarias del usuario
+ * Carga las estadísticas diarias del usuario (dealers y vendedores)
  */
 async function cargarEstadisticasDiarias() {
     const currentUser = getCurrentUser();
-    if (!currentUser || !esVendedor()) return;
+    if (!currentUser) return;
     
     try {
         const dineroHoy = await obtenerDineroEntregadoHoy(currentUser.id);
@@ -168,11 +170,11 @@ async function cargarEstadisticasDiarias() {
 }
 
 /**
- * Carga las estadísticas semanales del usuario
+ * Carga las estadísticas semanales del usuario (dealers y vendedores)
  */
 async function cargarEstadisticasSemanales() {
     const currentUser = getCurrentUser();
-    if (!currentUser || !esVendedor()) return;
+    if (!currentUser) return;
     
     try {
         const dineroSemana = await obtenerDineroEntregadoSemana(currentUser.id);
@@ -286,16 +288,8 @@ async function inicializarMenu() {
         return;
     }
     
-    // Mostrar/ocultar secciones según el rol
-    if (esDealer()) {
-        document.querySelectorAll('.seccion-vendedor').forEach(el => {
-            el.style.display = 'none';
-        });
-    } else if (esVendedor()) {
-        document.querySelectorAll('.seccion-dealer').forEach(el => {
-            el.style.display = 'none';
-        });
-    }
+    // Los dealers también ven las secciones de vendedor (metas, entregas, tickets)
+    // No ocultamos secciones, todos ven todo
     
     // Cargar datos
     await cargarResumenMetas();
