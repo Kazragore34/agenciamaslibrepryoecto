@@ -12,8 +12,8 @@
 async function crearEntregaProductos(sargentoId, prospectId, productos, itemsAdicionales = [], notas = '') {
     await ensureDb();
     
-    if (!esSargento()) {
-        throw new Error('Solo los sargentos pueden crear entregas');
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden crear entregas');
     }
     
     const currentUser = getCurrentUser();

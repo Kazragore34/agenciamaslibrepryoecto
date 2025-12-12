@@ -458,8 +458,8 @@
             cargarEntregaPendiente(entregaId);
         } else {
             // Cargar según rol
-            if (esSargento()) {
-                // Sargentos: pueden crear entregas de productos Y también venden (ven todo lo que ve un prospect)
+            if (esSargentoOAdmin()) {
+                // Sargentos y admins: pueden crear entregas de productos Y también venden (ven todo lo que ve un prospect)
                 cargarProspects();
                 const formularioCrearEntrega = document.getElementById('formularioCrearEntrega');
                 if (formularioCrearEntrega) {
@@ -484,7 +484,7 @@
         
         // Forzar recarga después de un pequeño delay para asegurar que todo esté cargado
         setTimeout(() => {
-            if ((esProspect() || esSargento()) && !entregaId) {
+            if ((esProspect() || esSargentoOAdmin()) && !entregaId) {
                 cargarListaEntregasPendientes();
                 cargarEntregasConfirmadasVendedor();
             }
@@ -492,7 +492,7 @@
 
         // Cargar prospects para el formulario de entrega de productos
         async function cargarProspects() {
-            if (!esSargento()) return;
+            if (!esSargentoOAdmin()) return;
             
             try {
                 await ensureDb();
@@ -567,7 +567,7 @@
 
         // Actualizar precio aproximado
         function actualizarPrecioAprox() {
-            if (!esSargento()) return;
+            if (!esSargentoOAdmin()) return;
             
             const productos = [];
             const productosList = document.getElementById('productosList');
@@ -608,8 +608,8 @@
             formCrearEntrega.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                if (!esSargento()) {
-                    mostrarMensaje('Solo los sargentos pueden crear entregas de productos', 'error');
+                if (!esSargentoOAdmin()) {
+                    mostrarMensaje('Solo los sargentos y administradores pueden crear entregas de productos', 'error');
                     return;
                 }
                 
@@ -722,7 +722,7 @@
                 let ticketsCreados = [];
                 let ticketsRecibidos = [];
                 
-                if (esSargento()) {
+                if (esSargentoOAdmin()) {
                     // Sargentos ven tanto los que crearon como los que recibieron
                     ticketsCreados = await obtenerTicketsPorDealer(currentUser.id);
                     ticketsRecibidos = await obtenerTicketsPorVendedor(currentUser.id);
@@ -894,7 +894,7 @@
                 if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
             }
             
-            if (esSargento()) {
+            if (esSargentoOAdmin()) {
                 if (btnEntregas) btnEntregas.style.display = 'inline-block';
                 if (btnPerdidas) btnPerdidas.style.display = 'inline-block';
             } else {

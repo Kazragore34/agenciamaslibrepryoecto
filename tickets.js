@@ -45,8 +45,8 @@ async function crearTicketDinero(sargentoId, prospectId, montoAprox = null, entr
     
     const currentUser = getCurrentUser();
     
-    // Permitir que sargentos creen tickets normalmente
-    if (esSargento()) {
+    // Permitir que sargentos y admins creen tickets normalmente
+    if (esSargentoOAdmin()) {
         if (currentUser.id !== sargentoId) {
             throw new Error('No puedes crear tickets en nombre de otro sargento');
         }
@@ -203,8 +203,8 @@ async function confirmarTicketDinero(ticketId, montoEntregado) {
 async function confirmarTicketDineroDealer(ticketId) {
     await ensureDb();
     
-    if (!esSargento()) {
-        throw new Error('Solo los sargentos pueden confirmar tickets de dinero');
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden confirmar tickets de dinero');
     }
     
     const currentUser = getCurrentUser();
@@ -260,8 +260,8 @@ async function confirmarTicketDineroDealer(ticketId) {
 async function rechazarTicketDineroDealer(ticketId, motivo = '') {
     await ensureDb();
     
-    if (!esSargento()) {
-        throw new Error('Solo los sargentos pueden rechazar tickets de dinero');
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden rechazar tickets de dinero');
     }
     
     const currentUser = getCurrentUser();

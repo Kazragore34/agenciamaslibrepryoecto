@@ -105,8 +105,8 @@
         
         const currentUser = getCurrentUser();
         
-        // Verificar que sea sargento
-        if (!esSargento()) {
+        // Verificar que sea sargento o admin
+        if (!esSargentoOAdmin()) {
             document.getElementById('mensajeNoSargento').style.display = 'block';
             document.getElementById('seccionTicketsPendientes').style.display = 'none';
             document.getElementById('seccionSolicitudesBalas').style.display = 'none';
@@ -126,7 +126,7 @@
                 if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
             }
             
-            if (esSargento()) {
+            if (esSargentoOAdmin()) {
                 if (btnPerdidas) btnPerdidas.style.display = 'inline-block';
             } else {
                 if (btnPerdidas) btnPerdidas.style.display = 'none';
@@ -135,9 +135,9 @@
         
         actualizarNavegacion();
 
-        // Cargar tickets pendientes de confirmar por el sargento
+        // Cargar tickets pendientes de confirmar por el sargento/admin
         async function cargarTicketsPendientesDealer() {
-            if (!esSargento()) return;
+            if (!esSargentoOAdmin()) return;
             
             try {
                 const tickets = await obtenerTicketsPorDealer(currentUser.id);
@@ -208,7 +208,7 @@
 
         // Cargar solicitudes de balas pendientes
         async function cargarSolicitudesBalasPendientes() {
-            if (!esSargento()) return;
+            if (!esSargentoOAdmin()) return;
             
             try {
                 const armasConSolicitudes = await obtenerSolicitudesBalasPendientes();
@@ -287,7 +287,7 @@
 
         // Cargar historial de productos
         async function cargarHistorialProductos() {
-            if (!esSargento()) return;
+            if (!esSargentoOAdmin()) return;
             
             try {
                 console.log('Cargando historial de productos para sargento:', currentUser.id);
@@ -447,7 +447,7 @@
 
         // Cargar historial de armas
         async function cargarHistorialArmas() {
-            if (!esSargento()) return;
+            if (!esSargentoOAdmin()) return;
             
             try {
                 console.log('Cargando historial de armas para sargento:', currentUser.id);
@@ -523,8 +523,8 @@
             }
         }
 
-        // Inicializar - Solo sargentos pueden ver esto
-        if (esSargento()) {
+        // Inicializar - Solo sargentos y admins pueden ver esto
+        if (esSargentoOAdmin()) {
             cargarTicketsPendientesDealer();
             cargarSolicitudesBalasPendientes();
             // No cargar historial automáticamente, solo cuando se expanda el acordeón

@@ -172,6 +172,15 @@ function esSargento() {
 }
 
 /**
+ * Verifica si el usuario actual es sargento o admin
+ * @returns {boolean} - true si es sargento o admin
+ */
+function esSargentoOAdmin() {
+    const user = getCurrentUser();
+    return user && (user.rol === 'sargento' || user.rol === 'admin');
+}
+
+/**
  * Verifica si el usuario actual es prospect (antes vendedor)
  * @returns {boolean} - true si es prospect
  */

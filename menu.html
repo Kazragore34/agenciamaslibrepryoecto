@@ -175,7 +175,7 @@
             const btnEntregas = document.getElementById('btnEntregas');
             const btnPerdidas = document.getElementById('btnPerdidas');
             
-            if (esSargento() || esAdmin()) {
+            if (esSargentoOAdmin()) {
                 if (btnPanelAdmin) btnPanelAdmin.style.display = 'inline-block';
                 if (btnEntregas) btnEntregas.style.display = 'inline-block';
                 if (btnPerdidas) btnPerdidas.style.display = 'inline-block';

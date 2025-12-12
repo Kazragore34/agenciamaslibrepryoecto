@@ -94,7 +94,7 @@
         const currentUser = getCurrentUser();
         
         // Verificar que sea dealer
-        if (!esSargento()) {
+        if (!esSargentoOAdmin()) {
             document.getElementById('mensajeNoDealer').style.display = 'block';
             document.getElementById('seccionMarcarPerdida').style.display = 'none';
             document.getElementById('seccionArmasPerdidas').style.display = 'none';

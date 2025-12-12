@@ -12,8 +12,8 @@
 async function crearEntregaArma(sargentoId, prospectId, tipoArma, chaleco = false, cantidadBalas = 0) {
     await ensureDb();
     
-    if (!esSargento()) {
-        throw new Error('Solo los sargentos pueden crear entregas de armas');
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden crear entregas de armas');
     }
     
     const currentUser = getCurrentUser();
@@ -126,8 +126,8 @@ async function solicitarRecargaBalas(armaId, cantidad) {
 async function entregarBalas(armaId, solicitudIndex) {
     await ensureDb();
     
-    if (!esSargento()) {
-        throw new Error('Solo los sargentos pueden entregar balas');
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden entregar balas');
     }
     
     const currentUser = getCurrentUser();
@@ -185,8 +185,8 @@ async function entregarBalas(armaId, solicitudIndex) {
 async function marcarArmaPerdida(armaId, motivo) {
     await ensureDb();
     
-    if (!esSargento()) {
-        throw new Error('Solo los dealers pueden marcar armas como perdidas');
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden marcar armas como perdidas');
     }
     
     const currentUser = getCurrentUser();

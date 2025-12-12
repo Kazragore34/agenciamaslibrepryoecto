@@ -105,7 +105,7 @@
                 if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
             }
             
-            if (esSargento()) {
+            if (esSargentoOAdmin()) {
                 if (btnEntregas) btnEntregas.style.display = 'inline-block';
                 if (btnPerdidas) btnPerdidas.style.display = 'inline-block';
             } else {
@@ -118,7 +118,7 @@
 
         // Cargar prospects para el formulario de armas (solo sargentos)
         async function cargarProspectsArmas() {
-            if (!esSargento()) return;
+            if (!esSargentoOAdmin()) return;
             
             try {
                 await ensureDb();
@@ -156,8 +156,8 @@
             formCrearArma.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
-                if (!esSargento()) {
-                    mostrarMensaje('Solo los sargentos pueden crear entregas de armas', 'error');
+                if (!esSargentoOAdmin()) {
+                    mostrarMensaje('Solo los sargentos y administradores pueden crear entregas de armas', 'error');
                     return;
                 }
                 
@@ -230,7 +230,7 @@
                 return;
             }
             
-            const esSarg = esSargento();
+            const esSarg = esSargentoOAdmin();
             let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>' + (esSarg ? 'Prospect' : 'Sargento') + '</th><th>Balas</th><th>Chaleco</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
             
             armas.forEach(arma => {
@@ -311,7 +311,7 @@
                 }
                 
                 const arma = { id: armaDoc.id, ...armaDoc.data() };
-                const esSarg = esSargento();
+                const esSarg = esSargentoOAdmin();
                 
                 const fechaCreacion = arma.fechaCreacion?.toDate();
                 const fechaCreacionStr = fechaCreacion ? fechaCreacion.toLocaleString('es-PE') : 'N/A';
