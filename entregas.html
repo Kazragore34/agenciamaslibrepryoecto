@@ -183,9 +183,16 @@
             if (!esSargento()) return;
             
             try {
+                console.log('Cargando historial de productos para sargento:', currentUser.id);
                 const entregas = await obtenerEntregasPorDealer(currentUser.id);
+                console.log('Entregas encontradas:', entregas.length);
                 
                 const listaEl = document.getElementById('historialProductos');
+                
+                if (!listaEl) {
+                    console.error('Elemento historialProductos no encontrado');
+                    return;
+                }
                 
                 if (entregas.length === 0) {
                     listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas de productos registradas</p>';
@@ -254,9 +261,16 @@
             if (!esSargento()) return;
             
             try {
+                console.log('Cargando historial de armas para sargento:', currentUser.id);
                 const armas = await obtenerArmasPorDealer(currentUser.id);
+                console.log('Armas encontradas:', armas.length);
                 
                 const listaEl = document.getElementById('historialArmas');
+                
+                if (!listaEl) {
+                    console.error('Elemento historialArmas no encontrado');
+                    return;
+                }
                 
                 if (armas.length === 0) {
                     listaEl.innerHTML = '<p style="color: #6b7280;">No hay armas entregadas registradas</p>';

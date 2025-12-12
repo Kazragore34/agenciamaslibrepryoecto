@@ -116,6 +116,15 @@
         
         actualizarNavegacion();
 
+        // Mostrar formulario de creación para sargentos
+        if (esSargento()) {
+            cargarProspectsArmas();
+            const formularioCrearArma = document.getElementById('formularioCrearArma');
+            if (formularioCrearArma) {
+                formularioCrearArma.style.display = 'block';
+            }
+        }
+
         // Cargar todas las armas (activas y perdidas)
         async function cargarArmas() {
             try {
