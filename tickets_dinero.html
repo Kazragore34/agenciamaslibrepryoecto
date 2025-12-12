@@ -496,6 +496,7 @@
         // Cargar tickets
         async function cargarTickets() {
             try {
+                console.log('Cargando tickets para:', currentUser.id, 'Rol:', currentUser.rol);
                 let tickets = [];
                 let ticketsCreados = [];
                 let ticketsRecibidos = [];
@@ -504,6 +505,7 @@
                     // Dealers ven tanto los que crearon como los que recibieron
                     ticketsCreados = await obtenerTicketsPorDealer(currentUser.id);
                     ticketsRecibidos = await obtenerTicketsPorVendedor(currentUser.id);
+                    console.log('Tickets creados:', ticketsCreados.length, 'Tickets recibidos:', ticketsRecibidos.length);
                     
                     // Combinar sin duplicados
                     const ticketsIds = new Set();
@@ -518,11 +520,14 @@
                     });
                     
                     document.getElementById('tituloTickets').textContent = 'Mis Tickets';
-                } else if (esVendedor()) {
+                } else {
                     tickets = await obtenerTicketsPorVendedor(currentUser.id);
+                    console.log('Tickets recibidos como vendedor:', tickets.length);
                     document.getElementById('tituloTickets').textContent = 'Mis Tickets';
                 }
                 
+                console.log('Total tickets a mostrar:', tickets.length);
+                console.log('Estados de tickets:', tickets.map(t => ({ id: t.id, estado: t.estado, ticketId: t.ticketId })));
                 mostrarTickets(tickets);
             } catch (error) {
                 console.error('Error cargando tickets:', error);
@@ -532,16 +537,37 @@
         function mostrarTickets(tickets) {
             const listaEl = document.getElementById('listaTickets');
             
+            if (!listaEl) {
+                console.error('Elemento listaTickets no encontrado');
+                return;
+            }
+            
             if (tickets.length === 0) {
                 listaEl.innerHTML = '<p style="color: #6b7280;">No hay tickets</p>';
                 return;
             }
             
+            // Separar tickets pendientes y confirmados
+            const ticketsPendientes = tickets.filter(t => t.estado === 'pendiente');
+            const ticketsConfirmados = tickets.filter(t => t.estado === 'confirmado');
+            
+            // Ordenar: primero pendientes, luego confirmados
+            const ticketsOrdenados = [...ticketsPendientes, ...ticketsConfirmados];
+            
             // Determinar qué columnas mostrar
             const tieneTicketsCreados = tickets.some(t => t.dealerId === currentUser.id);
             const tieneTicketsRecibidos = tickets.some(t => t.vendedorId === currentUser.id);
             
-            let html = '<table class="data-table"><thead><tr>';
+            let html = '';
+            
+            // Mostrar alerta si hay tickets pendientes
+            if (ticketsPendientes.length > 0) {
+                html += `<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin-bottom: 1rem; border-radius: 0.375rem;">
+                    <strong>⚠️ Tienes ${ticketsPendientes.length} ticket(s) pendiente(s) de confirmar</strong>
+                </div>`;
+            }
+            
+            html += '<table class="data-table"><thead><tr>';
             if (tieneTicketsCreados && tieneTicketsRecibidos) {
                 html += '<th>Tipo</th><th>Usuario</th><th>Ticket ID</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
             } else if (tieneTicketsCreados) {
@@ -551,14 +577,18 @@
             }
             html += '</tr></thead><tbody>';
             
-            tickets.forEach(ticket => {
+            ticketsOrdenados.forEach(ticket => {
                 const fecha = ticket.fechaCreacion?.toDate();
                 const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
                 const estadoClass = ticket.estado === 'confirmado' ? 'success' : 'pendiente';
                 const esCreadoPorMi = ticket.dealerId === currentUser.id;
                 const esRecibidoPorMi = ticket.vendedorId === currentUser.id;
+                const esPendiente = ticket.estado === 'pendiente';
                 
-                html += `<tr>
+                // Resaltar filas pendientes
+                const rowStyle = esPendiente ? 'background: #fef3c7; font-weight: 500;' : '';
+                
+                html += `<tr style="${rowStyle}">
                     ${tieneTicketsCreados && tieneTicketsRecibidos ? 
                         `<td>${esCreadoPorMi ? '<span style="color: #2563eb;">Creado</span>' : '<span style="color: #10b981;">Recibido</span>'}</td>
                          <td>${esCreadoPorMi ? ticket.vendedorNombre : ticket.dealerNombre}</td>` : 

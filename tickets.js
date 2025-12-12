@@ -205,15 +205,25 @@ async function obtenerTicketsPorDealer(dealerId) {
     await ensureDb();
     
     try {
+        // Obtener todos los tickets del dealer y ordenar en el cliente
+        // para evitar problemas con índices compuestos
         const snapshot = await db.collection('tickets_dinero')
             .where('dealerId', '==', dealerId)
-            .orderBy('fechaCreacion', 'desc')
             .get();
         
-        return snapshot.docs.map(doc => ({
+        const tickets = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+        
+        // Ordenar por fecha de creación (más recientes primero)
+        tickets.sort((a, b) => {
+            const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+            const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+            return fechaB - fechaA;
+        });
+        
+        return tickets;
     } catch (error) {
         console.error('Error obteniendo tickets por dealer:', error);
         throw error;
@@ -229,15 +239,25 @@ async function obtenerTicketsPorVendedor(vendedorId) {
     await ensureDb();
     
     try {
+        // Obtener todos los tickets del vendedor y ordenar en el cliente
+        // para evitar problemas con índices compuestos
         const snapshot = await db.collection('tickets_dinero')
             .where('vendedorId', '==', vendedorId)
-            .orderBy('fechaCreacion', 'desc')
             .get();
         
-        return snapshot.docs.map(doc => ({
+        const tickets = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+        
+        // Ordenar por fecha de creación (más recientes primero)
+        tickets.sort((a, b) => {
+            const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+            const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+            return fechaB - fechaA;
+        });
+        
+        return tickets;
     } catch (error) {
         console.error('Error obteniendo tickets por vendedor:', error);
         throw error;
