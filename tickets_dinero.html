@@ -562,6 +562,84 @@
             }
         });
 
+        // Manejar formulario de creación de entrega de productos
+        const formCrearEntrega = document.getElementById('formCrearEntrega');
+        if (formCrearEntrega) {
+            formCrearEntrega.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (!esSargento()) {
+                    mostrarMensaje('Solo los sargentos pueden crear entregas de productos', 'error');
+                    return;
+                }
+                
+                const prospectId = document.getElementById('prospectSelectEntrega').value;
+                if (!prospectId) {
+                    mostrarMensaje('Selecciona un prospect', 'error');
+                    return;
+                }
+                
+                const productos = [];
+                const productosList = document.getElementById('productosList');
+                productosList.querySelectorAll('.producto-item').forEach(item => {
+                    const tipo = item.querySelector('.producto-tipo').value;
+                    const cantidad = parseInt(item.querySelector('.producto-cantidad').value) || 0;
+                    if (tipo && cantidad > 0) {
+                        productos.push({ tipo, cantidad });
+                    }
+                });
+                
+                if (productos.length === 0) {
+                    mostrarMensaje('Agrega al menos un producto', 'error');
+                    return;
+                }
+                
+                // Items adicionales (fertilizante, maceta, regadera) - se agregan automáticamente para semillas
+                const itemsAdicionales = [];
+                productos.forEach(p => {
+                    if (p.tipo.startsWith('semilla_')) {
+                        itemsAdicionales.push({ tipo: 'fertilizante', cantidad: p.cantidad });
+                        itemsAdicionales.push({ tipo: 'maceta', cantidad: p.cantidad });
+                        itemsAdicionales.push({ tipo: 'regadera', cantidad: p.cantidad });
+                    }
+                });
+                
+                const notas = document.getElementById('notasEntrega').value;
+                
+                try {
+                    mostrarMensaje('Creando entrega...', 'info');
+                    await crearEntregaProductos(currentUser.id, prospectId, productos, itemsAdicionales, notas);
+                    mostrarMensaje('Entrega creada correctamente', 'success');
+                    formCrearEntrega.reset();
+                    // Resetear lista de productos
+                    productosList.innerHTML = `
+                        <div class="producto-item">
+                            <select class="producto-tipo" required>
+                                <option value="">Seleccionar producto...</option>
+                                <option value="coca">Coca</option>
+                                <option value="meta">Meta</option>
+                                <option value="crack">Crack</option>
+                                <option value="weed">Weed</option>
+                                <option value="semilla_maleza">Semilla Maleza</option>
+                                <option value="semilla_amarillo">Semilla Amarillo</option>
+                                <option value="semilla_azul">Semilla Azul</option>
+                                <option value="semilla_morado">Semilla Morado</option>
+                            </select>
+                            <input type="number" class="producto-cantidad" min="1" value="1" required>
+                            <button type="button" class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
+                        </div>
+                    `;
+                    actualizarPrecioAprox();
+                    // Recargar listas
+                    cargarListaEntregasPendientes();
+                    cargarEntregasConfirmadasVendedor();
+                } catch (error) {
+                    console.error('Error creando entrega:', error);
+                    mostrarMensaje(error.message, 'error');
+                }
+            });
+        }
+
         // Cargar entregas confirmadas para relacionar
         async function cargarEntregasConfirmadas() {
             if (!esDealer()) return;
