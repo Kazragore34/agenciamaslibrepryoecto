@@ -12,7 +12,7 @@
 <body>
     <div class="stats-container">
         <div class="fichaje-header">
-            <h1>Entregas (Solo Dealers)</h1>
+            <h1>Entregas</h1>
             <div>
                 <a href="menu.html" class="btn-primary">Menú</a>
                 <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
@@ -26,16 +26,30 @@
             </div>
         </div>
 
-        <!-- Verificar que sea dealer -->
-        <div id="mensajeNoDealer" style="display: none; margin-top: 2rem;">
+        <!-- Lista de entregas de productos -->
+        <div id="listaEntregasProductos" style="margin-top: 2rem;">
             <div class="stats-card">
-                <h3 style="color: #ef4444;">Acceso Restringido</h3>
-                <p>Solo los dealers pueden acceder a esta sección.</p>
+                <h2>Entregas de Productos</h2>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Para crear una nueva entrega de productos, ve a la sección de Tickets.</p>
+                <div id="listaEntregas">
+                    <!-- Se carga dinámicamente -->
+                </div>
             </div>
         </div>
 
-        <!-- Sección: Entrega de Productos -->
-        <div id="seccionProductos" class="seccion-dealer" style="margin-top: 2rem;">
+        <!-- Lista de armas entregadas -->
+        <div id="listaArmasEntregadas" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h2>Entregas de Armas</h2>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Para crear una nueva entrega de arma, ve a la sección de Armas.</p>
+                <div id="listaArmas">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- OLD FORM - REMOVED
+        <div id="seccionProductos" class="seccion-dealer" style="margin-top: 2rem; display: none;">
             <div class="stats-card">
                 <h2 style="margin-bottom: 1rem;">Entrega de Productos</h2>
                 <h3>Crear Nueva Entrega de Productos</h3>
@@ -158,7 +172,7 @@
         <div id="seccionTicketsPendientes" class="seccion-dealer" style="margin-top: 2rem;">
             <div class="stats-card">
                 <h2 style="margin-bottom: 1rem;">Confirmación de Dinero Entregado</h2>
-                <p style="color: #6b7280; margin-bottom: 1rem;">Aquí puedes confirmar los tickets de dinero que los vendedores han entregado.</p>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Aquí puedes confirmar los tickets de dinero que los prospects han entregado. Cuando un prospect entrega dinero, queda pendiente hasta que confirmes la cantidad recibida.</p>
                 <div id="listaTicketsPendientes">
                     <!-- Se carga dinámicamente -->
                 </div>
@@ -354,7 +368,7 @@
                     });
                     
                     document.getElementById('tituloEntregas').textContent = 'Mis Entregas';
-                } else if (esVendedor()) {
+                } else if (esProspect()) {
                     entregas = await obtenerEntregasPorVendedor(currentUser.id);
                     document.getElementById('tituloEntregas').textContent = 'Entregas Recibidas';
                 }
@@ -589,7 +603,7 @@
 
         // Cargar armas entregadas
         async function cargarArmasEntregadas() {
-            if (!esDealer()) return;
+            if (!esSargento()) return;
             
             try {
                 const armas = await obtenerArmasPorDealer(currentUser.id);
@@ -739,7 +753,7 @@
         }
 
         async function confirmarTicketDealer(ticketId) {
-            if (!confirm('¿Confirmas que recibiste este dinero del vendedor?')) return;
+            if (!confirm('¿Confirmas que recibiste este dinero del prospect?')) return;
             try {
                 mostrarMensaje('Confirmando ticket...', 'info');
                 await confirmarTicketDineroDealer(ticketId);
@@ -752,7 +766,7 @@
 
         // Cargar historial de productos
         async function cargarHistorialProductos() {
-            if (!esDealer()) return;
+            if (!esSargento()) return;
             
             try {
                 const entregas = await obtenerEntregasPorDealer(currentUser.id);
@@ -787,7 +801,7 @@
 
         // Cargar historial de armas
         async function cargarHistorialArmas() {
-            if (!esDealer()) return;
+            if (!esSargento()) return;
             
             try {
                 const armas = await obtenerArmasPorDealer(currentUser.id);
@@ -799,7 +813,7 @@
                     return;
                 }
                 
-                let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>Vendedor</th><th>Balas</th><th>Chaleco</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>';
+                let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>Prospect</th><th>Balas</th><th>Chaleco</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>';
                 
                 armas.forEach(arma => {
                     const fecha = arma.fechaCreacion?.toDate();
