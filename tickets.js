@@ -251,6 +251,58 @@ async function confirmarTicketDineroDealer(ticketId) {
 }
 
 /**
+ * Rechaza un ticket de dinero (sargento/dealer)
+ * Esta función es llamada cuando un sargento rechaza el monto entregado por el prospect
+ * @param {string} ticketId - ID del ticket
+ * @param {string} motivo - Motivo del rechazo (opcional)
+ * @returns {Promise<void>}
+ */
+async function rechazarTicketDineroDealer(ticketId, motivo = '') {
+    await ensureDb();
+    
+    if (!esSargento()) {
+        throw new Error('Solo los sargentos pueden rechazar tickets de dinero');
+    }
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+    }
+    
+    try {
+        const ticketRef = db.collection('tickets_dinero').doc(ticketId);
+        const ticketDoc = await ticketRef.get();
+        
+        if (!ticketDoc.exists) {
+            throw new Error('Ticket no encontrado');
+        }
+        
+        const ticketData = ticketDoc.data();
+        
+        // Verificar que el ticket es para este sargento
+        if (ticketData.dealerId !== currentUser.id) {
+            throw new Error('Este ticket no es para ti');
+        }
+        
+        // Verificar que el ticket está pendiente de confirmación del dealer
+        if (ticketData.estado !== 'pendiente_dealer') {
+            throw new Error('Este ticket ya fue procesado o no está pendiente de tu confirmación');
+        }
+        
+        // Actualizar el ticket a rechazado
+        await ticketRef.update({
+            estado: 'rechazado',
+            motivoRechazo: motivo || null,
+            fechaRechazo: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+    } catch (error) {
+        console.error('Error rechazando ticket de dinero (dealer):', error);
+        throw error;
+    }
+}
+
+/**
  * Obtiene todos los tickets creados por un dealer
  * @param {string} dealerId - ID del dealer
  * @returns {Promise<Array>} - Array de tickets

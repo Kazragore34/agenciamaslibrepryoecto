@@ -167,7 +167,8 @@
                         <td><strong style="color: #10b981;">$${ticket.montoEntregado.toLocaleString()}</strong></td>
                         <td>${fechaStr}</td>
                         <td>
-                            <button class="btn-success btn-sm" onclick="confirmarTicketDealer('${ticket.id}')">Confirmar</button>
+                            <button class="btn-success btn-sm" onclick="confirmarTicketDealer('${ticket.id}')" style="margin-right: 0.5rem;">Confirmar</button>
+                            <button class="btn-danger btn-sm" onclick="rechazarTicketDealer('${ticket.id}')">Rechazar</button>
                         </td>
                     </tr>`;
                 });
@@ -187,6 +188,21 @@
                 cargarTicketsPendientesDealer();
             } catch (error) {
                 alert(error.message);
+            }
+        }
+
+        async function rechazarTicketDealer(ticketId) {
+            const motivo = prompt('Motivo del rechazo (opcional):');
+            if (motivo === null) return; // Usuario canceló
+            
+            if (!confirm('¿Estás seguro de rechazar este ticket? El prospect podrá crear uno nuevo con un monto diferente.')) return;
+            
+            try {
+                await rechazarTicketDineroDealer(ticketId, motivo || '');
+                alert('Ticket rechazado. El prospect podrá crear un nuevo ticket.');
+                cargarTicketsPendientesDealer();
+            } catch (error) {
+                alert('Error: ' + error.message);
             }
         }
 

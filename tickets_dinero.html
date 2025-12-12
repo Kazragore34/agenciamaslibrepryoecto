@@ -351,33 +351,73 @@
                     return;
                 }
                 
-                // Obtener todos los tickets para verificar cuáles entregas ya tienen ticket
+                // Obtener todos los tickets para verificar cuáles entregas ya tienen ticket CONFIRMADO
                 const tickets = await obtenerTicketsPorVendedor(currentUser.id);
-                const entregasConTicket = new Set();
+                const entregasConTicketConfirmado = new Set();
+                const entregasConTicketRechazado = new Set();
+                
                 tickets.forEach(ticket => {
-                    if (ticket.entregasRelacionadas) {
-                        ticket.entregasRelacionadas.forEach(eId => entregasConTicket.add(eId));
+                    if (ticket.entregasRelacionadas && ticket.entregasRelacionadas.length > 0) {
+                        ticket.entregasRelacionadas.forEach(eId => {
+                            // Si el ticket está confirmado, la entrega no puede tener más tickets
+                            if (ticket.estado === 'confirmado') {
+                                entregasConTicketConfirmado.add(eId);
+                            }
+                            // Si el ticket está rechazado, se puede crear uno nuevo
+                            if (ticket.estado === 'rechazado') {
+                                entregasConTicketRechazado.add(eId);
+                            }
+                        });
                     }
                 });
                 
-                let html = '<table class="data-table"><thead><tr><th>Sargento</th><th>Productos</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                let html = '<table class="data-table"><thead><tr><th>Sargento</th><th>Productos</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
                 
                 entregasConfirmadas.forEach(entrega => {
                     const fecha = entrega.fechaCreacion?.toDate();
                     const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
-                    const tieneTicket = entregasConTicket.has(entrega.id);
+                    const tieneTicketConfirmado = entregasConTicketConfirmado.has(entrega.id);
+                    const tieneTicketRechazado = entregasConTicketRechazado.has(entrega.id);
+                    
+                    // Buscar el ticket más reciente para esta entrega para mostrar su estado
+                    const ticketReciente = tickets
+                        .filter(t => t.entregasRelacionadas && t.entregasRelacionadas.includes(entrega.id))
+                        .sort((a, b) => {
+                            const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+                            const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+                            return fechaB - fechaA;
+                        })[0];
+                    
+                    let estadoTicket = '';
+                    if (tieneTicketConfirmado && ticketReciente) {
+                        estadoTicket = `<span class="estado-badge success">Confirmado</span>`;
+                    } else if (tieneTicketRechazado && ticketReciente) {
+                        estadoTicket = `<span class="estado-badge error">Rechazado</span>`;
+                    } else if (ticketReciente && ticketReciente.estado === 'pendiente_dealer') {
+                        estadoTicket = `<span class="estado-badge pendiente">Pendiente de confirmación</span>`;
+                    } else {
+                        estadoTicket = '<span style="color: #6b7280;">Sin ticket</span>';
+                    }
                     
                     html += `<tr>
                         <td>${entrega.dealerNombre}</td>
                         <td>${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')}</td>
                         <td>${fechaStr}</td>
+                        <td>${estadoTicket}</td>
                         <td>
-                            ${!tieneTicket ? `
+                            ${tieneTicketConfirmado ? `
+                                <span style="color: #10b981; font-weight: 500;">✓ Ticket confirmado - No se puede modificar</span>
+                            ` : tieneTicketRechazado ? `
+                                <button class="btn-primary btn-sm" onclick="crearTicketDesdeEntrega('${entrega.id}', '${entrega.dealerId}')">
+                                    Crear Nuevo Ticket
+                                </button>
+                                <span style="color: #6b7280; font-size: 0.875rem; margin-left: 0.5rem;">(El anterior fue rechazado)</span>
+                            ` : ticketReciente && ticketReciente.estado === 'pendiente_dealer' ? `
+                                <span style="color: #f59e0b; font-weight: 500;">Esperando confirmación del sargento</span>
+                            ` : `
                                 <button class="btn-primary btn-sm" onclick="crearTicketDesdeEntrega('${entrega.id}', '${entrega.dealerId}')">
                                     Crear Ticket de Dinero
                                 </button>
-                            ` : `
-                                <span style="color: #6b7280;">Ticket ya creado</span>
                             `}
                         </td>
                     </tr>`;
