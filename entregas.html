@@ -311,11 +311,23 @@
         // Función para toggle del acordeón
         function toggleAccordion(id) {
             const content = document.getElementById(id);
-            const icon = document.getElementById('icon' + id.charAt(0).toUpperCase() + id.slice(1).replace('Historial', ''));
+            let iconId = '';
+            if (id === 'productosHistorial') {
+                iconId = 'iconProductos';
+            } else if (id === 'armasHistorial') {
+                iconId = 'iconArmas';
+            }
+            const icon = document.getElementById(iconId);
             
             if (content.style.display === 'none' || !content.style.display) {
                 content.style.display = 'block';
                 if (icon) icon.textContent = '▲';
+                // Recargar datos cuando se expande
+                if (id === 'productosHistorial') {
+                    cargarHistorialProductos();
+                } else if (id === 'armasHistorial') {
+                    cargarHistorialArmas();
+                }
             } else {
                 content.style.display = 'none';
                 if (icon) icon.textContent = '▼';
@@ -325,8 +337,7 @@
         // Inicializar - Solo sargentos pueden ver esto
         if (esSargento()) {
             cargarTicketsPendientesDealer();
-            cargarHistorialProductos();
-            cargarHistorialArmas();
+            // No cargar historial automáticamente, solo cuando se expanda el acordeón
         }
     </script>
 </body>
