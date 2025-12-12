@@ -26,33 +26,60 @@
             </div>
         </div>
 
-        <!-- Formulario de creación (solo para dealers) -->
-        <div id="formularioCrear" class="seccion-dealer" style="margin-top: 2rem;">
+        <!-- Formulario de creación de entrega de productos (solo para sargentos) -->
+        <div id="formularioCrearEntrega" class="seccion-sargento" style="margin-top: 2rem; display: none;">
             <div class="stats-card">
-                <h3>Crear Nuevo Ticket</h3>
-                <div id="mensajeTicket" class="auth-message" style="display: none;"></div>
-                <form id="formCrearTicket">
+                <h2>Crear Nueva Entrega de Productos</h2>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Crea una entrega de productos para un prospect. Después de que el prospect confirme, podrá crear un ticket de dinero.</p>
+                <div id="mensajeEntrega" class="auth-message" style="display: none;"></div>
+                <form id="formCrearEntrega">
                     <div class="form-group">
-                        <label for="vendedorSelectTicket">Vendedor</label>
-                        <select id="vendedorSelectTicket" required>
-                            <option value="">Seleccionar vendedor...</option>
+                        <label for="prospectSelectEntrega">Prospect</label>
+                        <select id="prospectSelectEntrega" required>
+                            <option value="">Seleccionar prospect...</option>
                         </select>
                     </div>
                     
                     <div class="form-group">
-                        <label for="montoAprox">Monto Aproximado (opcional, solo visible para ti)</label>
-                        <input type="number" id="montoAprox" min="0" step="0.01">
-                        <small style="color: #6b7280;">Este monto solo lo verás tú, el vendedor no lo verá</small>
+                        <label>Productos</label>
+                        <div id="productosList">
+                            <div class="producto-item">
+                                <select class="producto-tipo" required>
+                                    <option value="">Seleccionar producto...</option>
+                                    <option value="coca">Coca</option>
+                                    <option value="meta">Meta</option>
+                                    <option value="crack">Crack</option>
+                                    <option value="weed">Weed</option>
+                                    <option value="semilla_maleza">Semilla Maleza</option>
+                                    <option value="semilla_amarillo">Semilla Amarillo</option>
+                                    <option value="semilla_azul">Semilla Azul</option>
+                                    <option value="semilla_morado">Semilla Morado</option>
+                                </select>
+                                <input type="number" class="producto-cantidad" min="1" value="1" required>
+                                <button type="button" class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-secondary" onclick="agregarProducto()">+ Agregar Producto</button>
                     </div>
 
                     <div class="form-group">
-                        <label>Entregas Relacionadas (opcional)</label>
-                        <div id="entregasRelacionadasList">
-                            <!-- Se carga dinámicamente -->
+                        <label>Items Adicionales (para semillas)</label>
+                        <div id="itemsAdicionalesList">
+                            <p style="color: #6b7280; font-size: 0.875rem;">Se agregarán automáticamente cuando selecciones semillas</p>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-primary">Crear Ticket</button>
+                    <div class="form-group">
+                        <label for="notasEntrega">Notas (opcional)</label>
+                        <textarea id="notasEntrega" rows="3"></textarea>
+                    </div>
+
+                    <div id="precioAprox" class="precio-aprox" style="display: none; padding: 1rem; background: #f0fdf4; border-radius: 0.5rem; margin: 1rem 0;">
+                        <strong>Precio Aproximado: $<span id="precioAproxValor">0</span></strong>
+                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0.5rem 0 0 0;">Este precio es solo una estimación para tu referencia</p>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Crear Entrega</button>
                 </form>
             </div>
         </div>
@@ -81,7 +108,7 @@
         <div id="seccionEntregasConfirmadasVendedor" style="margin-top: 2rem;">
             <div class="stats-card">
                 <h3>Entregas Confirmadas - Crear Ticket de Dinero</h3>
-                <p style="color: #6b7280; margin-bottom: 1rem;">Selecciona una entrega confirmada para crear un ticket de dinero y registrar el monto que entregaste.</p>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Selecciona una entrega confirmada para crear un ticket de dinero y registrar el monto que entregaste. El ticket quedará pendiente hasta que el sargento confirme la cantidad.</p>
                 <div id="listaEntregasConfirmadasVendedor">
                     <!-- Se carga dinámicamente -->
                 </div>
@@ -303,9 +330,9 @@
             }
         }
 
-        // Cargar entregas confirmadas del vendedor (para crear tickets)
+        // Cargar entregas confirmadas del prospect (para crear tickets)
         async function cargarEntregasConfirmadasVendedor() {
-            if (esDealer()) {
+            if (esSargento()) {
                 document.getElementById('seccionEntregasConfirmadasVendedor').style.display = 'none';
                 return;
             }
@@ -339,7 +366,7 @@
                     }
                 });
                 
-                let html = '<table class="data-table"><thead><tr><th>Dealer</th><th>Productos</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                let html = '<table class="data-table"><thead><tr><th>Sargento</th><th>Productos</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
                 
                 entregasConfirmadas.forEach(entrega => {
                     const fecha = entrega.fechaCreacion?.toDate();
@@ -378,7 +405,7 @@
             
             try {
                 mostrarMensaje('Creando ticket...', 'info');
-                // Los vendedores pueden crear tickets para sí mismos
+                // Los prospects pueden crear tickets para sí mismos
                 const ticketId = await crearTicketDineroVendedor(dealerId, currentUser.id, parseFloat(monto), [entregaId]);
                 mostrarMensaje('Ticket creado y confirmado correctamente', 'success');
                 cargarEntregasConfirmadasVendedor();
@@ -396,15 +423,16 @@
         if (entregaId) {
             cargarEntregaPendiente(entregaId);
         } else {
-            // Cargar tickets normalmente
-            if (esDealer()) {
-                cargarVendedores();
-                cargarEntregasConfirmadas();
+            // Cargar según rol
+            if (esSargento()) {
+                // Sargentos: pueden crear entregas de productos
+                cargarProspects();
+                document.getElementById('formularioCrearEntrega').style.display = 'block';
                 document.getElementById('seccionListaEntregasPendientes').style.display = 'none';
                 document.getElementById('seccionEntregasConfirmadasVendedor').style.display = 'none';
-            } else {
-                document.getElementById('formularioCrear').style.display = 'none';
-                // Asegurar que las secciones estén visibles para vendedores
+            } else if (esProspect()) {
+                // Prospects: pueden confirmar entregas y crear tickets
+                document.getElementById('formularioCrearEntrega').style.display = 'none';
                 document.getElementById('seccionListaEntregasPendientes').style.display = 'block';
                 document.getElementById('seccionEntregasConfirmadasVendedor').style.display = 'block';
                 cargarListaEntregasPendientes();
@@ -415,50 +443,123 @@
         
         // Forzar recarga después de un pequeño delay para asegurar que todo esté cargado
         setTimeout(() => {
-            if (!esDealer() && !entregaId) {
+            if (esProspect() && !entregaId) {
                 cargarListaEntregasPendientes();
                 cargarEntregasConfirmadasVendedor();
             }
         }, 500);
 
-        // Cargar usuarios (todos excepto el dealer actual)
-        async function cargarVendedores() {
-            if (!esDealer()) return;
+        // Cargar prospects para el formulario de entrega de productos
+        async function cargarProspects() {
+            if (!esSargento()) return;
             
             try {
                 await ensureDb();
-                // Obtener todos los usuarios y filtrar
                 const snapshot = await db.collection('users')
                     .orderBy('nombre')
                     .get();
                 
                 const currentUser = getCurrentUser();
-                todosVendedores = snapshot.docs
+                const prospects = snapshot.docs
                     .map(doc => ({
                         id: doc.id,
                         ...doc.data()
                     }))
-                    .filter(user => user.id !== currentUser.id); // Excluir al dealer actual
+                    .filter(user => user.id !== currentUser.id); // Excluir al sargento actual
                 
-                const select = document.getElementById('vendedorSelectTicket');
-                select.innerHTML = '<option value="">Seleccionar usuario...</option>';
+                const select = document.getElementById('prospectSelectEntrega');
+                if (!select) return;
                 
-                if (todosVendedores.length === 0) {
-                    select.innerHTML = '<option value="">No hay usuarios disponibles</option>';
+                select.innerHTML = '<option value="">Seleccionar prospect...</option>';
+                
+                if (prospects.length === 0) {
+                    select.innerHTML = '<option value="">No hay prospects disponibles</option>';
                     return;
                 }
                 
-                todosVendedores.forEach(v => {
+                prospects.forEach(p => {
                     const option = document.createElement('option');
-                    option.value = v.id;
-                    option.textContent = `${v.nombre} ${v.apellido} (${v.username})`;
+                    option.value = p.id;
+                    option.textContent = `${p.nombre} ${p.apellido} (${p.username})`;
                     select.appendChild(option);
                 });
             } catch (error) {
-                console.error('Error cargando usuarios:', error);
-                alert('Error cargando usuarios: ' + error.message);
+                console.error('Error cargando prospects:', error);
             }
         }
+
+        // Agregar producto al formulario
+        function agregarProducto() {
+            const productosList = document.getElementById('productosList');
+            if (!productosList) return;
+            
+            const nuevoProducto = document.createElement('div');
+            nuevoProducto.className = 'producto-item';
+            nuevoProducto.innerHTML = `
+                <select class="producto-tipo" required>
+                    <option value="">Seleccionar producto...</option>
+                    <option value="coca">Coca</option>
+                    <option value="meta">Meta</option>
+                    <option value="crack">Crack</option>
+                    <option value="weed">Weed</option>
+                    <option value="semilla_maleza">Semilla Maleza</option>
+                    <option value="semilla_amarillo">Semilla Amarillo</option>
+                    <option value="semilla_azul">Semilla Azul</option>
+                    <option value="semilla_morado">Semilla Morado</option>
+                </select>
+                <input type="number" class="producto-cantidad" min="1" value="1" required>
+                <button type="button" class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
+            `;
+            productosList.appendChild(nuevoProducto);
+            actualizarPrecioAprox();
+        }
+
+        function eliminarProducto(btn) {
+            const productosList = document.getElementById('productosList');
+            if (!productosList) return;
+            
+            if (productosList.querySelectorAll('.producto-item').length > 1) {
+                btn.parentElement.remove();
+                actualizarPrecioAprox();
+            }
+        }
+
+        // Actualizar precio aproximado
+        function actualizarPrecioAprox() {
+            if (!esSargento()) return;
+            
+            const productos = [];
+            const productosList = document.getElementById('productosList');
+            if (!productosList) return;
+            
+            productosList.querySelectorAll('.producto-item').forEach(item => {
+                const tipo = item.querySelector('.producto-tipo')?.value;
+                const cantidad = parseInt(item.querySelector('.producto-cantidad')?.value) || 0;
+                if (tipo && cantidad > 0) {
+                    productos.push({ tipo, cantidad });
+                }
+            });
+            
+            const precioAprox = calcularPrecioAprox(productos);
+            const precioAproxEl = document.getElementById('precioAprox');
+            const precioAproxValor = document.getElementById('precioAproxValor');
+            
+            if (precioAproxEl && precioAproxValor) {
+                if (precioAprox > 0) {
+                    precioAproxEl.style.display = 'block';
+                    precioAproxValor.textContent = precioAprox.toLocaleString();
+                } else {
+                    precioAproxEl.style.display = 'none';
+                }
+            }
+        }
+
+        // Event listeners para actualizar precio
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('producto-tipo') || e.target.classList.contains('producto-cantidad')) {
+                actualizarPrecioAprox();
+            }
+        });
 
         // Cargar entregas confirmadas para relacionar
         async function cargarEntregasConfirmadas() {
@@ -502,8 +603,8 @@
                 let ticketsCreados = [];
                 let ticketsRecibidos = [];
                 
-                if (esDealer()) {
-                    // Dealers ven tanto los que crearon como los que recibieron
+                if (esSargento()) {
+                    // Sargentos ven tanto los que crearon como los que recibieron
                     ticketsCreados = await obtenerTicketsPorDealer(currentUser.id);
                     ticketsRecibidos = await obtenerTicketsPorVendedor(currentUser.id);
                     console.log('Tickets creados:', ticketsCreados.length, 'Tickets recibidos:', ticketsRecibidos.length);

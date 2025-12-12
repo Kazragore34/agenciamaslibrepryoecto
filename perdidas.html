@@ -12,7 +12,7 @@
 <body>
     <div class="stats-container">
         <div class="fichaje-header">
-            <h1>Pérdidas de Armas (Solo Dealers)</h1>
+            <h1>Pérdidas de Armas (Solo Sargentos)</h1>
             <div>
                 <a href="menu.html" class="btn-primary">Menú</a>
                 <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
@@ -30,7 +30,7 @@
         <div id="mensajeNoDealer" style="display: none; margin-top: 2rem;">
             <div class="stats-card">
                 <h3 style="color: #ef4444;">Acceso Restringido</h3>
-                <p>Solo los dealers pueden acceder a esta sección.</p>
+                <p>Solo los sargentos pueden acceder a esta sección.</p>
             </div>
         </div>
 
@@ -41,9 +41,9 @@
                 <div id="mensajePerdida" class="auth-message" style="display: none;"></div>
                 <form id="formMarcarPerdida">
                     <div class="form-group">
-                        <label for="vendedorSelectPerdida">Vendedor</label>
+                        <label for="vendedorSelectPerdida">Prospect</label>
                         <select id="vendedorSelectPerdida" required>
-                            <option value="">Seleccionar vendedor...</option>
+                            <option value="">Seleccionar prospect...</option>
                         </select>
                     </div>
                     
@@ -94,7 +94,7 @@
         const currentUser = getCurrentUser();
         
         // Verificar que sea dealer
-        if (!esDealer()) {
+        if (!esSargento()) {
             document.getElementById('mensajeNoDealer').style.display = 'block';
             document.getElementById('seccionMarcarPerdida').style.display = 'none';
             document.getElementById('seccionArmasPerdidas').style.display = 'none';

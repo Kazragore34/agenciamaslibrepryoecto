@@ -82,8 +82,9 @@
                 document.getElementById('userUsername').textContent = user.username || '-';
                 
                 const rolTexto = {
-                    'dealer': 'Dealer',
-                    'vendedor': 'Vendedor'
+                    'admin': 'Admin',
+                    'sargento': 'Sargento',
+                    'prospect': 'Prospect'
                 };
                 document.getElementById('userRol').textContent = rolTexto[user.rol] || user.rol || '-';
             }

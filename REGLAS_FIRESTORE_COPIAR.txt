@@ -1,0 +1,91 @@
+// ============================================
+// REGLAS DE FIRESTORE - COPIAR Y PEGAR
+// ============================================
+// 
+// INSTRUCCIONES:
+// 1. Ve a: https://console.firebase.google.com/
+// 2. Selecciona tu proyecto (FichayTuning)
+// 3. En el menú lateral izquierdo, haz clic en "Firestore Database"
+// 4. Haz clic en la pestaña "Reglas" (Rules) en la parte superior
+// 5. Copia TODO el código de abajo y pégalo en el editor
+// 6. Haz clic en "Publicar" (Publish) en la parte superior derecha
+//
+// ============================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function para verificar autenticación
+    // Nota: Con autenticación manual (localStorage), esto siempre será false
+    // Por eso las reglas están más permisivas - la validación se hace en el código JavaScript
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Colección de usuarios
+    match /users/{userId} {
+      // Permitir lectura para búsquedas de username
+      allow read: if true;
+      // Permitir creación (registro)
+      allow create: if true;
+      // Permitir actualización (la validación de roles admin/sargento/prospect se hace en el código)
+      allow update: if true;
+    }
+    
+    // Colección de entregas de productos
+    match /entregas_productos/{entregaId} {
+      // Permitir lectura a todos (la validación se hace en el código)
+      allow read: if true;
+      // Permitir creación (la validación de rol sargento se hace en el código)
+      allow create: if true;
+      // Permitir actualización (la validación se hace en el código)
+      allow update: if true;
+      // Permitir eliminación (la validación se hace en el código)
+      allow delete: if true;
+    }
+    
+    // Colección de tickets de dinero
+    match /tickets_dinero/{ticketId} {
+      // Permitir lectura a todos
+      allow read: if true;
+      // Permitir creación (la validación de rol sargento/prospect se hace en el código)
+      allow create: if true;
+      // Permitir actualización (la validación se hace en el código)
+      allow update: if true;
+    }
+    
+    // Colección de entregas de armas
+    match /entregas_armas/{armaId} {
+      // Permitir lectura a todos
+      allow read: if true;
+      // Permitir creación (la validación de rol sargento se hace en el código)
+      allow create: if true;
+      // Permitir actualización (la validación se hace en el código)
+      allow update: if true;
+    }
+    
+    // Colección de metas
+    match /metas/{metaId} {
+      // Permitir lectura a todos
+      allow read: if true;
+      // Permitir creación y actualización (se hace desde las funciones)
+      allow create, update: if true;
+    }
+    
+    // Colecciones antiguas (mantener para compatibilidad)
+    match /fichajes/{fichajeId} {
+      allow read, create, update, delete: if true;
+    }
+    
+    match /semanas/{semanaId} {
+      allow read, create, update, delete: if true;
+    }
+    
+    match /tuneos/{tuneoId} {
+      allow read, create, update: if true;
+      allow delete: if false;
+    }
+  }
+}
+

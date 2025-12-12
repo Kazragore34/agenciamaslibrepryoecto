@@ -29,13 +29,13 @@
 
         <div class="stats-grid">
             <div class="stats-card">
-                <h3>Top Vendedores</h3>
+                <h3>Top Prospects</h3>
                 <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Por dinero total entregado</p>
                 <div id="topVendedoresTable"></div>
             </div>
 
             <div class="stats-card">
-                <h3>Top Dealers</h3>
+                <h3>Top Sargentos</h3>
                 <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Por entregas realizadas</p>
                 <div id="topDealersTable"></div>
             </div>
@@ -57,7 +57,7 @@
 
         <div class="stats-card" style="margin-top: 2rem;">
             <h3>Dinero Entregado por Día (Últimos 30 días)</h3>
-            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Dinero total entregado por vendedores por día</p>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Dinero total entregado por prospects por día</p>
             <div style="position: relative; height: 400px;">
                 <canvas id="dineroDiasChart"></canvas>
             </div>
@@ -97,7 +97,7 @@
             const btnEntregas = document.getElementById('btnEntregas');
             const btnPerdidas = document.getElementById('btnPerdidas');
             
-            if (esDealer()) {
+            if (esSargento() || esAdmin()) {
                 if (btnPanelAdmin) btnPanelAdmin.style.display = 'inline-block';
                 if (btnEntregas) btnEntregas.style.display = 'inline-block';
                 if (btnPerdidas) btnPerdidas.style.display = 'inline-block';

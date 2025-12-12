@@ -12,7 +12,7 @@
 <body>
     <div class="stats-container">
         <div class="fichaje-header">
-            <h1>Panel de Administración (Solo Dealers)</h1>
+            <h1>Panel de Administración (Solo Admin)</h1>
             <div>
                 <a href="menu.html" class="btn-primary">Menú</a>
                 <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
@@ -28,7 +28,7 @@
 
         <div class="stats-card" style="margin-top: 2rem;">
             <h3>Gestión de Usuarios</h3>
-            <p style="color: #6b7280; margin-bottom: 1.5rem;">Solo los dealers pueden acceder a esta sección. Aquí puedes gestionar usuarios, asignar roles (dealer/vendedor) y restablecer contraseñas.</p>
+            <p style="color: #6b7280; margin-bottom: 1.5rem;">Solo los administradores pueden acceder a esta sección. Aquí puedes gestionar usuarios, asignar roles (admin/sargento/prospect) y restablecer contraseñas.</p>
             <div id="usuariosTable"></div>
         </div>
     </div>
@@ -42,7 +42,7 @@
         requireAuth();
 
         const currentUser = getCurrentUser();
-        if (!esDealer()) {
+        if (!esAdmin()) {
             document.body.innerHTML = `
                 <div style="padding: 2rem; text-align: center;">
                     <h2>Acceso Denegado</h2>
@@ -71,7 +71,7 @@
                 return;
             }
 
-            const puedeCambiarRoles = esDealer();
+            const puedeCambiarRoles = esAdmin();
             const puedeCambiarContrasenas = tienePermisosAdmin();
 
             let html = `
@@ -102,8 +102,9 @@
                         ${puedeCambiarRoles ? `
                         <td>
                             <select id="rol_${usuario.id}" class="form-group select" style="width: 150px;">
-                                <option value="vendedor" ${usuario.rol === 'vendedor' ? 'selected' : ''}>Vendedor</option>
-                                <option value="dealer" ${usuario.rol === 'dealer' ? 'selected' : ''}>Dealer</option>
+                                <option value="prospect" ${usuario.rol === 'prospect' ? 'selected' : ''}>Prospect</option>
+                                <option value="sargento" ${usuario.rol === 'sargento' ? 'selected' : ''}>Sargento</option>
+                                <option value="admin" ${usuario.rol === 'admin' ? 'selected' : ''}>Admin</option>
                             </select>
                         </td>
                         <td>

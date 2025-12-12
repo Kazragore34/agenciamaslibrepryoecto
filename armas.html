@@ -26,11 +26,54 @@
             </div>
         </div>
 
+        <!-- Formulario de creación de entrega de arma (solo para sargentos) -->
+        <div id="formularioCrearArma" class="seccion-sargento" style="margin-top: 2rem; display: none;">
+            <div class="stats-card">
+                <h2>Crear Nueva Entrega de Arma</h2>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Crea una entrega de arma para un prospect.</p>
+                <div id="mensajeArma" class="auth-message" style="display: none;"></div>
+                <form id="formCrearArma">
+                    <div class="form-group">
+                        <label for="prospectSelectArma">Prospect</label>
+                        <select id="prospectSelectArma" required>
+                            <option value="">Seleccionar prospect...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tipoArma">Tipo de Arma</label>
+                        <select id="tipoArma" required>
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="SNS">SNS</option>
+                            <option value="MK2">MK2</option>
+                            <option value="VINTAGE">VINTAGE</option>
+                            <option value=".50">.50</option>
+                            <option value="AP_PISTOL">AP PISTOL</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cantidadBalas">Cantidad de Balas Iniciales</label>
+                        <input type="number" id="cantidadBalas" min="0" value="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" id="chaleco" style="margin-right: 0.5rem;">
+                            <span>Incluir Chaleco</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Crear Entrega de Arma</button>
+                </form>
+            </div>
+        </div>
+
         <!-- Lista de armas (activas y perdidas) -->
         <div style="margin-top: 2rem;">
             <div class="stats-card">
-                <h3>Historial de Armas</h3>
-                <p style="color: #6b7280; margin-bottom: 1rem;">Todas las armas que has recibido (activas y perdidas). Haz click en "Solicitar Balas" para solicitar más balas en armas activas.</p>
+                <h3 id="tituloArmas">Historial de Armas</h3>
+                <p style="color: #6b7280; margin-bottom: 1rem;" id="descripcionArmas">Todas las armas que has recibido (activas y perdidas). Haz click en "Solicitar Balas" para solicitar más balas en armas activas.</p>
                 <div id="listaArmas">
                     <!-- Se carga dinámicamente -->
                 </div>
@@ -56,12 +99,16 @@
             const btnEntregas = document.getElementById('btnEntregas');
             const btnPerdidas = document.getElementById('btnPerdidas');
             
-            if (esDealer()) {
+            if (esAdmin()) {
                 if (btnPanelAdmin) btnPanelAdmin.style.display = 'inline-block';
+            } else {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
+            }
+            
+            if (esSargento()) {
                 if (btnEntregas) btnEntregas.style.display = 'inline-block';
                 if (btnPerdidas) btnPerdidas.style.display = 'inline-block';
             } else {
-                if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
                 if (btnEntregas) btnEntregas.style.display = 'none';
                 if (btnPerdidas) btnPerdidas.style.display = 'none';
             }
@@ -72,8 +119,14 @@
         // Cargar todas las armas (activas y perdidas)
         async function cargarArmas() {
             try {
-                // Todos los usuarios ven las armas que recibieron (activas y perdidas)
-                const armas = await obtenerArmasPorVendedor(currentUser.id);
+                let armas = [];
+                if (esSargento()) {
+                    // Sargentos ven las armas que entregaron
+                    armas = await obtenerArmasPorDealer(currentUser.id);
+                } else {
+                    // Prospects ven las armas que recibieron
+                    armas = await obtenerArmasPorVendedor(currentUser.id);
+                }
                 
                 // Ordenar: primero activas, luego perdidas
                 const armasActivas = armas.filter(a => a.estado === 'activa');
@@ -122,15 +175,19 @@
                     <td>${arma.chaleco ? 'Sí' : 'No'}</td>
                     <td><span class="estado-badge ${estadoClass}">${arma.estado}</span></td>
                     <td>${fechaStr}</td>
-                    <td>
-                        ${arma.estado === 'activa' ? `
-                            <button class="btn-primary btn-sm" onclick="solicitarBalasModal('${arma.id}')" style="margin-right: 0.5rem;">
-                                Solicitar Balas
-                            </button>
-                        ` : `
-                            <span style="color: #ef4444; font-size: 0.875rem;">${obtenerNombreMotivo(arma.motivoPerdida)}</span>
-                        `}
-                    </td>
+                <td>
+                    ${arma.estado === 'activa' && !esSarg ? `
+                        <button class="btn-primary btn-sm" onclick="solicitarBalasModal('${arma.id}')" style="margin-right: 0.5rem;">
+                            Solicitar Balas
+                        </button>
+                    ` : ''}
+                    ${arma.estado === 'perdida' ? `
+                        <span style="color: #ef4444; font-size: 0.875rem;">${obtenerNombreMotivo(arma.motivoPerdida)}</span>
+                    ` : ''}
+                    ${arma.estado === 'activa' && esSarg && solicitudesPendientes.length > 0 ? `
+                        <span style="color: #f59e0b; font-size: 0.875rem;">${solicitudesPendientes.length} solicitud(es) pendiente(s)</span>
+                    ` : ''}
+                </td>
                 </tr>`;
             });
             
