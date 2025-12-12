@@ -219,8 +219,15 @@
             }
             
             try {
+                console.log('Cargando entregas pendientes para:', currentUser.id);
                 const entregas = await obtenerEntregasPendientesVendedor(currentUser.id);
+                console.log('Entregas pendientes encontradas:', entregas.length);
                 const listaEl = document.getElementById('listaEntregasPendientes');
+                
+                if (!listaEl) {
+                    console.error('Elemento listaEntregasPendientes no encontrado');
+                    return;
+                }
                 
                 if (entregas.length === 0) {
                     listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas pendientes</p>';
@@ -303,9 +310,18 @@
             }
             
             try {
+                console.log('Cargando entregas confirmadas para:', currentUser.id);
                 const entregas = await obtenerEntregasPorVendedor(currentUser.id);
+                console.log('Total entregas encontradas:', entregas.length);
+                console.log('Estados de entregas:', entregas.map(e => ({ id: e.id, estado: e.estado })));
                 const entregasConfirmadas = entregas.filter(e => e.estado === 'confirmado');
+                console.log('Entregas confirmadas:', entregasConfirmadas.length);
                 const listaEl = document.getElementById('listaEntregasConfirmadasVendedor');
+                
+                if (!listaEl) {
+                    console.error('Elemento listaEntregasConfirmadasVendedor no encontrado');
+                    return;
+                }
                 
                 if (entregasConfirmadas.length === 0) {
                     listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas confirmadas. Primero debes confirmar las entregas pendientes.</p>';
