@@ -9,25 +9,30 @@
  * @param {string} notas - Notas opcionales
  * @returns {Promise<string>} - ID de la entrega creada
  */
-async function crearEntregaProductos(dealerId, vendedorId, productos, itemsAdicionales = [], notas = '') {
+async function crearEntregaProductos(sargentoId, prospectId, productos, itemsAdicionales = [], notas = '') {
     await ensureDb();
     
-    if (!esDealer()) {
-        throw new Error('Solo los dealers pueden crear entregas');
+    if (!esSargento()) {
+        throw new Error('Solo los sargentos pueden crear entregas');
     }
     
     const currentUser = getCurrentUser();
-    if (currentUser.id !== dealerId) {
-        throw new Error('No puedes crear entregas en nombre de otro dealer');
+    if (currentUser.id !== sargentoId) {
+        throw new Error('No puedes crear entregas en nombre de otro sargento');
+    }
+    
+    // Un sargento no puede darse productos a sí mismo
+    if (sargentoId === prospectId) {
+        throw new Error('Un sargento no puede darse productos a sí mismo. Otro sargento debe entregártelos.');
     }
     
     try {
-        // Obtener datos del vendedor
-        const vendedorDoc = await db.collection('users').doc(vendedorId).get();
-        if (!vendedorDoc.exists) {
-            throw new Error('Vendedor no encontrado');
+        // Obtener datos del prospect
+        const prospectDoc = await db.collection('users').doc(prospectId).get();
+        if (!prospectDoc.exists) {
+            throw new Error('Prospect no encontrado');
         }
-        const vendedorData = vendedorDoc.data();
+        const prospectData = prospectDoc.data();
         
         // Calcular precio aproximado
         const precioAprox = calcularPrecioAprox(productos);
@@ -39,10 +44,10 @@ async function crearEntregaProductos(dealerId, vendedorId, productos, itemsAdici
         }));
         
         const entregaData = {
-            dealerId,
+            dealerId: sargentoId, // Mantener nombre de campo para compatibilidad
             dealerNombre: `${currentUser.nombre} ${currentUser.apellido}`,
-            vendedorId,
-            vendedorNombre: `${vendedorData.nombre} ${vendedorData.apellido}`,
+            vendedorId: prospectId, // Mantener nombre de campo para compatibilidad
+            vendedorNombre: `${prospectData.nombre} ${prospectData.apellido}`,
             productos: productosConPrecio,
             itemsAdicionales,
             estado: 'pendiente',
@@ -83,7 +88,8 @@ async function confirmarEntrega(entregaId) {
         
         const entregaData = entregaDoc.data();
         
-        if (entregaData.vendedorId !== currentUser.id) {
+        // Tanto prospects como sargentos pueden confirmar entregas (si son el destinatario)
+        if (entregaData.vendedorId !== currentUser.id && entregaData.dealerId !== currentUser.id) {
             throw new Error('Esta entrega no es para ti');
         }
         
@@ -126,7 +132,8 @@ async function rechazarEntrega(entregaId, motivo) {
         
         const entregaData = entregaDoc.data();
         
-        if (entregaData.vendedorId !== currentUser.id) {
+        // Tanto prospects como sargentos pueden confirmar entregas (si son el destinatario)
+        if (entregaData.vendedorId !== currentUser.id && entregaData.dealerId !== currentUser.id) {
             throw new Error('Esta entrega no es para ti');
         }
         
@@ -209,11 +216,11 @@ async function obtenerEntregasPorDealer(dealerId) {
 }
 
 /**
- * Obtiene todas las entregas recibidas por un vendedor
- * @param {string} vendedorId - ID del vendedor
+ * Obtiene todas las entregas recibidas por un prospect
+ * @param {string} prospectId - ID del prospect
  * @returns {Promise<Array>} - Array de entregas
  */
-async function obtenerEntregasPorVendedor(vendedorId) {
+async function obtenerEntregasPorVendedor(prospectId) {
     await ensureDb();
     
     try {
@@ -243,11 +250,11 @@ async function obtenerEntregasPorVendedor(vendedorId) {
 }
 
 /**
- * Obtiene todas las entregas pendientes de un vendedor
- * @param {string} vendedorId - ID del vendedor
+ * Obtiene todas las entregas pendientes de un prospect
+ * @param {string} prospectId - ID del prospect
  * @returns {Promise<Array>} - Array de entregas pendientes
  */
-async function obtenerEntregasPendientesVendedor(vendedorId) {
+async function obtenerEntregasPendientesVendedor(prospectId) {
     await ensureDb();
     
     try {

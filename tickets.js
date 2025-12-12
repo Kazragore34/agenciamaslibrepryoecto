@@ -40,39 +40,39 @@ async function generarTicketId() {
  * @param {Array} entregasRelacionadas - IDs de entregas relacionadas (opcional)
  * @returns {Promise<string>} - ID del ticket creado
  */
-async function crearTicketDinero(dealerId, vendedorId, montoAprox = null, entregasRelacionadas = []) {
+async function crearTicketDinero(sargentoId, prospectId, montoAprox = null, entregasRelacionadas = []) {
     await ensureDb();
     
     const currentUser = getCurrentUser();
     
-    // Permitir que dealers creen tickets normalmente
-    if (esDealer()) {
-        if (currentUser.id !== dealerId) {
-            throw new Error('No puedes crear tickets en nombre de otro dealer');
+    // Permitir que sargentos creen tickets normalmente
+    if (esSargento()) {
+        if (currentUser.id !== sargentoId) {
+            throw new Error('No puedes crear tickets en nombre de otro sargento');
         }
     } else {
-        // Permitir que vendedores creen tickets para sí mismos
-        if (currentUser.id !== vendedorId) {
-            throw new Error('No puedes crear tickets en nombre de otro vendedor');
+        // Permitir que prospects crean tickets para sí mismos
+        if (currentUser.id !== prospectId) {
+            throw new Error('No puedes crear tickets en nombre de otro prospect');
         }
     }
     
     try {
-        // Obtener datos del vendedor
-        const vendedorDoc = await db.collection('users').doc(vendedorId).get();
-        if (!vendedorDoc.exists) {
-            throw new Error('Vendedor no encontrado');
+        // Obtener datos del prospect
+        const prospectDoc = await db.collection('users').doc(prospectId).get();
+        if (!prospectDoc.exists) {
+            throw new Error('Prospect no encontrado');
         }
-        const vendedorData = vendedorDoc.data();
+        const prospectData = prospectDoc.data();
         
         const ticketId = await generarTicketId();
         
         const ticketData = {
             ticketId,
-            dealerId,
+            dealerId: sargentoId, // Mantener nombre de campo para compatibilidad
             dealerNombre: `${currentUser.nombre} ${currentUser.apellido}`,
-            vendedorId,
-            vendedorNombre: `${vendedorData.nombre} ${vendedorData.apellido}`,
+            vendedorId: prospectId, // Mantener nombre de campo para compatibilidad
+            vendedorNombre: `${prospectData.nombre} ${prospectData.apellido}`,
             montoAprox: montoAprox || null,
             montoEntregado: null,
             estado: 'pendiente',
@@ -97,12 +97,12 @@ async function crearTicketDinero(dealerId, vendedorId, montoAprox = null, entreg
  * @param {Array} entregasRelacionadas - IDs de entregas relacionadas
  * @returns {Promise<string>} - ID del ticket creado
  */
-async function crearTicketDineroVendedor(dealerId, vendedorId, montoEntregado, entregasRelacionadas = []) {
+async function crearTicketDineroVendedor(sargentoId, prospectId, montoEntregado, entregasRelacionadas = []) {
     await ensureDb();
     
     const currentUser = getCurrentUser();
-    if (currentUser.id !== vendedorId) {
-        throw new Error('No puedes crear tickets en nombre de otro vendedor');
+    if (currentUser.id !== prospectId) {
+        throw new Error('No puedes crear tickets en nombre de otro prospect');
     }
     
     if (!montoEntregado || montoEntregado <= 0) {
@@ -110,20 +110,20 @@ async function crearTicketDineroVendedor(dealerId, vendedorId, montoEntregado, e
     }
     
     try {
-        // Obtener datos del dealer
-        const dealerDoc = await db.collection('users').doc(dealerId).get();
-        if (!dealerDoc.exists) {
-            throw new Error('Dealer no encontrado');
+        // Obtener datos del sargento
+        const sargentoDoc = await db.collection('users').doc(sargentoId).get();
+        if (!sargentoDoc.exists) {
+            throw new Error('Sargento no encontrado');
         }
-        const dealerData = dealerDoc.data();
+        const sargentoData = sargentoDoc.data();
         
         const ticketId = await generarTicketId();
         
         const ticketData = {
             ticketId,
-            dealerId,
-            dealerNombre: `${dealerData.nombre} ${dealerData.apellido}`,
-            vendedorId,
+            dealerId: sargentoId, // Mantener nombre de campo para compatibilidad
+            dealerNombre: `${sargentoData.nombre} ${sargentoData.apellido}`,
+            vendedorId: prospectId, // Mantener nombre de campo para compatibilidad
             vendedorNombre: `${currentUser.nombre} ${currentUser.apellido}`,
             montoAprox: null,
             montoEntregado,

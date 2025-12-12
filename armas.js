@@ -2,23 +2,28 @@
 
 /**
  * Crea una nueva entrega de arma
- * @param {string} dealerId - ID del dealer
- * @param {string} vendedorId - ID del vendedor
+ * @param {string} sargentoId - ID del sargento que entrega
+ * @param {string} prospectId - ID del prospect que recibe
  * @param {string} tipoArma - Tipo de arma (SNS, MK2, VINTAGE, .50, AP_PISTOL)
  * @param {boolean} chaleco - Si se entrega chaleco
  * @param {number} cantidadBalas - Cantidad de balas iniciales
  * @returns {Promise<string>} - ID de la entrega de arma creada
  */
-async function crearEntregaArma(dealerId, vendedorId, tipoArma, chaleco = false, cantidadBalas = 0) {
+async function crearEntregaArma(sargentoId, prospectId, tipoArma, chaleco = false, cantidadBalas = 0) {
     await ensureDb();
     
-    if (!esDealer()) {
-        throw new Error('Solo los dealers pueden crear entregas de armas');
+    if (!esSargento()) {
+        throw new Error('Solo los sargentos pueden crear entregas de armas');
     }
     
     const currentUser = getCurrentUser();
-    if (currentUser.id !== dealerId) {
-        throw new Error('No puedes crear entregas en nombre de otro dealer');
+    if (currentUser.id !== sargentoId) {
+        throw new Error('No puedes crear entregas en nombre de otro sargento');
+    }
+    
+    // Un sargento no puede darse armas a sí mismo
+    if (sargentoId === prospectId) {
+        throw new Error('Un sargento no puede darse armas a sí mismo. Otro sargento debe entregártelas.');
     }
     
     if (!TIPOS_ARMAS.includes(tipoArma)) {

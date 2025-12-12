@@ -44,7 +44,7 @@ async function obtenerTodosUsuarios() {
 async function actualizarRolUsuario(userId, nuevoRol) {
     await ensureDb();
     try {
-        const rolesValidos = ['dealer', 'vendedor'];
+        const rolesValidos = ['admin', 'sargento', 'prospect'];
         if (!rolesValidos.includes(nuevoRol)) {
             throw new Error('Rol inválido');
         }
@@ -61,20 +61,25 @@ async function actualizarRolUsuario(userId, nuevoRol) {
 
 /**
  * Verifica si el usuario actual tiene permisos de administración
- * @returns {boolean} - true si es dealer (puede gestionar usuarios)
+ * @returns {boolean} - true si es admin (puede gestionar usuarios y roles)
  */
 function tienePermisosAdmin() {
     const user = getCurrentUser();
-    return user && user.rol === 'dealer';
+    return user && user.rol === 'admin';
 }
 
 /**
- * Verifica si el usuario actual es dealer
- * @returns {boolean} - true si es dealer
+ * Verifica si el usuario actual es sargento (antes dealer)
+ * @returns {boolean} - true si es sargento
  */
-function esDealer() {
+function esSargento() {
     const user = getCurrentUser();
-    return user && user.rol === 'dealer';
+    return user && user.rol === 'sargento';
+}
+
+// Mantener función antigua para compatibilidad temporal
+function esDealer() {
+    return esSargento();
 }
 
 /**
@@ -86,9 +91,9 @@ function esDealer() {
 async function cambiarContrasenaUsuario(userId, nuevaPassword) {
     await ensureDb();
     
-    // Verificar permisos
+    // Verificar permisos (solo admin puede cambiar contraseñas)
     const user = getCurrentUser();
-    if (!user || user.rol !== 'dealer') {
+    if (!user || user.rol !== 'admin') {
         throw new Error('No tienes permisos para cambiar contraseñas');
     }
 
