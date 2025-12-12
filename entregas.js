@@ -237,7 +237,7 @@ async function obtenerEntregasPorVendedor(prospectId) {
         // Obtener todas las entregas del vendedor y ordenar en el cliente
         // para evitar problemas con índices compuestos
         const snapshot = await db.collection('entregas_productos')
-            .where('vendedorId', '==', vendedorId)
+            .where('vendedorId', '==', prospectId)
             .get();
         
         const entregas = snapshot.docs.map(doc => ({
@@ -271,7 +271,7 @@ async function obtenerEntregasPendientesVendedor(prospectId) {
         // Primero obtener todas las entregas del vendedor y filtrar por estado en el cliente
         // para evitar problemas con índices compuestos
         const snapshot = await db.collection('entregas_productos')
-            .where('vendedorId', '==', vendedorId)
+            .where('vendedorId', '==', prospectId)
             .get();
         
         const entregas = snapshot.docs
