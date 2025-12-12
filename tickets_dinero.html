@@ -314,9 +314,10 @@
                 console.log('Cargando entregas confirmadas para:', currentUser.id);
                 const entregas = await obtenerEntregasPorVendedor(currentUser.id);
                 console.log('Total entregas encontradas:', entregas.length);
-                console.log('Estados de entregas:', entregas.map(e => ({ id: e.id, estado: e.estado })));
+                console.log('Estados de entregas:', entregas.map(e => ({ id: e.id, estado: e.estado, dealerNombre: e.dealerNombre })));
                 const entregasConfirmadas = entregas.filter(e => e.estado === 'confirmado');
-                console.log('Entregas confirmadas:', entregasConfirmadas.length);
+                console.log('Entregas confirmadas filtradas:', entregasConfirmadas.length);
+                console.log('Mostrando entregas confirmadas:', entregasConfirmadas);
                 const listaEl = document.getElementById('listaEntregasConfirmadasVendedor');
                 
                 if (!listaEl) {
