@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pérdidas de Armas - Sistema de Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-fichaje.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="stats-container">
+        <div class="fichaje-header">
+            <h1>Pérdidas de Armas (Solo Dealers)</h1>
+            <div>
+                <a href="menu.html" class="btn-primary">Menú</a>
+                <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
+                <a href="armas.html" class="btn-primary">Armas</a>
+                <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
+                <a href="admin.html" class="btn-primary">Admin</a>
+                <a href="entregas.html" class="btn-primary">Entregas</a>
+                <a href="perdidas.html" class="btn-primary" style="background: #ef4444;">Pérdidas</a>
+                <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
+                <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <!-- Verificar que sea dealer -->
+        <div id="mensajeNoDealer" style="display: none; margin-top: 2rem;">
+            <div class="stats-card">
+                <h3 style="color: #ef4444;">Acceso Restringido</h3>
+                <p>Solo los dealers pueden acceder a esta sección.</p>
+            </div>
+        </div>
+
+        <!-- Formulario para marcar arma como perdida -->
+        <div id="seccionMarcarPerdida" class="seccion-dealer" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h3>Marcar Arma como Perdida</h3>
+                <div id="mensajePerdida" class="auth-message" style="display: none;"></div>
+                <form id="formMarcarPerdida">
+                    <div class="form-group">
+                        <label for="vendedorSelectPerdida">Vendedor</label>
+                        <select id="vendedorSelectPerdida" required>
+                            <option value="">Seleccionar vendedor...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="armaSelectPerdida">Arma Activa</label>
+                        <select id="armaSelectPerdida" required>
+                            <option value="">Primero selecciona un vendedor</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="motivoPerdida">Motivo de Pérdida</label>
+                        <select id="motivoPerdida" required>
+                            <option value="">Seleccionar motivo...</option>
+                            <option value="robo_corte">Robo o Corte</option>
+                            <option value="enfrentamiento">Enfrentamiento</option>
+                            <option value="policia">Policía</option>
+                            <option value="full_muerte">Full Muerte</option>
+                            <option value="bug">Bug</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-danger">Marcar como Perdida</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de armas perdidas -->
+        <div id="seccionArmasPerdidas" class="seccion-dealer" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h3>Historial de Armas Perdidas</h3>
+                <div id="listaArmasPerdidas">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="crypto-utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+    <script src="productos.js"></script>
+    <script src="armas.js"></script>
+    <script>
+        requireAuth();
+        
+        const currentUser = getCurrentUser();
+        
+        // Verificar que sea dealer
+        if (!esDealer()) {
+            document.getElementById('mensajeNoDealer').style.display = 'block';
+            document.getElementById('seccionMarcarPerdida').style.display = 'none';
+            document.getElementById('seccionArmasPerdidas').style.display = 'none';
+        } else {
+            document.getElementById('mensajeNoDealer').style.display = 'none';
+        }
+        
+        let todosVendedores = [];
+        let armasActivasPorVendedor = {};
+
+        // Cargar vendedores
+        async function cargarVendedores() {
+            if (!esDealer()) return;
+            
+            try {
+                await ensureDb();
+                const snapshot = await db.collection('users')
+                    .orderBy('nombre')
+                    .get();
+                
+                todosVendedores = snapshot.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                    .filter(user => user.id !== currentUser.id);
+                
+                const select = document.getElementById('vendedorSelectPerdida');
+                select.innerHTML = '<option value="">Seleccionar vendedor...</option>';
+                
+                todosVendedores.forEach(v => {
+                    const option = document.createElement('option');
+                    option.value = v.id;
+                    option.textContent = `${v.nombre} ${v.apellido} (${v.username})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando usuarios:', error);
+            }
+        }
+
+        // Cargar armas activas del vendedor seleccionado
+        async function cargarArmasActivasVendedor(vendedorId) {
+            if (!vendedorId) {
+                document.getElementById('armaSelectPerdida').innerHTML = '<option value="">Primero selecciona un vendedor</option>';
+                return;
+            }
+            
+            try {
+                const armas = await obtenerArmasPorVendedor(vendedorId);
+                const armasActivas = armas.filter(a => a.estado === 'activa');
+                
+                const select = document.getElementById('armaSelectPerdida');
+                select.innerHTML = '<option value="">Seleccionar arma...</option>';
+                
+                if (armasActivas.length === 0) {
+                    select.innerHTML = '<option value="">Este vendedor no tiene armas activas</option>';
+                    return;
+                }
+                
+                armasActivas.forEach(arma => {
+                    const option = document.createElement('option');
+                    option.value = arma.id;
+                    const fecha = arma.fechaCreacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleDateString('es-PE') : '';
+                    option.textContent = `${arma.tipoArma} - Entregada: ${fechaStr}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando armas activas:', error);
+                mostrarMensaje('Error cargando armas: ' + error.message, 'error');
+            }
+        }
+
+        // Cargar armas perdidas
+        async function cargarArmasPerdidas() {
+            if (!esDealer()) return;
+            
+            try {
+                const armas = await obtenerArmasPorDealer(currentUser.id);
+                const armasPerdidas = armas.filter(a => a.estado === 'perdida');
+                
+                const listaEl = document.getElementById('listaArmasPerdidas');
+                
+                if (armasPerdidas.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay armas perdidas registradas</p>';
+                    return;
+                }
+                
+                let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>Vendedor</th><th>Motivo</th><th>Fecha Pérdida</th><th>Fecha Entrega</th></tr></thead><tbody>';
+                
+                armasPerdidas.forEach(arma => {
+                    const fechaEntrega = arma.fechaCreacion?.toDate();
+                    const fechaEntregaStr = fechaEntrega ? fechaEntrega.toLocaleString('es-PE') : 'N/A';
+                    const fechaPerdida = arma.fechaPerdida?.toDate();
+                    const fechaPerdidaStr = fechaPerdida ? fechaPerdida.toLocaleString('es-PE') : 'N/A';
+                    
+                    html += `<tr>
+                        <td><strong>${arma.tipoArma}</strong></td>
+                        <td>${arma.vendedorNombre}</td>
+                        <td><span style="color: #ef4444;">${obtenerNombreMotivo(arma.motivoPerdida)}</span></td>
+                        <td>${fechaPerdidaStr}</td>
+                        <td>${fechaEntregaStr}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                listaEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando armas perdidas:', error);
+            }
+        }
+
+        function mostrarMensaje(mensaje, tipo) {
+            const mensajeEl = document.getElementById('mensajePerdida');
+            mensajeEl.textContent = mensaje;
+            mensajeEl.className = `auth-message ${tipo}`;
+            mensajeEl.style.display = 'block';
+            setTimeout(() => {
+                mensajeEl.style.display = 'none';
+            }, 3000);
+        }
+
+        // Event listeners
+        document.getElementById('vendedorSelectPerdida').addEventListener('change', (e) => {
+            const vendedorId = e.target.value;
+            cargarArmasActivasVendedor(vendedorId);
+        });
+
+        document.getElementById('formMarcarPerdida').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const armaId = document.getElementById('armaSelectPerdida').value;
+            if (!armaId) {
+                mostrarMensaje('Selecciona un arma', 'error');
+                return;
+            }
+            
+            const motivo = document.getElementById('motivoPerdida').value;
+            if (!motivo) {
+                mostrarMensaje('Selecciona un motivo', 'error');
+                return;
+            }
+            
+            try {
+                mostrarMensaje('Marcando arma como perdida...', 'info');
+                await marcarArmaPerdida(armaId, motivo);
+                mostrarMensaje('Arma marcada como perdida correctamente', 'success');
+                document.getElementById('formMarcarPerdida').reset();
+                document.getElementById('armaSelectPerdida').innerHTML = '<option value="">Primero selecciona un vendedor</option>';
+                cargarArmasPerdidas();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        });
+
+        // Inicializar
+        if (esDealer()) {
+            cargarVendedores();
+            cargarArmasPerdidas();
+        }
+    </script>
+</body>
+</html>
+

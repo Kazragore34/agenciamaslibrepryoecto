@@ -21,6 +21,7 @@
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
                 <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="display: none;">Admin</a>
                 <a id="btnEntregas" href="entregas.html" class="btn-primary" style="display: none;">Entregas</a>
+                <a id="btnPerdidas" href="perdidas.html" class="btn-primary" style="display: none; background: #ef4444;">Pérdidas</a>
                 <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
@@ -94,13 +95,16 @@
         function actualizarNavegacion() {
             const btnPanelAdmin = document.getElementById('btnPanelAdmin');
             const btnEntregas = document.getElementById('btnEntregas');
+            const btnPerdidas = document.getElementById('btnPerdidas');
             
             if (esDealer()) {
                 if (btnPanelAdmin) btnPanelAdmin.style.display = 'inline-block';
                 if (btnEntregas) btnEntregas.style.display = 'inline-block';
+                if (btnPerdidas) btnPerdidas.style.display = 'inline-block';
             } else {
                 if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
                 if (btnEntregas) btnEntregas.style.display = 'none';
+                if (btnPerdidas) btnPerdidas.style.display = 'none';
             }
         }
         actualizarNavegacion();
