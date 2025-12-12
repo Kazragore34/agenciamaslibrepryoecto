@@ -12,164 +12,30 @@
 <body>
     <div class="stats-container">
         <div class="fichaje-header">
-            <h1>Entregas</h1>
+            <h1>Entregas (Solo Sargentos)</h1>
             <div>
                 <a href="menu.html" class="btn-primary">Menú</a>
                 <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
                 <a href="armas.html" class="btn-primary">Armas</a>
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-                <a href="admin.html" class="btn-primary">Admin</a>
-                <a href="entregas.html" class="btn-primary" style="background: #059669;">Entregas</a>
-                <a href="perdidas.html" class="btn-primary" style="background: #ef4444;">Pérdidas</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="display: none;">Admin</a>
+                <a id="btnEntregas" href="entregas.html" class="btn-primary" style="background: #059669;">Entregas</a>
+                <a id="btnPerdidas" href="perdidas.html" class="btn-primary" style="display: none; background: #ef4444;">Pérdidas</a>
                 <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
 
-        <!-- Lista de entregas de productos -->
-        <div id="listaEntregasProductos" style="margin-top: 2rem;">
+        <!-- Mensaje de acceso restringido -->
+        <div id="mensajeNoSargento" style="display: none; margin-top: 2rem;">
             <div class="stats-card">
-                <h2>Entregas de Productos</h2>
-                <p style="color: #6b7280; margin-bottom: 1rem;">Para crear una nueva entrega de productos, ve a la sección de Tickets.</p>
-                <div id="listaEntregas">
-                    <!-- Se carga dinámicamente -->
-                </div>
+                <h3 style="color: #ef4444;">Acceso Restringido</h3>
+                <p>Solo los sargentos pueden acceder a esta sección.</p>
             </div>
         </div>
 
-        <!-- Lista de armas entregadas -->
-        <div id="listaArmasEntregadas" style="margin-top: 2rem;">
-            <div class="stats-card">
-                <h2>Entregas de Armas</h2>
-                <p style="color: #6b7280; margin-bottom: 1rem;">Para crear una nueva entrega de arma, ve a la sección de Armas.</p>
-                <div id="listaArmas">
-                    <!-- Se carga dinámicamente -->
-                </div>
-            </div>
-        </div>
-
-        <!-- OLD FORM - REMOVED
-        <div id="seccionProductos" class="seccion-dealer" style="margin-top: 2rem; display: none;">
-            <div class="stats-card">
-                <h2 style="margin-bottom: 1rem;">Entrega de Productos</h2>
-                <h3>Crear Nueva Entrega de Productos</h3>
-                <div id="mensajeEntrega" class="auth-message" style="display: none;"></div>
-                <form id="formCrearEntrega">
-                    <div class="form-group">
-                        <label for="vendedorSelect">Vendedor</label>
-                        <select id="vendedorSelect" required>
-                            <option value="">Seleccionar vendedor...</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Productos</label>
-                        <div id="productosList">
-                            <div class="producto-item">
-                                <select class="producto-tipo" required>
-                                    <option value="">Seleccionar producto...</option>
-                                    <option value="coca">Coca</option>
-                                    <option value="meta">Meta</option>
-                                    <option value="crack">Crack</option>
-                                    <option value="weed">Weed</option>
-                                    <option value="semilla_maleza">Semilla Maleza</option>
-                                    <option value="semilla_amarillo">Semilla Amarillo</option>
-                                    <option value="semilla_azul">Semilla Azul</option>
-                                    <option value="semilla_morado">Semilla Morado</option>
-                                </select>
-                                <input type="number" class="producto-cantidad" min="1" value="1" required>
-                                <button type="button" class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
-                            </div>
-                        </div>
-                        <button type="button" class="btn-secondary" onclick="agregarProducto()">+ Agregar Producto</button>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Items Adicionales (para semillas)</label>
-                        <div id="itemsAdicionalesList">
-                            <!-- Se agregan automáticamente cuando se selecciona una semilla -->
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="notasEntrega">Notas (opcional)</label>
-                        <textarea id="notasEntrega" rows="3"></textarea>
-                    </div>
-
-                    <div id="precioAprox" class="precio-aprox" style="display: none;">
-                        <strong>Precio Aproximado: $<span id="precioAproxValor">0</span></strong>
-                    </div>
-
-                    <button type="submit" class="btn-primary">Crear Entrega</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Lista de entregas de productos -->
-        <div id="listaEntregasProductos" class="seccion-dealer" style="margin-top: 2rem;">
-            <div class="stats-card">
-                <h3 id="tituloEntregas">Entregas de Productos</h3>
-                <div id="listaEntregas">
-                    <!-- Se carga dinámicamente -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Sección: Entrega de Armas -->
-        <div id="seccionArmas" class="seccion-dealer" style="margin-top: 2rem;">
-            <div class="stats-card">
-                <h2 style="margin-bottom: 1rem;">Entrega de Armas</h2>
-                <h3>Crear Nueva Entrega de Arma</h3>
-                <div id="mensajeArma" class="auth-message" style="display: none;"></div>
-                <form id="formCrearArma">
-                    <div class="form-group">
-                        <label for="vendedorSelectArma">Vendedor</label>
-                        <select id="vendedorSelectArma" required>
-                            <option value="">Seleccionar usuario...</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="tipoArma">Tipo de Arma</label>
-                        <select id="tipoArma" required>
-                            <option value="">Seleccionar tipo...</option>
-                            <option value="SNS">SNS</option>
-                            <option value="MK2">MK2</option>
-                            <option value="VINTAGE">VINTAGE</option>
-                            <option value=".50">.50</option>
-                            <option value="AP_PISTOL">AP PISTOL</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="cantidadBalas">Cantidad de Balas Iniciales</label>
-                        <input type="number" id="cantidadBalas" min="0" value="0" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center;">
-                            <input type="checkbox" id="chaleco" style="margin-right: 0.5rem;">
-                            <span>Incluir Chaleco</span>
-                        </label>
-                    </div>
-
-                    <button type="submit" class="btn-primary">Crear Entrega de Arma</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Lista de armas entregadas -->
-        <div id="listaArmasEntregadas" class="seccion-dealer" style="margin-top: 2rem;">
-            <div class="stats-card">
-                <h3>Armas Entregadas</h3>
-                <div id="listaArmas">
-                    <!-- Se carga dinámicamente -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Sección: Tickets Pendientes de Confirmar (Dealer) -->
-        <div id="seccionTicketsPendientes" class="seccion-dealer" style="margin-top: 2rem;">
+        <!-- Sección: Tickets Pendientes de Confirmar (Sargento) -->
+        <div id="seccionTicketsPendientes" style="margin-top: 2rem;">
             <div class="stats-card">
                 <h2 style="margin-bottom: 1rem;">Confirmación de Dinero Entregado</h2>
                 <p style="color: #6b7280; margin-bottom: 1rem;">Aquí puedes confirmar los tickets de dinero que los prospects han entregado. Cuando un prospect entrega dinero, queda pendiente hasta que confirmes la cantidad recibida.</p>
@@ -180,9 +46,10 @@
         </div>
 
         <!-- Acordeón: Historial de Entregas -->
-        <div id="seccionHistorial" class="seccion-dealer" style="margin-top: 2rem;">
+        <div id="seccionHistorial" style="margin-top: 2rem;">
             <div class="stats-card">
                 <h2 style="margin-bottom: 1rem;">Historial de Entregas</h2>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Haz click en cada sección para ver el historial completo. Puedes confirmar el dinero entregado por cada entrega.</p>
                 
                 <!-- Acordeón de Productos -->
                 <div class="accordion-item" style="margin-bottom: 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden;">
@@ -227,489 +94,36 @@
         
         const currentUser = getCurrentUser();
         
-        // Verificar que sea dealer
-        if (!esDealer()) {
-            document.getElementById('mensajeNoDealer').style.display = 'block';
-            document.getElementById('seccionProductos').style.display = 'none';
-            document.getElementById('seccionArmas').style.display = 'none';
-            document.getElementById('listaEntregasProductos').style.display = 'none';
-            document.getElementById('listaArmasEntregadas').style.display = 'none';
+        // Verificar que sea sargento
+        if (!esSargento()) {
+            document.getElementById('mensajeNoSargento').style.display = 'block';
+            document.getElementById('seccionTicketsPendientes').style.display = 'none';
+            document.getElementById('seccionHistorial').style.display = 'none';
         } else {
-            document.getElementById('mensajeNoDealer').style.display = 'none';
+            document.getElementById('mensajeNoSargento').style.display = 'none';
+        }
+
+        // Actualizar navegación según rol
+        function actualizarNavegacion() {
+            const btnPanelAdmin = document.getElementById('btnPanelAdmin');
+            const btnPerdidas = document.getElementById('btnPerdidas');
+            
+            if (esAdmin()) {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'inline-block';
+            } else {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
+            }
+            
+            if (esSargento()) {
+                if (btnPerdidas) btnPerdidas.style.display = 'inline-block';
+            } else {
+                if (btnPerdidas) btnPerdidas.style.display = 'none';
+            }
         }
         
-        let todosVendedores = [];
-        let todosVendedoresArmas = [];
+        actualizarNavegacion();
 
-        // Cargar vendedores para el select (todos los usuarios excepto el dealer actual)
-        async function cargarVendedores() {
-            if (!esDealer()) return;
-            
-            try {
-                await ensureDb();
-                // Obtener todos los usuarios y filtrar
-                const snapshot = await db.collection('users')
-                    .orderBy('nombre')
-                    .get();
-                
-                const currentUser = getCurrentUser();
-                todosVendedores = snapshot.docs
-                    .map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }))
-                    .filter(user => user.id !== currentUser.id); // Excluir al dealer actual
-                
-                const select = document.getElementById('vendedorSelect');
-                select.innerHTML = '<option value="">Seleccionar vendedor...</option>';
-                
-                if (todosVendedores.length === 0) {
-                    select.innerHTML = '<option value="">No hay vendedores disponibles</option>';
-                    return;
-                }
-                
-                todosVendedores.forEach(v => {
-                    const option = document.createElement('option');
-                    option.value = v.id;
-                    option.textContent = `${v.nombre} ${v.apellido} (${v.username})`;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error cargando vendedores:', error);
-                alert('Error cargando vendedores: ' + error.message);
-            }
-        }
-
-        // Agregar producto al formulario
-        function agregarProducto() {
-            const productosList = document.getElementById('productosList');
-            const nuevoProducto = document.createElement('div');
-            nuevoProducto.className = 'producto-item';
-            nuevoProducto.innerHTML = `
-                <select class="producto-tipo" required>
-                    <option value="">Seleccionar producto...</option>
-                    <option value="coca">Coca</option>
-                    <option value="meta">Meta</option>
-                    <option value="crack">Crack</option>
-                    <option value="weed">Weed</option>
-                    <option value="semilla_maleza">Semilla Maleza</option>
-                    <option value="semilla_amarillo">Semilla Amarillo</option>
-                    <option value="semilla_azul">Semilla Azul</option>
-                    <option value="semilla_morado">Semilla Morado</option>
-                </select>
-                <input type="number" class="producto-cantidad" min="1" value="1" required>
-                <button type="button" class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
-            `;
-            productosList.appendChild(nuevoProducto);
-            actualizarPrecioAprox();
-        }
-
-        function eliminarProducto(btn) {
-            if (document.querySelectorAll('.producto-item').length > 1) {
-                btn.parentElement.remove();
-                actualizarPrecioAprox();
-            }
-        }
-
-        // Actualizar precio aproximado
-        function actualizarPrecioAprox() {
-            if (!esDealer()) return;
-            
-            const productos = [];
-            document.querySelectorAll('.producto-item').forEach(item => {
-                const tipo = item.querySelector('.producto-tipo').value;
-                const cantidad = parseInt(item.querySelector('.producto-cantidad').value) || 0;
-                if (tipo && cantidad > 0) {
-                    productos.push({ tipo, cantidad });
-                }
-            });
-            
-            const precioAprox = calcularPrecioAprox(productos);
-            const precioAproxEl = document.getElementById('precioAprox');
-            const precioAproxValor = document.getElementById('precioAproxValor');
-            
-            if (precioAprox > 0) {
-                precioAproxEl.style.display = 'block';
-                precioAproxValor.textContent = precioAprox.toLocaleString();
-            } else {
-                precioAproxEl.style.display = 'none';
-            }
-        }
-
-        // Agregar event listeners para actualizar precio
-        document.addEventListener('change', (e) => {
-            if (e.target.classList.contains('producto-tipo') || e.target.classList.contains('producto-cantidad')) {
-                actualizarPrecioAprox();
-            }
-        });
-
-        // Cargar entregas
-        async function cargarEntregas() {
-            try {
-                let entregas = [];
-                let entregasCreadas = [];
-                let entregasRecibidas = [];
-                
-                if (esSargento()) {
-                    // Sargentos ven tanto las que crearon como las que recibieron
-                    entregasCreadas = await obtenerEntregasPorDealer(currentUser.id);
-                    entregasRecibidas = await obtenerEntregasPorVendedor(currentUser.id);
-                    
-                    // Combinar sin duplicados
-                    const entregasIds = new Set();
-                    entregasCreadas.forEach(e => {
-                        entregasIds.add(e.id);
-                        entregas.push(e);
-                    });
-                    entregasRecibidas.forEach(e => {
-                        if (!entregasIds.has(e.id)) {
-                            entregas.push(e);
-                        }
-                    });
-                    
-                    document.getElementById('tituloEntregas').textContent = 'Mis Entregas';
-                } else if (esProspect()) {
-                    entregas = await obtenerEntregasPorVendedor(currentUser.id);
-                    document.getElementById('tituloEntregas').textContent = 'Entregas Recibidas';
-                }
-                
-                mostrarEntregas(entregas);
-            } catch (error) {
-                console.error('Error cargando entregas:', error);
-            }
-        }
-
-        function mostrarEntregas(entregas) {
-            const listaEl = document.getElementById('listaEntregas');
-            
-            if (entregas.length === 0) {
-                listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas</p>';
-                return;
-            }
-            
-            // Separar entregas pendientes de las demás
-            const entregasPendientes = entregas.filter(e => e.estado === 'pendiente');
-            const entregasOtras = entregas.filter(e => e.estado !== 'pendiente');
-            
-            // Ordenar: primero pendientes, luego las demás
-            const entregasOrdenadas = [...entregasPendientes, ...entregasOtras];
-            
-            // Determinar columnas según el tipo de entregas
-            const tieneEntregasCreadas = entregas.some(e => e.dealerId === currentUser.id);
-            const tieneEntregasRecibidas = entregas.some(e => e.vendedorId === currentUser.id);
-            
-            let html = '';
-            
-            // Mostrar alerta si hay entregas pendientes
-            if (entregasPendientes.length > 0) {
-                html += `<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin-bottom: 1rem; border-radius: 0.375rem;">
-                    <strong>⚠️ Tienes ${entregasPendientes.length} entrega(s) pendiente(s) de confirmar</strong>
-                </div>`;
-            }
-            
-            html += '<table class="data-table"><thead><tr>';
-            if (tieneEntregasCreadas && tieneEntregasRecibidas) {
-                html += '<th>Tipo</th><th>Usuario</th><th>Productos</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
-            } else if (tieneEntregasCreadas) {
-                html += '<th>Vendedor</th><th>Productos</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
-            } else {
-                html += '<th>Dealer</th><th>Productos</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
-            }
-            html += '</tr></thead><tbody>';
-            
-            entregasOrdenadas.forEach(entrega => {
-                const fecha = entrega.fechaCreacion?.toDate();
-                const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
-                const estadoClass = entrega.estado === 'confirmado' ? 'success' : 
-                                   entrega.estado === 'rechazado' ? 'error' : 'pendiente';
-                const esCreadaPorMi = entrega.dealerId === currentUser.id;
-                const esRecibidaPorMi = entrega.vendedorId === currentUser.id;
-                const esPendiente = entrega.estado === 'pendiente';
-                
-                // Resaltar filas pendientes
-                const rowStyle = esPendiente ? 'background: #fef3c7; font-weight: 500;' : '';
-                
-                html += `<tr style="${rowStyle}">
-                    ${tieneEntregasCreadas && tieneEntregasRecibidas ? 
-                        `<td>${esCreadaPorMi ? '<span style="color: #2563eb;">Creada</span>' : '<span style="color: #10b981;">Recibida</span>'}</td>
-                         <td>${esCreadaPorMi ? entrega.vendedorNombre : entrega.dealerNombre}</td>` : 
-                        (esCreadaPorMi ? `<td>${entrega.vendedorNombre}</td>` : `<td>${entrega.dealerNombre}</td>`)
-                    }
-                    <td>${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')}</td>
-                    <td><span class="estado-badge ${estadoClass}">${entrega.estado}</span></td>
-                    <td>${fechaStr}</td>
-                    <td>
-                        ${entrega.estado === 'pendiente' && entrega.dealerId === currentUser.id ? 
-                            `<button class="btn-danger btn-sm" onclick="eliminarEntregaConfirm('${entrega.id}')">Eliminar</button>` : 
-                            ''
-                        }
-                        ${entrega.estado === 'pendiente' && entrega.vendedorId === currentUser.id ? 
-                            `<button class="btn-success btn-sm" onclick="confirmarEntregaConfirm('${entrega.id}')">Confirmar</button>
-                             <button class="btn-danger btn-sm" onclick="rechazarEntregaConfirm('${entrega.id}')">Rechazar</button>` : 
-                            ''
-                        }
-                    </td>
-                </tr>`;
-            });
-            
-            html += '</tbody></table>';
-            listaEl.innerHTML = html;
-        }
-
-        async function eliminarEntregaConfirm(entregaId) {
-            if (!confirm('¿Estás seguro de eliminar esta entrega?')) return;
-            try {
-                await eliminarEntrega(entregaId);
-                mostrarMensaje('Entrega eliminada correctamente', 'success');
-                cargarEntregas();
-            } catch (error) {
-                mostrarMensaje(error.message, 'error');
-            }
-        }
-
-        async function confirmarEntregaConfirm(entregaId) {
-            if (!confirm('¿Confirmas que recibiste esta entrega?')) return;
-            try {
-                await confirmarEntrega(entregaId);
-                mostrarMensaje('Entrega confirmada correctamente', 'success');
-                cargarEntregas();
-            } catch (error) {
-                mostrarMensaje(error.message, 'error');
-            }
-        }
-
-        async function rechazarEntregaConfirm(entregaId) {
-            const motivo = prompt('Motivo del rechazo:');
-            if (!motivo) return;
-            try {
-                await rechazarEntrega(entregaId, motivo);
-                mostrarMensaje('Entrega rechazada', 'info');
-                cargarEntregas();
-            } catch (error) {
-                mostrarMensaje(error.message, 'error');
-            }
-        }
-
-        function mostrarMensaje(mensaje, tipo) {
-            const mensajeEl = document.getElementById('mensajeEntrega');
-            mensajeEl.textContent = mensaje;
-            mensajeEl.className = `auth-message ${tipo}`;
-            mensajeEl.style.display = 'block';
-            setTimeout(() => {
-                mensajeEl.style.display = 'none';
-            }, 3000);
-        }
-
-        // Manejar formulario
-        document.getElementById('formCrearEntrega').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!esDealer()) {
-                mostrarMensaje('Solo los dealers pueden crear entregas', 'error');
-                return;
-            }
-            
-            const vendedorId = document.getElementById('vendedorSelect').value;
-            if (!vendedorId) {
-                mostrarMensaje('Selecciona un vendedor', 'error');
-                return;
-            }
-            
-            const productos = [];
-            document.querySelectorAll('.producto-item').forEach(item => {
-                const tipo = item.querySelector('.producto-tipo').value;
-                const cantidad = parseInt(item.querySelector('.producto-cantidad').value) || 0;
-                if (tipo && cantidad > 0) {
-                    productos.push({ tipo, cantidad });
-                }
-            });
-            
-            if (productos.length === 0) {
-                mostrarMensaje('Agrega al menos un producto', 'error');
-                return;
-            }
-            
-            // Items adicionales (fertilizante, maceta, regadera) - se agregan automáticamente para semillas
-            const itemsAdicionales = [];
-            productos.forEach(p => {
-                if (p.tipo.startsWith('semilla_')) {
-                    itemsAdicionales.push({ tipo: 'fertilizante', cantidad: p.cantidad });
-                    itemsAdicionales.push({ tipo: 'maceta', cantidad: p.cantidad });
-                    itemsAdicionales.push({ tipo: 'regadera', cantidad: p.cantidad });
-                }
-            });
-            
-            const notas = document.getElementById('notasEntrega').value;
-            
-            try {
-                mostrarMensaje('Creando entrega...', 'info');
-                await crearEntregaProductos(currentUser.id, vendedorId, productos, itemsAdicionales, notas);
-                mostrarMensaje('Entrega creada correctamente', 'success');
-                document.getElementById('formCrearEntrega').reset();
-                document.getElementById('productosList').innerHTML = `
-                    <div class="producto-item">
-                        <select class="producto-tipo" required>
-                            <option value="">Seleccionar producto...</option>
-                            <option value="coca">Coca</option>
-                            <option value="meta">Meta</option>
-                            <option value="crack">Crack</option>
-                            <option value="weed">Weed</option>
-                            <option value="semilla_maleza">Semilla Maleza</option>
-                            <option value="semilla_amarillo">Semilla Amarillo</option>
-                            <option value="semilla_azul">Semilla Azul</option>
-                            <option value="semilla_morado">Semilla Morado</option>
-                        </select>
-                        <input type="number" class="producto-cantidad" min="1" value="1" required>
-                        <button type="button" class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
-                    </div>
-                `;
-                actualizarPrecioAprox();
-                cargarEntregas();
-            } catch (error) {
-                mostrarMensaje(error.message, 'error');
-            }
-        });
-
-        // Cargar vendedores para armas
-        async function cargarVendedoresArmas() {
-            if (!esDealer()) return;
-            
-            try {
-                await ensureDb();
-                const snapshot = await db.collection('users')
-                    .orderBy('nombre')
-                    .get();
-                
-                todosVendedoresArmas = snapshot.docs
-                    .map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }))
-                    .filter(user => user.id !== currentUser.id);
-                
-                const select = document.getElementById('vendedorSelectArma');
-                select.innerHTML = '<option value="">Seleccionar usuario...</option>';
-                
-                todosVendedoresArmas.forEach(v => {
-                    const option = document.createElement('option');
-                    option.value = v.id;
-                    option.textContent = `${v.nombre} ${v.apellido} (${v.username})`;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error cargando usuarios:', error);
-            }
-        }
-
-        // Cargar armas entregadas
-        async function cargarArmasEntregadas() {
-            if (!esSargento()) return;
-            
-            try {
-                const armas = await obtenerArmasPorDealer(currentUser.id);
-                const listaEl = document.getElementById('listaArmas');
-                
-                if (armas.length === 0) {
-                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay armas entregadas</p>';
-                    return;
-                }
-                
-                const esSarg = esSargento();
-                let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>' + (esSarg ? 'Prospect' : 'Sargento') + '</th><th>Balas</th><th>Chaleco</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
-                
-                armas.forEach(arma => {
-                    const fecha = arma.fechaCreacion?.toDate();
-                    const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
-                    const estadoClass = arma.estado === 'activa' ? 'success' : 'error';
-                    
-                    html += `<tr>
-                        <td><strong>${arma.tipoArma}</strong></td>
-                        <td>${esSarg ? arma.vendedorNombre : arma.dealerNombre}</td>
-                        <td>${arma.cantidadBalasActual !== undefined ? arma.cantidadBalasActual : arma.cantidadBalasInicial || 0} / ${arma.cantidadBalasInicial || 0}</td>
-                        <td>${arma.chaleco ? 'Sí' : 'No'}</td>
-                        <td><span class="estado-badge ${estadoClass}">${arma.estado}</span></td>
-                        <td>${fechaStr}</td>
-                        <td>
-                            ${arma.estado === 'activa' && esSarg ? 
-                                `<button class="btn-danger btn-sm" onclick="marcarArmaPerdidaDesdeEntregas('${arma.id}')">Marcar Perdida</button>` : 
-                                (arma.estado === 'perdida' ? `<span style="color: #ef4444;">${obtenerNombreMotivo(arma.motivoPerdida)}</span>` : '')
-                            }
-                        </td>
-                    </tr>`;
-                });
-                
-                html += '</tbody></table>';
-                listaEl.innerHTML = html;
-            } catch (error) {
-                console.error('Error cargando armas:', error);
-            }
-        }
-
-        async function marcarArmaPerdidaDesdeEntregas(armaId) {
-            const motivo = prompt(`Motivo de pérdida:\n1. robo_corte\n2. enfrentamiento\n3. policia\n4. full_muerte\n5. bug\n\nIngresa el valor:`);
-            if (!motivo) return;
-            
-            const motivosValidos = MOTIVOS_PERDIDA.map(m => m.valor);
-            if (!motivosValidos.includes(motivo)) {
-                alert('Motivo inválido. Usa uno de: robo_corte, enfrentamiento, policia, full_muerte, bug');
-                return;
-            }
-            
-            try {
-                mostrarMensaje('Marcando arma como perdida...', 'info');
-                await marcarArmaPerdida(armaId, motivo);
-                mostrarMensaje('Arma marcada como perdida', 'success');
-                cargarArmasEntregadas();
-            } catch (error) {
-                mostrarMensaje(error.message, 'error');
-            }
-        }
-
-        // Manejar formulario de armas
-        document.getElementById('formCrearArma').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const vendedorId = document.getElementById('vendedorSelectArma').value;
-            if (!vendedorId) {
-                mostrarMensaje('Selecciona un vendedor', 'error');
-                return;
-            }
-            
-            const tipoArma = document.getElementById('tipoArma').value;
-            if (!tipoArma) {
-                mostrarMensaje('Selecciona un tipo de arma', 'error');
-                return;
-            }
-            
-            const cantidadBalas = parseInt(document.getElementById('cantidadBalas').value) || 0;
-            const chaleco = document.getElementById('chaleco').checked;
-            
-            try {
-                mostrarMensaje('Creando entrega de arma...', 'info');
-                await crearEntregaArma(currentUser.id, vendedorId, tipoArma, chaleco, cantidadBalas);
-                mostrarMensaje('Entrega de arma creada correctamente', 'success');
-                document.getElementById('formCrearArma').reset();
-                cargarArmasEntregadas();
-            } catch (error) {
-                mostrarMensaje(error.message, 'error');
-            }
-        });
-
-        // Función para toggle del acordeón
-        function toggleAccordion(id) {
-            const content = document.getElementById(id);
-            const iconId = id === 'productosHistorial' ? 'iconProductos' : 'iconArmas';
-            const icon = document.getElementById(iconId);
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                icon.textContent = '▲';
-            } else {
-                content.style.display = 'none';
-                icon.textContent = '▼';
-            }
-        }
-
-        // Cargar tickets pendientes de confirmar por el dealer
+        // Cargar tickets pendientes de confirmar por el sargento
         async function cargarTicketsPendientesDealer() {
             if (!esSargento()) return;
             
@@ -728,7 +142,7 @@
                 html += `<strong>⚠️ Tienes ${ticketsPendientes.length} ticket(s) pendiente(s) de confirmar</strong>`;
                 html += '</div>';
                 
-                html += '<table class="data-table"><thead><tr><th>Ticket ID</th><th>Vendedor</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                html += '<table class="data-table"><thead><tr><th>Ticket ID</th><th>Prospect</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
                 
                 ticketsPendientes.forEach(ticket => {
                     const fecha = ticket.fechaCreacion?.toDate();
@@ -756,12 +170,11 @@
         async function confirmarTicketDealer(ticketId) {
             if (!confirm('¿Confirmas que recibiste este dinero del prospect?')) return;
             try {
-                mostrarMensaje('Confirmando ticket...', 'info');
                 await confirmarTicketDineroDealer(ticketId);
-                mostrarMensaje('Ticket confirmado correctamente', 'success');
+                alert('Ticket confirmado correctamente');
                 cargarTicketsPendientesDealer();
             } catch (error) {
-                mostrarMensaje(error.message, 'error');
+                alert(error.message);
             }
         }
 
@@ -771,25 +184,44 @@
             
             try {
                 const entregas = await obtenerEntregasPorDealer(currentUser.id);
-                const entregasConfirmadas = entregas.filter(e => e.estado === 'confirmado');
                 
                 const listaEl = document.getElementById('historialProductos');
                 
-                if (entregasConfirmadas.length === 0) {
-                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas de productos confirmadas</p>';
+                if (entregas.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas de productos registradas</p>';
                     return;
                 }
                 
-                let html = '<table class="data-table"><thead><tr><th>Vendedor</th><th>Productos</th><th>Fecha</th></tr></thead><tbody>';
+                // Ordenar por fecha (más recientes primero)
+                entregas.sort((a, b) => {
+                    const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+                    const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+                    return fechaB - fechaA;
+                });
                 
-                entregasConfirmadas.forEach(entrega => {
+                let html = '<table class="data-table"><thead><tr><th>Prospect</th><th>Productos</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                
+                entregas.forEach(entrega => {
                     const fecha = entrega.fechaCreacion?.toDate();
                     const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+                    const estadoClass = entrega.estado === 'confirmado' ? 'success' : entrega.estado === 'rechazado' ? 'error' : 'pendiente';
+                    
+                    // Buscar tickets relacionados
+                    const tieneTicket = entrega.ticketsRelacionados && entrega.ticketsRelacionados.length > 0;
                     
                     html += `<tr>
-                        <td>${entrega.vendedorNombre}</td>
+                        <td><strong>${entrega.vendedorNombre}</strong></td>
                         <td>${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')}</td>
+                        <td><span class="estado-badge ${estadoClass}">${entrega.estado}</span></td>
                         <td>${fechaStr}</td>
+                        <td>
+                            ${entrega.estado === 'confirmado' && !tieneTicket ? 
+                                `<button class="btn-primary btn-sm" onclick="verDetallesEntrega('${entrega.id}')">Ver Detalles</button>` : 
+                                entrega.estado === 'confirmado' && tieneTicket ? 
+                                `<span style="color: #10b981; font-size: 0.875rem;">Ticket creado</span>` : 
+                                ''
+                            }
+                        </td>
                     </tr>`;
                 });
                 
@@ -797,6 +229,23 @@
                 listaEl.innerHTML = html;
             } catch (error) {
                 console.error('Error cargando historial de productos:', error);
+            }
+        }
+
+        async function verDetallesEntrega(entregaId) {
+            // Mostrar detalles y permitir confirmar dinero
+            const monto = prompt('El prospect ha entregado dinero por esta entrega. Ingresa el monto recibido:');
+            if (!monto || isNaN(monto) || parseFloat(monto) <= 0) {
+                alert('Monto inválido');
+                return;
+            }
+            
+            try {
+                await crearTicketDinero(currentUser.id, entregaId, parseFloat(monto), [entregaId]);
+                alert('Ticket de dinero creado. El prospect debe confirmar el monto.');
+                cargarHistorialProductos();
+            } catch (error) {
+                alert(error.message);
             }
         }
 
@@ -810,9 +259,16 @@
                 const listaEl = document.getElementById('historialArmas');
                 
                 if (armas.length === 0) {
-                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay armas entregadas</p>';
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay armas entregadas registradas</p>';
                     return;
                 }
+                
+                // Ordenar por fecha (más recientes primero)
+                armas.sort((a, b) => {
+                    const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+                    const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+                    return fechaB - fechaA;
+                });
                 
                 let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>Prospect</th><th>Balas</th><th>Chaleco</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>';
                 
@@ -838,13 +294,21 @@
             }
         }
 
-        // Inicializar - Cargar listas para todos los usuarios
-        cargarEntregas();
-        
-        // Cargar armas (sargentos ven las que entregaron, prospects las que recibieron)
-        cargarArmasEntregadas();
-        
-        // Solo sargentos pueden confirmar tickets y ver historial
+        // Función para toggle del acordeón
+        function toggleAccordion(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById('icon' + id.charAt(0).toUpperCase() + id.slice(1).replace('Historial', ''));
+            
+            if (content.style.display === 'none' || !content.style.display) {
+                content.style.display = 'block';
+                if (icon) icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                if (icon) icon.textContent = '▼';
+            }
+        }
+
+        // Inicializar - Solo sargentos pueden ver esto
         if (esSargento()) {
             cargarTicketsPendientesDealer();
             cargarHistorialProductos();
@@ -853,4 +317,3 @@
     </script>
 </body>
 </html>
-

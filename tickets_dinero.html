@@ -330,12 +330,9 @@
             }
         }
 
-        // Cargar entregas confirmadas del prospect (para crear tickets)
+        // Cargar entregas confirmadas del prospect (o sargento que también vende)
         async function cargarEntregasConfirmadasVendedor() {
-            if (esSargento()) {
-                document.getElementById('seccionEntregasConfirmadasVendedor').style.display = 'none';
-                return;
-            }
+            // Sargentos también pueden recibir entregas y crear tickets, así que no ocultar
             
             try {
                 console.log('Cargando entregas confirmadas para:', currentUser.id);
@@ -425,14 +422,21 @@
         } else {
             // Cargar según rol
             if (esSargento()) {
-                // Sargentos: pueden crear entregas de productos
+                // Sargentos: pueden crear entregas de productos Y también venden (ven todo lo que ve un prospect)
                 cargarProspects();
-                document.getElementById('formularioCrearEntrega').style.display = 'block';
-                document.getElementById('seccionListaEntregasPendientes').style.display = 'none';
-                document.getElementById('seccionEntregasConfirmadasVendedor').style.display = 'none';
+                const formularioCrearEntrega = document.getElementById('formularioCrearEntrega');
+                if (formularioCrearEntrega) {
+                    formularioCrearEntrega.style.display = 'block';
+                }
+                // También cargar entregas pendientes y confirmadas para que puedan vender
+                cargarListaEntregasPendientes();
+                cargarEntregasConfirmadasVendedor();
             } else if (esProspect()) {
                 // Prospects: pueden confirmar entregas y crear tickets
-                document.getElementById('formularioCrearEntrega').style.display = 'none';
+                const formularioCrearEntrega = document.getElementById('formularioCrearEntrega');
+                if (formularioCrearEntrega) {
+                    formularioCrearEntrega.style.display = 'none';
+                }
                 document.getElementById('seccionListaEntregasPendientes').style.display = 'block';
                 document.getElementById('seccionEntregasConfirmadasVendedor').style.display = 'block';
                 cargarListaEntregasPendientes();
@@ -443,7 +447,7 @@
         
         // Forzar recarga después de un pequeño delay para asegurar que todo esté cargado
         setTimeout(() => {
-            if (esProspect() && !entregaId) {
+            if ((esProspect() || esSargento()) && !entregaId) {
                 cargarListaEntregasPendientes();
                 cargarEntregasConfirmadasVendedor();
             }
