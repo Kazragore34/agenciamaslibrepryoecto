@@ -195,6 +195,62 @@ async function confirmarTicketDinero(ticketId, montoEntregado) {
 }
 
 /**
+ * Confirma un ticket de dinero (sargento/dealer)
+ * Esta función es llamada cuando un sargento confirma que recibió el dinero del prospect
+ * @param {string} ticketId - ID del ticket
+ * @returns {Promise<void>}
+ */
+async function confirmarTicketDineroDealer(ticketId) {
+    await ensureDb();
+    
+    if (!esSargento()) {
+        throw new Error('Solo los sargentos pueden confirmar tickets de dinero');
+    }
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+    }
+    
+    try {
+        const ticketRef = db.collection('tickets_dinero').doc(ticketId);
+        const ticketDoc = await ticketRef.get();
+        
+        if (!ticketDoc.exists) {
+            throw new Error('Ticket no encontrado');
+        }
+        
+        const ticketData = ticketDoc.data();
+        
+        // Verificar que el ticket es para este sargento
+        if (ticketData.dealerId !== currentUser.id) {
+            throw new Error('Este ticket no es para ti');
+        }
+        
+        // Verificar que el ticket está pendiente de confirmación del dealer
+        if (ticketData.estado !== 'pendiente_dealer') {
+            throw new Error('Este ticket ya fue procesado o no está pendiente de tu confirmación');
+        }
+        
+        // Actualizar el ticket a confirmado
+        await ticketRef.update({
+            estado: 'confirmado',
+            fechaConfirmacion: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Actualizar metas del prospect (vendedor)
+        if (ticketData.montoEntregado && ticketData.montoEntregado > 0) {
+            await actualizarMeta(ticketData.vendedorId, 'diaria', ticketData.montoEntregado);
+            await actualizarMeta(ticketData.vendedorId, 'semanal', ticketData.montoEntregado);
+        }
+        
+    } catch (error) {
+        console.error('Error confirmando ticket de dinero (dealer):', error);
+        throw error;
+    }
+}
+
+/**
  * Obtiene todos los tickets creados por un dealer
  * @param {string} dealerId - ID del dealer
  * @returns {Promise<Array>} - Array de tickets
