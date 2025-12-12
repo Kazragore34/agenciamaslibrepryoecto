@@ -619,6 +619,11 @@
     color: #92400e;
 }
 
+.estado-badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
 .estado-badge.success,
 .estado-badge.confirmado {
     background: #d1fae5;

@@ -548,12 +548,13 @@
                 return;
             }
             
-            // Separar tickets pendientes y confirmados
+            // Separar tickets pendientes, pendientes_dealer y confirmados
             const ticketsPendientes = tickets.filter(t => t.estado === 'pendiente');
+            const ticketsPendientesDealer = tickets.filter(t => t.estado === 'pendiente_dealer');
             const ticketsConfirmados = tickets.filter(t => t.estado === 'confirmado');
             
-            // Ordenar: primero pendientes, luego confirmados
-            const ticketsOrdenados = [...ticketsPendientes, ...ticketsConfirmados];
+            // Ordenar: primero pendientes, luego pendientes_dealer, luego confirmados
+            const ticketsOrdenados = [...ticketsPendientes, ...ticketsPendientesDealer, ...ticketsConfirmados];
             
             // Determinar qué columnas mostrar
             const tieneTicketsCreados = tickets.some(t => t.dealerId === currentUser.id);
