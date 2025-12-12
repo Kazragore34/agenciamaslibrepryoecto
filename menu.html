@@ -10,71 +10,98 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-    <div class="stats-container">
-        <div class="fichaje-header">
-            <h1>Menú Principal</h1>
-            <div>
-                <a href="menu.html" class="btn-primary">Menú</a>
-                <a href="entregas.html" class="btn-primary">Entregas</a>
-                <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
-                <a href="armas.html" class="btn-primary">Armas</a>
-                <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
-                <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
-                <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+    <!-- Si no está autenticado, mostrar formulario de login -->
+    <div id="loginSection" style="display: none;">
+        <div class="auth-container">
+            <div class="auth-box">
+                <h2 style="text-align: center; margin-bottom: 1.5rem; color: #1f2937;">Iniciar Sesión</h2>
+                <div id="authMessage" class="auth-message" style="display: none;"></div>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginUsername">Username</label>
+                        <input type="text" id="loginUsername" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Contraseña</label>
+                        <input type="password" id="loginPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Iniciar Sesión</button>
+                    <p style="text-align: center; margin-top: 1rem; color: #6b7280;">
+                        ¿No tienes cuenta? <a href="registro.html" style="color: #2563eb;">Regístrate aquí</a>
+                    </p>
+                </form>
             </div>
         </div>
+    </div>
 
-        <!-- Resumen de Metas (para vendedores) -->
-        <div id="seccionMetas" class="seccion-vendedor" style="margin-top: 2rem;">
-            <div class="stats-grid">
-                <div class="stats-card" id="metaDiaria">
-                    <!-- Se carga dinámicamente -->
-                </div>
-                <div class="stats-card" id="metaSemanal">
-                    <!-- Se carga dinámicamente -->
+    <!-- Si está autenticado, mostrar el menú principal -->
+    <div id="menuSection" style="display: none;">
+        <div class="stats-container">
+            <div class="fichaje-header">
+                <h1>Menú Principal</h1>
+                <div>
+                    <a href="menu.html" class="btn-primary">Menú</a>
+                    <a href="entregas.html" class="btn-primary">Entregas</a>
+                    <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
+                    <a href="armas.html" class="btn-primary">Armas</a>
+                    <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
+                    <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                    <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
+                    <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
                 </div>
             </div>
-        </div>
 
-        <!-- Estadísticas Diarias y Semanales (para vendedores) -->
-        <div id="seccionEstadisticas" class="seccion-vendedor" style="margin-top: 2rem;">
-            <div class="stats-grid">
-                <div class="stats-card" id="estadisticasDiarias">
-                    <!-- Se carga dinámicamente -->
-                </div>
-                <div class="stats-card" id="estadisticasSemanales">
-                    <!-- Se carga dinámicamente -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Entregas Pendientes (para vendedores) -->
-        <div id="seccionEntregas" class="seccion-vendedor" style="margin-top: 2rem;">
-            <div class="stats-card">
-                <h3>Entregas Pendientes de Confirmar</h3>
-                <div id="entregasPendientes">
-                    <!-- Se carga dinámicamente -->
+            <!-- Resumen de Metas (para vendedores) -->
+            <div id="seccionMetas" class="seccion-vendedor" style="margin-top: 2rem;">
+                <div class="stats-grid">
+                    <div class="stats-card" id="metaDiaria">
+                        <!-- Se carga dinámicamente -->
+                    </div>
+                    <div class="stats-card" id="metaSemanal">
+                        <!-- Se carga dinámicamente -->
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Tickets Pendientes (para vendedores) -->
-        <div id="seccionTickets" class="seccion-vendedor" style="margin-top: 2rem;">
-            <div class="stats-card">
-                <h3>Tickets de Dinero Pendientes</h3>
-                <div id="ticketsPendientes">
-                    <!-- Se carga dinámicamente -->
+            <!-- Estadísticas Diarias y Semanales (para vendedores) -->
+            <div id="seccionEstadisticas" class="seccion-vendedor" style="margin-top: 2rem;">
+                <div class="stats-grid">
+                    <div class="stats-card" id="estadisticasDiarias">
+                        <!-- Se carga dinámicamente -->
+                    </div>
+                    <div class="stats-card" id="estadisticasSemanales">
+                        <!-- Se carga dinámicamente -->
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Armas Activas -->
-        <div id="seccionArmas" style="margin-top: 2rem;">
-            <div class="stats-card">
-                <h3 id="tituloArmas">Armas Activas</h3>
-                <div id="armasActivas">
-                    <!-- Se carga dinámicamente -->
+            <!-- Entregas Pendientes (para vendedores) -->
+            <div id="seccionEntregas" class="seccion-vendedor" style="margin-top: 2rem;">
+                <div class="stats-card">
+                    <h3>Entregas Pendientes de Confirmar</h3>
+                    <div id="entregasPendientes">
+                        <!-- Se carga dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tickets Pendientes (para vendedores) -->
+            <div id="seccionTickets" class="seccion-vendedor" style="margin-top: 2rem;">
+                <div class="stats-card">
+                    <h3>Tickets de Dinero Pendientes</h3>
+                    <div id="ticketsPendientes">
+                        <!-- Se carga dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Armas Activas -->
+            <div id="seccionArmas" style="margin-top: 2rem;">
+                <div class="stats-card">
+                    <h3 id="tituloArmas">Armas Activas</h3>
+                    <div id="armasActivas">
+                        <!-- Se carga dinámicamente -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -91,11 +118,74 @@
     <script src="armas.js"></script>
     <script src="menu.js"></script>
     <script>
+        // Función para mostrar mensajes
+        function showMessage(message, type) {
+            const messageEl = document.getElementById('authMessage');
+            messageEl.textContent = message;
+            messageEl.className = `auth-message ${type}`;
+            messageEl.style.display = 'block';
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 3000);
+        }
+
+        // Verificar autenticación al cargar
+        function verificarAutenticacion() {
+            const currentUser = getCurrentUser();
+            
+            if (!currentUser) {
+                // Mostrar formulario de login
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('menuSection').style.display = 'none';
+            } else {
+                // Mostrar menú principal
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('menuSection').style.display = 'block';
+                
+                // Actualizar botón admin
+                actualizarBotonAdmin();
+                
+                // Inicializar menú
+                inicializarMenu();
+            }
+        }
+
+        // Manejar formulario de login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                showMessage('Iniciando sesión...', 'info');
+                await login(username, password);
+                showMessage('¡Login exitoso!', 'success');
+                setTimeout(() => {
+                    verificarAutenticacion();
+                }, 500);
+            } catch (error) {
+                showMessage(error.message || 'Error al iniciar sesión', 'error');
+            }
+        });
+
+        // Función para actualizar botón admin
+        function actualizarBotonAdmin() {
+            const btnPanelAdmin = document.getElementById('btnPanelAdmin');
+            if (btnPanelAdmin) {
+                if (esDealer()) {
+                    btnPanelAdmin.style.visibility = 'visible';
+                    btnPanelAdmin.style.width = 'auto';
+                } else {
+                    btnPanelAdmin.style.visibility = 'hidden';
+                    btnPanelAdmin.style.width = '0';
+                }
+            }
+        }
+
         // Inicializar cuando la página cargue
         document.addEventListener('DOMContentLoaded', () => {
-            inicializarMenu();
+            verificarAutenticacion();
         });
     </script>
 </body>
 </html>
-

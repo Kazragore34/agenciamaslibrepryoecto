@@ -1,23 +1,24 @@
-# Sistema de Fichaje y Calculador de Precios
+# Sistema de Gestión de Stock y Entregas
 
-Sistema completo para gestión de fichaje de horas trabajadas y calculador de precios de tuneos para mecánica en FiveM.
+Sistema completo para gestión de entregas de productos, tickets de dinero, armas y seguimiento de metas para una banda de GTA V.
 
 ## Características
 
 - ✅ Registro y autenticación con username (sin email)
-- ✅ Sistema de fichaje de entrada/salida
-- ✅ Cálculo automático de horas con división de semanas (lunes 00:00 - domingo 23:59, hora Perú)
-- ✅ Sistema de roles (jefe, encargado, empleado)
-- ✅ Calculador de precios de tuneos con descuentos
-- ✅ Estadísticas de tuneos y recaudación
-- ✅ Gestión de roles (solo jefes)
+- ✅ Sistema de roles (dealer, vendedor)
+- ✅ Gestión de entregas de productos (dealer → vendedor)
+- ✅ Sistema de tickets de dinero con montos aproximados
+- ✅ Gestión de armas con solicitudes de balas
+- ✅ Metas diarias (100k) y semanales (1M)
+- ✅ Estadísticas de ventas y entregas
+- ✅ Panel de administración (solo dealers)
 
 ## Configuración Inicial
 
 ### 1. Configurar Firebase
 
 1. Ve a [Firebase Console](https://console.firebase.google.com/)
-2. Crea un nuevo proyecto
+2. Crea un nuevo proyecto o usa uno existente
 3. Habilita **Firestore Database** (modo de prueba inicialmente)
 4. Ve a **Project Settings** > **General**
 5. En "Your apps", selecciona **Web** (</>)
@@ -30,109 +31,137 @@ Sistema completo para gestión de fichaje de horas trabajadas y calculador de pr
 3. Pégalo en las reglas de Firestore
 4. Publica las reglas
 
-**Nota:** Las reglas están simplificadas para desarrollo. En producción, ajusta según tus necesidades de seguridad.
+**Nota:** Las reglas están configuradas para autenticación manual. En producción, considera implementar Firebase Authentication para mayor seguridad.
 
 ### 3. Estructura de Colecciones
 
 El sistema creará automáticamente estas colecciones:
 
-- **users**: Usuarios registrados
-- **fichajes**: Registros de entrada/salida
-- **semanas**: Resumen de horas por semana
-- **tuneos**: Registro de tuneos realizados
+- **users**: Usuarios registrados (roles: dealer, vendedor)
+- **entregas_productos**: Entregas de productos de dealer a vendedor
+- **tickets_dinero**: Tickets de dinero que los vendedores deben entregar
+- **entregas_armas**: Entregas de armas con solicitudes de balas
+- **metas**: Metas diarias y semanales de cada usuario
 
 ## Uso
 
 ### Registro de Usuarios
 
-1. Abre `registro.html`
+1. Abre `registro.html` o `menu.html`
 2. Completa el formulario de registro:
    - Nombre
    - Apellido
-   - Username (ejemplo: Kazragore34)
+   - Username
    - Contraseña
 3. Inicia sesión con tu username y contraseña
+4. Serás redirigido a `menu.html`
 
-### Fichaje de Horas
+### Roles del Sistema
 
-1. Accede a `fichaje.html` después de iniciar sesión
-2. Haz clic en "Fichar Entrada" al comenzar tu jornada
-3. Haz clic en "Fichar Salida" al terminar
-4. El sistema calcula automáticamente las horas y las divide entre semanas si cruza el domingo
+#### Dealer
+- Puede crear entregas de productos
+- Puede crear tickets de dinero
+- Puede entregar armas
+- Puede gestionar usuarios (cambiar roles, restablecer contraseñas)
+- Ve montos aproximados en tickets
 
-### Calculador de Precios
+#### Vendedor
+- Recibe y confirma entregas de productos
+- Confirma tickets de dinero
+- Solicita recarga de balas
+- Ve sus metas diarias y semanales
+- No ve montos aproximados (solo confirma lo que entregó)
 
-1. Accede a `calculador.html`
-2. Selecciona la categoría del vehículo
-3. Marca los servicios necesarios (Full Tuning, Motor, Frenos, etc.)
-4. Ingresa la cantidad de piezas
-5. Aplica descuentos si corresponde:
-   - **Convenio (20%)**: Selecciona la entidad (Mecánicos, Motor Club, Puf Puf, Médicos)
-   - **Amistad (5-10%)**: Usa el slider para seleccionar el porcentaje e ingresa el nombre
-6. El precio se calcula automáticamente
-7. Haz clic en "Registrar Tuneo" para guardar
+### Entregas de Productos
 
-### Ver Horas Trabajadas
+1. **Dealer**: Accede a `entregas.html`
+   - Selecciona un vendedor
+   - Agrega productos y cantidades
+   - El sistema calcula precio aproximado (solo visible para dealer)
+   - Crea la entrega
 
-1. Accede a `horas.html`
-2. Selecciona la semana que deseas ver
-3. Si eres jefe o encargado, puedes filtrar por usuario
+2. **Vendedor**: Ve la entrega en `menu.html` o `entregas.html`
+   - Confirma o rechaza la entrega
+   - Si confirma, la entrega queda registrada
+
+### Tickets de Dinero
+
+1. **Dealer**: Accede a `tickets_dinero.html`
+   - Crea un ticket para un vendedor
+   - Ingresa monto aproximado (opcional, solo visible para dealer)
+   - Relaciona entregas si es necesario
+
+2. **Vendedor**: Ve el ticket en `menu.html` o `tickets_dinero.html`
+   - Confirma el monto que entregó
+   - El sistema actualiza sus metas automáticamente
+
+### Gestión de Armas
+
+1. **Dealer**: Accede a `armas.html`
+   - Crea entrega de arma (tipo, chaleco opcional)
+   - Ve solicitudes de balas pendientes
+   - Marca armas como perdidas (con motivo)
+
+2. **Vendedor**: Ve sus armas en `menu.html` o `armas.html`
+   - Solicita recarga de balas cuando sea necesario
+   - Ve historial de armas perdidas
+
+### Metas
+
+- **Meta Diaria**: $100,000
+- **Meta Semanal**: $1,000,000
+
+Los vendedores pueden ver su progreso en `menu.html`. Las metas se actualizan automáticamente cuando confirman tickets de dinero.
 
 ### Estadísticas
 
-1. Accede a `estadisticas.html`
-2. Verás dos tablas:
-   - **Quién Tuneó Más**: Ranking por cantidad de tuneos
-   - **Quién Recaudó Más**: Ranking por recaudación total
+Accede a `estadisticas.html` para ver:
+- Top vendedores (por dinero entregado)
+- Top dealers (por entregas realizadas)
+- Productos más entregados
+- Estado de entregas (confirmadas, pendientes, rechazadas)
+- Gráficas de dinero por día y semana
+- Gráficas de entregas por día
 
-### Administración (Solo Jefes)
+### Administración (Solo Dealers)
 
 1. Accede a `admin.html`
 2. Verás la lista de todos los usuarios
-3. Cambia el rol de cada usuario según necesites
+3. Cambia el rol de cada usuario (dealer/vendedor)
+4. Restablece contraseñas cuando sea necesario
 
-## Tabla de Precios
+## Productos Disponibles
 
-El sistema incluye precios para las siguientes categorías:
+- Coca
+- Meta
+- Crack
+- Weed
+- Semilla Maleza (precio: $170)
+- Semilla Amarillo (precio: $180)
+- Semilla Azul (precio: $220)
+- Semilla Morado (precio: $210)
 
-- Compacts
-- Coupes
-- Motos Taller Regular
-- Muscle
-- Off Road
-- Sedans
-- Sports
-- Sports Classics
-- Super
-- SUV's
-- Motos Taller de Motor
-- Vans
-- Importación (Sangre)
+**Nota:** Las semillas incluyen automáticamente fertilizante, maceta y regadera en la misma cantidad.
 
-Cada categoría tiene precios para:
-- Full Tuning
-- Motor
-- Frenos
-- Transmisión
-- Turbo
-- Suspensión
-- Pieza (precio unitario)
+## Tipos de Armas
 
-## Descuentos
+- SNS
+- MK2
+- VINTAGE
+- .50
+- AP PISTOL
 
-### Descuento por Convenio (20%)
-Aplicable a:
-- Mecánicos
-- Motor Club
-- Puf Puf
-- Médicos
+## Motivos de Pérdida de Armas
 
-### Descuento de Amistad (5-10%)
-Descuento variable seleccionable mediante slider. Requiere nombre de la persona.
+- Pérdida por Robo o Corte
+- Pérdida en Enfrentamiento
+- Pérdida por Policía
+- Pérdida por Full Muerte
+- Pérdida por Bug
 
 ## Zona Horaria
 
-El sistema usa la zona horaria de Perú (America/Lima, UTC-5) para todos los cálculos de tiempo.
+El sistema usa la zona horaria de Perú (America/Lima, UTC-5) para todos los cálculos de tiempo y fechas.
 
 ## Seguridad
 
@@ -140,34 +169,66 @@ El sistema usa la zona horaria de Perú (America/Lima, UTC-5) para todos los cá
 - La sesión se almacena en localStorage
 - Cada página verifica la autenticación antes de cargar
 - Los roles determinan los permisos de acceso
+- Los dealers ven información adicional (montos aproximados)
 
 ## Archivos Principales
 
+### Páginas HTML
+- `menu.html` - Página principal (incluye login si no estás autenticado)
 - `registro.html` - Registro y login
-- `fichaje.html` - Fichaje de horas
-- `horas.html` - Visualización de horas
-- `calculador.html` - Calculador de precios
-- `estadisticas.html` - Estadísticas
-- `admin.html` - Administración de roles
+- `entregas.html` - Gestión de entregas de productos
+- `tickets_dinero.html` - Gestión de tickets de dinero
+- `armas.html` - Gestión de armas
+- `estadisticas.html` - Estadísticas de ventas
+- `admin.html` - Administración de usuarios (solo dealers)
+- `perfil.html` - Perfil del usuario y cambio de contraseña
+
+### Archivos JavaScript
 - `firebase-config.js` - Configuración de Firebase
 - `auth.js` - Funciones de autenticación
-- `fichaje.js` - Lógica de fichaje
-- `calculador.js` - Lógica del calculador
-- `estadisticas.js` - Estadísticas
-- `admin.js` - Gestión de roles
+- `productos.js` - Configuración de productos y precios
+- `entregas.js` - Lógica de entregas
+- `tickets.js` - Lógica de tickets de dinero
+- `armas.js` - Lógica de armas
+- `metas.js` - Sistema de metas
+- `menu.js` - Funciones del menú principal
+- `admin.js` - Gestión de usuarios
+
+### Estilos
 - `styles-fichaje.css` - Estilos del sistema
+- `styles.css` - Estilos generales
 
 ## Notas Importantes
 
-1. **Primer Usuario**: El primer usuario registrado tendrá rol "empleado" por defecto. Para convertirlo en jefe, necesitarás acceder directamente a Firestore o crear un usuario jefe manualmente.
+1. **Primer Usuario**: El primer usuario registrado tendrá rol "vendedor" por defecto. Para convertirlo en dealer, accede a `admin.html` (si ya tienes un dealer) o modifica directamente en Firestore.
 
 2. **Configuración de Firebase**: Asegúrate de reemplazar los valores en `firebase-config.js` con los de tu proyecto.
 
-3. **Reglas de Firestore**: Las reglas proporcionadas son básicas. Ajusta según tus necesidades de seguridad en producción.
+3. **Reglas de Firestore**: Las reglas proporcionadas son permisivas para autenticación manual. Ajusta según tus necesidades de seguridad en producción.
 
 4. **Backup**: Realiza backups regulares de tu base de datos Firestore.
+
+5. **Montos Aproximados**: Solo los dealers pueden ver los montos aproximados en los tickets. Los vendedores solo ven el ticket vacío esperando su confirmación.
+
+## Flujo de Trabajo
+
+### Entrega de Productos
+1. Dealer crea entrega → Vendedor recibe notificación
+2. Vendedor confirma → Entrega registrada
+3. Dealer puede crear ticket de dinero relacionado
+
+### Ticket de Dinero
+1. Dealer crea ticket (con monto aproximado opcional)
+2. Vendedor ve ticket pendiente
+3. Vendedor confirma monto entregado
+4. Sistema actualiza metas del vendedor
+
+### Entrega de Arma
+1. Dealer entrega arma
+2. Vendedor puede solicitar balas
+3. Dealer entrega balas
+4. Si se pierde, dealer marca con motivo
 
 ## Soporte
 
 Para problemas o preguntas, revisa la configuración de Firebase y asegúrate de que todas las colecciones estén correctamente configuradas.
-

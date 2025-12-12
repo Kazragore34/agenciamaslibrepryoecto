@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estadísticas - Sistema de Control</title>
+    <title>Estadísticas de Ventas - Sistema de Control</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="styles-fichaje.css">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -13,7 +13,7 @@
 <body>
     <div class="stats-container">
         <div class="fichaje-header">
-            <h1>Estadísticas</h1>
+            <h1>Estadísticas de Ventas</h1>
             <div>
                 <a href="menu.html" class="btn-primary">Menú</a>
                 <a href="entregas.html" class="btn-primary">Entregas</a>
@@ -29,18 +29,34 @@
         <div class="stats-grid">
             <div class="stats-card">
                 <h3>Top Vendedores</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Por dinero total entregado</p>
                 <div id="topVendedoresTable"></div>
             </div>
 
             <div class="stats-card">
+                <h3>Top Dealers</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Por entregas realizadas</p>
+                <div id="topDealersTable"></div>
+            </div>
+        </div>
+
+        <div class="stats-grid" style="margin-top: 2rem;">
+            <div class="stats-card">
                 <h3>Productos Más Entregados</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Cantidad total entregada</p>
                 <div id="productosMasTable"></div>
+            </div>
+
+            <div class="stats-card">
+                <h3>Estado de Entregas</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Resumen de entregas</p>
+                <div id="estadoEntregasTable"></div>
             </div>
         </div>
 
         <div class="stats-card" style="margin-top: 2rem;">
             <h3>Dinero Entregado por Día (Últimos 30 días)</h3>
-            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Dinero entregado por día en los últimos 30 días</p>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Dinero total entregado por vendedores por día</p>
             <div style="position: relative; height: 400px;">
                 <canvas id="dineroDiasChart"></canvas>
             </div>
@@ -48,9 +64,17 @@
 
         <div class="stats-card" style="margin-top: 2rem;">
             <h3>Dinero Entregado por Semana</h3>
-            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Dinero entregado por semana</p>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Dinero total entregado por semana</p>
             <div style="position: relative; height: 400px;">
                 <canvas id="dineroSemanasChart"></canvas>
+            </div>
+        </div>
+
+        <div class="stats-card" style="margin-top: 2rem;">
+            <h3>Entregas por Día (Últimos 30 días)</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Cantidad de entregas confirmadas por día</p>
+            <div style="position: relative; height: 400px;">
+                <canvas id="entregasDiasChart"></canvas>
             </div>
         </div>
     </div>
@@ -90,6 +114,7 @@
 
         let dineroDiasChart = null;
         let dineroSemanasChart = null;
+        let entregasDiasChart = null;
 
         async function cargarEstadisticas() {
             try {
@@ -99,12 +124,21 @@
                 const topVendedores = await obtenerTopVendedores();
                 mostrarTopVendedores(topVendedores);
 
+                // Cargar top dealers
+                const topDealers = await obtenerTopDealers();
+                mostrarTopDealers(topDealers);
+
                 // Cargar productos más entregados
                 const productosMas = await obtenerProductosMasEntregados();
                 mostrarProductosMas(productosMas);
 
+                // Cargar estado de entregas
+                const estadoEntregas = await obtenerEstadoEntregas();
+                mostrarEstadoEntregas(estadoEntregas);
+
                 // Cargar gráficas
                 await cargarGraficasDinero();
+                await cargarGraficasEntregas();
             } catch (error) {
                 console.error('Error cargando estadísticas:', error);
             }
@@ -127,10 +161,12 @@
                         vendedoresMap[vendedorId] = {
                             vendedorId,
                             vendedorNombre: ticket.vendedorNombre,
-                            total: 0
+                            total: 0,
+                            tickets: 0
                         };
                     }
                     vendedoresMap[vendedorId].total += monto;
+                    vendedoresMap[vendedorId].tickets += 1;
                 });
                 
                 const vendedores = Object.values(vendedoresMap);
@@ -139,6 +175,42 @@
                 return vendedores.slice(0, 10);
             } catch (error) {
                 console.error('Error obteniendo top vendedores:', error);
+                return [];
+            }
+        }
+
+        async function obtenerTopDealers() {
+            try {
+                const snapshot = await db.collection('entregas_productos')
+                    .where('estado', '==', 'confirmado')
+                    .get();
+                
+                const dealersMap = {};
+                
+                snapshot.forEach(doc => {
+                    const entrega = doc.data();
+                    const dealerId = entrega.dealerId;
+                    
+                    if (!dealersMap[dealerId]) {
+                        dealersMap[dealerId] = {
+                            dealerId,
+                            dealerNombre: entrega.dealerNombre,
+                            entregas: 0,
+                            productosTotal: 0
+                        };
+                    }
+                    dealersMap[dealerId].entregas += 1;
+                    entrega.productos.forEach(p => {
+                        dealersMap[dealerId].productosTotal += p.cantidad || 0;
+                    });
+                });
+                
+                const dealers = Object.values(dealersMap);
+                dealers.sort((a, b) => b.entregas - a.entregas);
+                
+                return dealers.slice(0, 10);
+            } catch (error) {
+                console.error('Error obteniendo top dealers:', error);
                 return [];
             }
         }
@@ -178,6 +250,33 @@
             }
         }
 
+        async function obtenerEstadoEntregas() {
+            try {
+                const snapshot = await db.collection('entregas_productos').get();
+                
+                let confirmadas = 0;
+                let pendientes = 0;
+                let rechazadas = 0;
+                
+                snapshot.forEach(doc => {
+                    const estado = doc.data().estado;
+                    if (estado === 'confirmado') confirmadas++;
+                    else if (estado === 'pendiente') pendientes++;
+                    else if (estado === 'rechazado') rechazadas++;
+                });
+                
+                return {
+                    confirmadas,
+                    pendientes,
+                    rechazadas,
+                    total: confirmadas + pendientes + rechazadas
+                };
+            } catch (error) {
+                console.error('Error obteniendo estado de entregas:', error);
+                return { confirmadas: 0, pendientes: 0, rechazadas: 0, total: 0 };
+            }
+        }
+
         async function cargarGraficasDinero() {
             try {
                 const datosDias = await obtenerDineroPorDias();
@@ -187,6 +286,15 @@
                 mostrarGraficaSemanas(datosSemanas);
             } catch (error) {
                 console.error('Error cargando gráficas:', error);
+            }
+        }
+
+        async function cargarGraficasEntregas() {
+            try {
+                const datosDias = await obtenerEntregasPorDias();
+                mostrarGraficaEntregasDias(datosDias);
+            } catch (error) {
+                console.error('Error cargando gráficas de entregas:', error);
             }
         }
 
@@ -254,6 +362,44 @@
                 }));
             } catch (error) {
                 console.error('Error obteniendo dinero por semanas:', error);
+                return [];
+            }
+        }
+
+        async function obtenerEntregasPorDias() {
+            try {
+                const snapshot = await db.collection('entregas_productos')
+                    .where('estado', '==', 'confirmado')
+                    .get();
+                
+                const diasMap = {};
+                const hoy = new Date();
+                
+                // Inicializar últimos 30 días
+                for (let i = 29; i >= 0; i--) {
+                    const fecha = new Date(hoy);
+                    fecha.setDate(fecha.getDate() - i);
+                    const fechaStr = fecha.toISOString().split('T')[0];
+                    diasMap[fechaStr] = 0;
+                }
+                
+                snapshot.forEach(doc => {
+                    const entrega = doc.data();
+                    const fechaConfirmacion = entrega.fechaConfirmacion?.toDate();
+                    if (fechaConfirmacion) {
+                        const fechaStr = fechaConfirmacion.toISOString().split('T')[0];
+                        if (diasMap.hasOwnProperty(fechaStr)) {
+                            diasMap[fechaStr] += 1;
+                        }
+                    }
+                });
+                
+                return Object.keys(diasMap).map(fecha => ({
+                    fecha: new Date(fecha).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' }),
+                    cantidad: diasMap[fecha]
+                }));
+            } catch (error) {
+                console.error('Error obteniendo entregas por días:', error);
                 return [];
             }
         }
@@ -366,6 +512,50 @@
             });
         }
 
+        function mostrarGraficaEntregasDias(datos) {
+            const ctx = document.getElementById('entregasDiasChart').getContext('2d');
+            
+            if (entregasDiasChart) {
+                entregasDiasChart.destroy();
+            }
+
+            entregasDiasChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: datos.map(d => d.fecha),
+                    datasets: [{
+                        label: 'Entregas Confirmadas',
+                        data: datos.map(d => d.cantidad),
+                        backgroundColor: 'rgba(16, 185, 129, 0.5)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Cantidad de Entregas'
+                            },
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         function mostrarTopVendedores(datos) {
             const container = document.getElementById('topVendedoresTable');
             
@@ -381,6 +571,7 @@
                             <th>#</th>
                             <th>Vendedor</th>
                             <th>Total Entregado</th>
+                            <th>Tickets</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -395,6 +586,50 @@
                         </td>
                         <td>${item.vendedorNombre}</td>
                         <td><strong>$${item.total.toLocaleString()}</strong></td>
+                        <td>${item.tickets}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function mostrarTopDealers(datos) {
+            const container = document.getElementById('topDealersTable');
+            
+            if (datos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay datos</p>';
+                return;
+            }
+
+            let html = `
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Dealer</th>
+                            <th>Entregas</th>
+                            <th>Productos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            datos.forEach((item, index) => {
+                const rankClass = index === 0 ? 'oro' : index === 1 ? 'plata' : index === 2 ? 'bronce' : '';
+                html += `
+                    <tr>
+                        <td>
+                            <span class="rank-badge ${rankClass}">${index + 1}</span>
+                        </td>
+                        <td>${item.dealerNombre}</td>
+                        <td><strong>${item.entregas}</strong></td>
+                        <td>${item.productosTotal}</td>
                     </tr>
                 `;
             });
@@ -440,6 +675,62 @@
             html += `
                     </tbody>
                 </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function mostrarEstadoEntregas(datos) {
+            const container = document.getElementById('estadoEntregasTable');
+            
+            if (datos.total === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay entregas</p>';
+                return;
+            }
+
+            const porcentajeConfirmadas = datos.total > 0 ? ((datos.confirmadas / datos.total) * 100).toFixed(1) : 0;
+            const porcentajePendientes = datos.total > 0 ? ((datos.pendientes / datos.total) * 100).toFixed(1) : 0;
+            const porcentajeRechazadas = datos.total > 0 ? ((datos.rechazadas / datos.total) * 100).toFixed(1) : 0;
+
+            let html = `
+                <div style="padding: 1rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span><strong>Confirmadas:</strong></span>
+                            <span>${datos.confirmadas} (${porcentajeConfirmadas}%)</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                            <div style="width: ${porcentajeConfirmadas}%; height: 100%; background: #10b981;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span><strong>Pendientes:</strong></span>
+                            <span>${datos.pendientes} (${porcentajePendientes}%)</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                            <div style="width: ${porcentajePendientes}%; height: 100%; background: #f59e0b;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <span><strong>Rechazadas:</strong></span>
+                            <span>${datos.rechazadas} (${porcentajeRechazadas}%)</span>
+                        </div>
+                        <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                            <div style="width: ${porcentajeRechazadas}%; height: 100%; background: #ef4444;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span><strong>Total:</strong></span>
+                            <span><strong>${datos.total}</strong></span>
+                        </div>
+                    </div>
+                </div>
             `;
 
             container.innerHTML = html;

@@ -14,12 +14,13 @@
         <div class="fichaje-header">
             <h1>Mi Perfil</h1>
             <div>
-                <a href="fichaje.html" class="btn-primary">Fichaje</a>
-                <a href="horas.html" class="btn-primary">Horas</a>
-                <a href="calculador.html" class="btn-primary">Calculador</a>
+                <a href="menu.html" class="btn-primary">Menú</a>
+                <a href="entregas.html" class="btn-primary">Entregas</a>
+                <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
+                <a href="armas.html" class="btn-primary">Armas</a>
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-                <a href="perfil.html" class="btn-primary" style="background: #7c3aed;">Mi Perfil</a>
                 <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
@@ -80,9 +81,8 @@
                 document.getElementById('userUsername').textContent = user.username || '-';
                 
                 const rolTexto = {
-                    'jefe': 'Jefe',
-                    'encargado': 'Encargado',
-                    'empleado': 'Empleado'
+                    'dealer': 'Dealer',
+                    'vendedor': 'Vendedor'
                 };
                 document.getElementById('userRol').textContent = rolTexto[user.rol] || user.rol || '-';
             }
@@ -92,7 +92,7 @@
         function actualizarBotonAdmin() {
             const btnPanelAdmin = document.getElementById('btnPanelAdmin');
             if (btnPanelAdmin) {
-                if (esJefe()) {
+                if (esDealer()) {
                     btnPanelAdmin.style.visibility = 'visible';
                     btnPanelAdmin.style.width = 'auto';
                     btnPanelAdmin.style.minWidth = '80px';
