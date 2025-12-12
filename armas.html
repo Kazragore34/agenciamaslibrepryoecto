@@ -116,13 +116,76 @@
         
         actualizarNavegacion();
 
-        // Mostrar formulario de creación para sargentos
-        if (esSargento()) {
-            cargarProspectsArmas();
-            const formularioCrearArma = document.getElementById('formularioCrearArma');
-            if (formularioCrearArma) {
-                formularioCrearArma.style.display = 'block';
+        // Cargar prospects para el formulario de armas (solo sargentos)
+        async function cargarProspectsArmas() {
+            if (!esSargento()) return;
+            
+            try {
+                await ensureDb();
+                const snapshot = await db.collection('users')
+                    .orderBy('nombre')
+                    .get();
+                
+                const currentUser = getCurrentUser();
+                const prospects = snapshot.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                    .filter(user => user.id !== currentUser.id);
+                
+                const select = document.getElementById('prospectSelectArma');
+                if (!select) return;
+                
+                select.innerHTML = '<option value="">Seleccionar prospect...</option>';
+                
+                prospects.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = `${p.nombre} ${p.apellido} (${p.username})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando prospects:', error);
             }
+        }
+
+        // Manejar formulario de creación de arma
+        const formCrearArma = document.getElementById('formCrearArma');
+        if (formCrearArma) {
+            formCrearArma.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (!esSargento()) {
+                    mostrarMensaje('Solo los sargentos pueden crear entregas de armas', 'error');
+                    return;
+                }
+                
+                const prospectId = document.getElementById('prospectSelectArma').value;
+                if (!prospectId) {
+                    mostrarMensaje('Selecciona un prospect', 'error');
+                    return;
+                }
+                
+                const tipoArma = document.getElementById('tipoArma').value;
+                if (!tipoArma) {
+                    mostrarMensaje('Selecciona un tipo de arma', 'error');
+                    return;
+                }
+                
+                const cantidadBalas = parseInt(document.getElementById('cantidadBalas').value) || 0;
+                const chaleco = document.getElementById('chaleco').checked;
+                
+                try {
+                    mostrarMensaje('Creando entrega de arma...', 'info');
+                    await crearEntregaArma(currentUser.id, prospectId, tipoArma, chaleco, cantidadBalas);
+                    mostrarMensaje('Entrega de arma creada correctamente', 'success');
+                    formCrearArma.reset();
+                    cargarArmas();
+                } catch (error) {
+                    mostrarMensaje(error.message, 'error');
+                }
+            });
         }
 
         // Cargar todas las armas (activas y perdidas)
@@ -255,6 +318,7 @@
 
         function mostrarMensaje(mensaje, tipo) {
             const mensajeEl = document.getElementById('mensajeArma');
+            if (!mensajeEl) return;
             mensajeEl.textContent = mensaje;
             mensajeEl.className = `auth-message ${tipo}`;
             mensajeEl.style.display = 'block';
@@ -262,7 +326,6 @@
                 mensajeEl.style.display = 'none';
             }, 3000);
         }
-
 
         // Inicializar
         if (esSargento()) {
