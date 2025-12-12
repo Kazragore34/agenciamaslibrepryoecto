@@ -607,9 +607,9 @@
                 const notas = document.getElementById('notasEntrega').value;
                 
                 try {
-                    mostrarMensaje('Creando entrega...', 'info');
+                    mostrarMensaje('Creando entrega...', 'info', 'mensajeEntrega');
                     await crearEntregaProductos(currentUser.id, prospectId, productos, itemsAdicionales, notas);
-                    mostrarMensaje('Entrega creada correctamente', 'success');
+                    mostrarMensaje('Entrega creada correctamente', 'success', 'mensajeEntrega');
                     formCrearEntrega.reset();
                     // Resetear lista de productos
                     productosList.innerHTML = `
@@ -635,7 +635,7 @@
                     cargarEntregasConfirmadasVendedor();
                 } catch (error) {
                     console.error('Error creando entrega:', error);
-                    mostrarMensaje(error.message, 'error');
+                    mostrarMensaje(error.message, 'error', 'mensajeEntrega');
                 }
             });
         }
@@ -819,8 +819,18 @@
             }
         }
 
-        function mostrarMensaje(mensaje, tipo) {
-            const mensajeEl = document.getElementById('mensajeTicket');
+        function mostrarMensaje(mensaje, tipo, elementoId = null) {
+            let mensajeEl;
+            if (elementoId) {
+                mensajeEl = document.getElementById(elementoId);
+            } else {
+                mensajeEl = document.getElementById('mensajeTicket') || document.getElementById('mensajeEntrega');
+            }
+            if (!mensajeEl) {
+                console.error('Elemento de mensaje no encontrado');
+                alert(mensaje); // Fallback a alert si no encuentra el elemento
+                return;
+            }
             mensajeEl.textContent = mensaje;
             mensajeEl.className = `auth-message ${tipo}`;
             mensajeEl.style.display = 'block';
