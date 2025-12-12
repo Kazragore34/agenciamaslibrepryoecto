@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tickets de Dinero - Sistema de Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-fichaje.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="stats-container">
+        <div class="fichaje-header">
+            <h1>Tickets de Dinero</h1>
+            <div>
+                <a href="menu.html" class="btn-primary">Menú</a>
+                <a href="entregas.html" class="btn-primary">Entregas</a>
+                <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
+                <a href="armas.html" class="btn-primary">Armas</a>
+                <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
+                <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <!-- Formulario de creación (solo para dealers) -->
+        <div id="formularioCrear" class="seccion-dealer" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h3>Crear Nuevo Ticket</h3>
+                <div id="mensajeTicket" class="auth-message" style="display: none;"></div>
+                <form id="formCrearTicket">
+                    <div class="form-group">
+                        <label for="vendedorSelectTicket">Vendedor</label>
+                        <select id="vendedorSelectTicket" required>
+                            <option value="">Seleccionar vendedor...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="montoAprox">Monto Aproximado (opcional, solo visible para ti)</label>
+                        <input type="number" id="montoAprox" min="0" step="0.01">
+                        <small style="color: #6b7280;">Este monto solo lo verás tú, el vendedor no lo verá</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Entregas Relacionadas (opcional)</label>
+                        <div id="entregasRelacionadasList">
+                            <!-- Se carga dinámicamente -->
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Crear Ticket</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de tickets -->
+        <div style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h3 id="tituloTickets">Mis Tickets</h3>
+                <div id="listaTickets">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="crypto-utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+    <script src="productos.js"></script>
+    <script src="metas.js"></script>
+    <script src="tickets.js"></script>
+    <script>
+        requireAuth();
+        
+        const currentUser = getCurrentUser();
+        let todosVendedores = [];
+        let entregasConfirmadas = [];
+
+        // Cargar vendedores
+        async function cargarVendedores() {
+            if (!esDealer()) return;
+            
+            try {
+                await ensureDb();
+                const snapshot = await db.collection('users')
+                    .where('rol', '==', 'vendedor')
+                    .orderBy('nombre')
+                    .get();
+                
+                todosVendedores = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                const select = document.getElementById('vendedorSelectTicket');
+                select.innerHTML = '<option value="">Seleccionar vendedor...</option>';
+                todosVendedores.forEach(v => {
+                    const option = document.createElement('option');
+                    option.value = v.id;
+                    option.textContent = `${v.nombre} ${v.apellido} (${v.username})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando vendedores:', error);
+            }
+        }
+
+        // Cargar entregas confirmadas para relacionar
+        async function cargarEntregasConfirmadas() {
+            if (!esDealer()) return;
+            
+            try {
+                const entregas = await obtenerEntregasPorDealer(currentUser.id);
+                entregasConfirmadas = entregas.filter(e => e.estado === 'confirmado');
+                
+                const listEl = document.getElementById('entregasRelacionadasList');
+                if (entregasConfirmadas.length === 0) {
+                    listEl.innerHTML = '<p style="color: #6b7280;">No hay entregas confirmadas</p>';
+                    return;
+                }
+                
+                let html = '';
+                entregasConfirmadas.forEach(entrega => {
+                    const fecha = entrega.fechaCreacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleDateString('es-PE') : '';
+                    html += `
+                        <label style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                            <input type="checkbox" value="${entrega.id}" class="entrega-checkbox">
+                            <span style="margin-left: 0.5rem;">
+                                ${entrega.vendedorNombre} - ${fechaStr} 
+                                (${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')})
+                            </span>
+                        </label>
+                    `;
+                });
+                listEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando entregas:', error);
+            }
+        }
+
+        // Cargar tickets
+        async function cargarTickets() {
+            try {
+                let tickets = [];
+                if (esDealer()) {
+                    tickets = await obtenerTicketsPorDealer(currentUser.id);
+                    document.getElementById('tituloTickets').textContent = 'Mis Tickets Creados';
+                } else if (esVendedor()) {
+                    tickets = await obtenerTicketsPorVendedor(currentUser.id);
+                    document.getElementById('tituloTickets').textContent = 'Mis Tickets';
+                }
+                
+                mostrarTickets(tickets);
+            } catch (error) {
+                console.error('Error cargando tickets:', error);
+            }
+        }
+
+        function mostrarTickets(tickets) {
+            const listaEl = document.getElementById('listaTickets');
+            
+            if (tickets.length === 0) {
+                listaEl.innerHTML = '<p style="color: #6b7280;">No hay tickets</p>';
+                return;
+            }
+            
+            let html = '<table class="data-table"><thead><tr>';
+            if (esDealer()) {
+                html += '<th>Vendedor</th><th>Ticket ID</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
+            } else {
+                html += '<th>Ticket ID</th><th>Dealer</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
+            }
+            html += '</tr></thead><tbody>';
+            
+            tickets.forEach(ticket => {
+                const fecha = ticket.fechaCreacion?.toDate();
+                const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+                const estadoClass = ticket.estado === 'confirmado' ? 'success' : 'pendiente';
+                
+                html += `<tr>
+                    ${esDealer() ? `<td>${ticket.vendedorNombre}</td>` : ''}
+                    <td><strong>${ticket.ticketId}</strong></td>
+                    ${esDealer() ? `<td>${ticket.montoAprox ? '$' + ticket.montoAprox.toLocaleString() : 'N/A'}</td>` : ''}
+                    <td>${ticket.montoEntregado ? '$' + ticket.montoEntregado.toLocaleString() : '-'}</td>
+                    <td><span class="estado-badge ${estadoClass}">${ticket.estado}</span></td>
+                    <td>${fechaStr}</td>
+                    <td>
+                        ${ticket.estado === 'pendiente' && esVendedor() ? 
+                            `<button class="btn-success btn-sm" onclick="confirmarTicketModal('${ticket.id}')">Confirmar</button>` : 
+                            ''
+                        }
+                        ${esDealer() && ticket.estado === 'confirmado' && ticket.montoAprox ? 
+                            `<span style="color: ${ticket.montoEntregado >= ticket.montoAprox ? '#10b981' : '#ef4444'};">
+                                ${ticket.montoEntregado >= ticket.montoAprox ? '✓' : '⚠'} 
+                                ${((ticket.montoEntregado / ticket.montoAprox) * 100).toFixed(1)}%
+                            </span>` : 
+                            ''
+                        }
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            listaEl.innerHTML = html;
+        }
+
+        async function confirmarTicketModal(ticketId) {
+            const monto = prompt('Ingresa el monto que entregaste:');
+            if (!monto || isNaN(monto) || parseFloat(monto) <= 0) {
+                alert('Monto inválido');
+                return;
+            }
+            
+            try {
+                mostrarMensaje('Confirmando ticket...', 'info');
+                await confirmarTicketDinero(ticketId, parseFloat(monto));
+                mostrarMensaje('Ticket confirmado correctamente', 'success');
+                cargarTickets();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+
+        function mostrarMensaje(mensaje, tipo) {
+            const mensajeEl = document.getElementById('mensajeTicket');
+            mensajeEl.textContent = mensaje;
+            mensajeEl.className = `auth-message ${tipo}`;
+            mensajeEl.style.display = 'block';
+            setTimeout(() => {
+                mensajeEl.style.display = 'none';
+            }, 3000);
+        }
+
+        // Manejar formulario
+        document.getElementById('formCrearTicket').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!esDealer()) {
+                mostrarMensaje('Solo los dealers pueden crear tickets', 'error');
+                return;
+            }
+            
+            const vendedorId = document.getElementById('vendedorSelectTicket').value;
+            if (!vendedorId) {
+                mostrarMensaje('Selecciona un vendedor', 'error');
+                return;
+            }
+            
+            const montoAprox = document.getElementById('montoAprox').value;
+            const montoAproxNum = montoAprox ? parseFloat(montoAprox) : null;
+            
+            const entregasRelacionadas = [];
+            document.querySelectorAll('.entrega-checkbox:checked').forEach(cb => {
+                entregasRelacionadas.push(cb.value);
+            });
+            
+            try {
+                mostrarMensaje('Creando ticket...', 'info');
+                await crearTicketDinero(currentUser.id, vendedorId, montoAproxNum, entregasRelacionadas);
+                mostrarMensaje('Ticket creado correctamente', 'success');
+                document.getElementById('formCrearTicket').reset();
+                cargarTickets();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        });
+
+        // Inicializar
+        if (esDealer()) {
+            cargarVendedores();
+            cargarEntregasConfirmadas();
+        } else {
+            document.getElementById('formularioCrear').style.display = 'none';
+        }
+        
+        cargarTickets();
+    </script>
+</body>
+</html>
+

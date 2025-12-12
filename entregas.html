@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entregas - Sistema de Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-fichaje.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div class="stats-container">
+        <div class="fichaje-header">
+            <h1>Entregas de Productos</h1>
+            <div>
+                <a href="menu.html" class="btn-primary">Menú</a>
+                <a href="entregas.html" class="btn-primary">Entregas</a>
+                <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
+                <a href="armas.html" class="btn-primary">Armas</a>
+                <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
+                <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <!-- Formulario de creación (solo para dealers) -->
+        <div id="formularioCrear" class="seccion-dealer" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h3>Crear Nueva Entrega</h3>
+                <div id="mensajeEntrega" class="auth-message" style="display: none;"></div>
+                <form id="formCrearEntrega">
+                    <div class="form-group">
+                        <label for="vendedorSelect">Vendedor</label>
+                        <select id="vendedorSelect" required>
+                            <option value="">Seleccionar vendedor...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Productos</label>
+                        <div id="productosList">
+                            <div class="producto-item">
+                                <select class="producto-tipo" required>
+                                    <option value="">Seleccionar producto...</option>
+                                    <option value="coca">Coca</option>
+                                    <option value="meta">Meta</option>
+                                    <option value="crack">Crack</option>
+                                    <option value="weed">Weed</option>
+                                    <option value="semilla_maleza">Semilla Maleza</option>
+                                    <option value="semilla_amarillo">Semilla Amarillo</option>
+                                    <option value="semilla_azul">Semilla Azul</option>
+                                    <option value="semilla_morado">Semilla Morado</option>
+                                </select>
+                                <input type="number" class="producto-cantidad" min="1" value="1" required>
+                                <button type="button" class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-secondary" onclick="agregarProducto()">+ Agregar Producto</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Items Adicionales (para semillas)</label>
+                        <div id="itemsAdicionalesList">
+                            <!-- Se agregan automáticamente cuando se selecciona una semilla -->
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notasEntrega">Notas (opcional)</label>
+                        <textarea id="notasEntrega" rows="3"></textarea>
+                    </div>
+
+                    <div id="precioAprox" class="precio-aprox" style="display: none;">
+                        <strong>Precio Aproximado: $<span id="precioAproxValor">0</span></strong>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Crear Entrega</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de entregas -->
+        <div style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h3 id="tituloEntregas">Mis Entregas</h3>
+                <div id="listaEntregas">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="crypto-utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+    <script src="productos.js"></script>
+    <script src="metas.js"></script>
+    <script src="entregas.js"></script>
+    <script>
+        requireAuth();
+        
+        const currentUser = getCurrentUser();
+        let todosVendedores = [];
+
+        // Cargar vendedores para el select
+        async function cargarVendedores() {
+            if (!esDealer()) return;
+            
+            try {
+                await ensureDb();
+                const snapshot = await db.collection('users')
+                    .where('rol', '==', 'vendedor')
+                    .orderBy('nombre')
+                    .get();
+                
+                todosVendedores = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                const select = document.getElementById('vendedorSelect');
+                select.innerHTML = '<option value="">Seleccionar vendedor...</option>';
+                todosVendedores.forEach(v => {
+                    const option = document.createElement('option');
+                    option.value = v.id;
+                    option.textContent = `${v.nombre} ${v.apellido} (${v.username})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando vendedores:', error);
+            }
+        }
+
+        // Agregar producto al formulario
+        function agregarProducto() {
+            const productosList = document.getElementById('productosList');
+            const nuevoProducto = document.createElement('div');
+            nuevoProducto.className = 'producto-item';
+            nuevoProducto.innerHTML = `
+                <select class="producto-tipo" required>
+                    <option value="">Seleccionar producto...</option>
+                    <option value="coca">Coca</option>
+                    <option value="meta">Meta</option>
+                    <option value="crack">Crack</option>
+                    <option value="weed">Weed</option>
+                    <option value="semilla_maleza">Semilla Maleza</option>
+                    <option value="semilla_amarillo">Semilla Amarillo</option>
+                    <option value="semilla_azul">Semilla Azul</option>
+                    <option value="semilla_morado">Semilla Morado</option>
+                </select>
+                <input type="number" class="producto-cantidad" min="1" value="1" required>
+                <button type="button" class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
+            `;
+            productosList.appendChild(nuevoProducto);
+            actualizarPrecioAprox();
+        }
+
+        function eliminarProducto(btn) {
+            if (document.querySelectorAll('.producto-item').length > 1) {
+                btn.parentElement.remove();
+                actualizarPrecioAprox();
+            }
+        }
+
+        // Actualizar precio aproximado
+        function actualizarPrecioAprox() {
+            if (!esDealer()) return;
+            
+            const productos = [];
+            document.querySelectorAll('.producto-item').forEach(item => {
+                const tipo = item.querySelector('.producto-tipo').value;
+                const cantidad = parseInt(item.querySelector('.producto-cantidad').value) || 0;
+                if (tipo && cantidad > 0) {
+                    productos.push({ tipo, cantidad });
+                }
+            });
+            
+            const precioAprox = calcularPrecioAprox(productos);
+            const precioAproxEl = document.getElementById('precioAprox');
+            const precioAproxValor = document.getElementById('precioAproxValor');
+            
+            if (precioAprox > 0) {
+                precioAproxEl.style.display = 'block';
+                precioAproxValor.textContent = precioAprox.toLocaleString();
+            } else {
+                precioAproxEl.style.display = 'none';
+            }
+        }
+
+        // Agregar event listeners para actualizar precio
+        document.addEventListener('change', (e) => {
+            if (e.target.classList.contains('producto-tipo') || e.target.classList.contains('producto-cantidad')) {
+                actualizarPrecioAprox();
+            }
+        });
+
+        // Cargar entregas
+        async function cargarEntregas() {
+            try {
+                let entregas = [];
+                if (esDealer()) {
+                    entregas = await obtenerEntregasPorDealer(currentUser.id);
+                    document.getElementById('tituloEntregas').textContent = 'Mis Entregas';
+                } else if (esVendedor()) {
+                    entregas = await obtenerEntregasPorVendedor(currentUser.id);
+                    document.getElementById('tituloEntregas').textContent = 'Entregas Recibidas';
+                }
+                
+                mostrarEntregas(entregas);
+            } catch (error) {
+                console.error('Error cargando entregas:', error);
+            }
+        }
+
+        function mostrarEntregas(entregas) {
+            const listaEl = document.getElementById('listaEntregas');
+            
+            if (entregas.length === 0) {
+                listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas</p>';
+                return;
+            }
+            
+            let html = '<table class="data-table"><thead><tr>';
+            if (esDealer()) {
+                html += '<th>Vendedor</th>';
+            } else {
+                html += '<th>Dealer</th>';
+            }
+            html += '<th>Productos</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
+            
+            entregas.forEach(entrega => {
+                const fecha = entrega.fechaCreacion?.toDate();
+                const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+                const estadoClass = entrega.estado === 'confirmado' ? 'success' : 
+                                   entrega.estado === 'rechazado' ? 'error' : 'pendiente';
+                
+                html += `<tr>
+                    <td>${esDealer() ? entrega.vendedorNombre : entrega.dealerNombre}</td>
+                    <td>${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')}</td>
+                    <td><span class="estado-badge ${estadoClass}">${entrega.estado}</span></td>
+                    <td>${fechaStr}</td>
+                    <td>
+                        ${entrega.estado === 'pendiente' && esDealer() ? 
+                            `<button class="btn-danger btn-sm" onclick="eliminarEntregaConfirm('${entrega.id}')">Eliminar</button>` : 
+                            ''
+                        }
+                        ${entrega.estado === 'pendiente' && esVendedor() ? 
+                            `<button class="btn-success btn-sm" onclick="confirmarEntregaConfirm('${entrega.id}')">Confirmar</button>
+                             <button class="btn-danger btn-sm" onclick="rechazarEntregaConfirm('${entrega.id}')">Rechazar</button>` : 
+                            ''
+                        }
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            listaEl.innerHTML = html;
+        }
+
+        async function eliminarEntregaConfirm(entregaId) {
+            if (!confirm('¿Estás seguro de eliminar esta entrega?')) return;
+            try {
+                await eliminarEntrega(entregaId);
+                mostrarMensaje('Entrega eliminada correctamente', 'success');
+                cargarEntregas();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+
+        async function confirmarEntregaConfirm(entregaId) {
+            if (!confirm('¿Confirmas que recibiste esta entrega?')) return;
+            try {
+                await confirmarEntrega(entregaId);
+                mostrarMensaje('Entrega confirmada correctamente', 'success');
+                cargarEntregas();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+
+        async function rechazarEntregaConfirm(entregaId) {
+            const motivo = prompt('Motivo del rechazo:');
+            if (!motivo) return;
+            try {
+                await rechazarEntrega(entregaId, motivo);
+                mostrarMensaje('Entrega rechazada', 'info');
+                cargarEntregas();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+
+        function mostrarMensaje(mensaje, tipo) {
+            const mensajeEl = document.getElementById('mensajeEntrega');
+            mensajeEl.textContent = mensaje;
+            mensajeEl.className = `auth-message ${tipo}`;
+            mensajeEl.style.display = 'block';
+            setTimeout(() => {
+                mensajeEl.style.display = 'none';
+            }, 3000);
+        }
+
+        // Manejar formulario
+        document.getElementById('formCrearEntrega').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!esDealer()) {
+                mostrarMensaje('Solo los dealers pueden crear entregas', 'error');
+                return;
+            }
+            
+            const vendedorId = document.getElementById('vendedorSelect').value;
+            if (!vendedorId) {
+                mostrarMensaje('Selecciona un vendedor', 'error');
+                return;
+            }
+            
+            const productos = [];
+            document.querySelectorAll('.producto-item').forEach(item => {
+                const tipo = item.querySelector('.producto-tipo').value;
+                const cantidad = parseInt(item.querySelector('.producto-cantidad').value) || 0;
+                if (tipo && cantidad > 0) {
+                    productos.push({ tipo, cantidad });
+                }
+            });
+            
+            if (productos.length === 0) {
+                mostrarMensaje('Agrega al menos un producto', 'error');
+                return;
+            }
+            
+            // Items adicionales (fertilizante, maceta, regadera) - se agregan automáticamente para semillas
+            const itemsAdicionales = [];
+            productos.forEach(p => {
+                if (p.tipo.startsWith('semilla_')) {
+                    itemsAdicionales.push({ tipo: 'fertilizante', cantidad: p.cantidad });
+                    itemsAdicionales.push({ tipo: 'maceta', cantidad: p.cantidad });
+                    itemsAdicionales.push({ tipo: 'regadera', cantidad: p.cantidad });
+                }
+            });
+            
+            const notas = document.getElementById('notasEntrega').value;
+            
+            try {
+                mostrarMensaje('Creando entrega...', 'info');
+                await crearEntregaProductos(currentUser.id, vendedorId, productos, itemsAdicionales, notas);
+                mostrarMensaje('Entrega creada correctamente', 'success');
+                document.getElementById('formCrearEntrega').reset();
+                document.getElementById('productosList').innerHTML = `
+                    <div class="producto-item">
+                        <select class="producto-tipo" required>
+                            <option value="">Seleccionar producto...</option>
+                            <option value="coca">Coca</option>
+                            <option value="meta">Meta</option>
+                            <option value="crack">Crack</option>
+                            <option value="weed">Weed</option>
+                            <option value="semilla_maleza">Semilla Maleza</option>
+                            <option value="semilla_amarillo">Semilla Amarillo</option>
+                            <option value="semilla_azul">Semilla Azul</option>
+                            <option value="semilla_morado">Semilla Morado</option>
+                        </select>
+                        <input type="number" class="producto-cantidad" min="1" value="1" required>
+                        <button type="button" class="btn-remove" onclick="eliminarProducto(this)">Eliminar</button>
+                    </div>
+                `;
+                actualizarPrecioAprox();
+                cargarEntregas();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        });
+
+        // Inicializar
+        if (esDealer()) {
+            cargarVendedores();
+        } else {
+            document.getElementById('formularioCrear').style.display = 'none';
+        }
+        
+        cargarEntregas();
+    </script>
+</body>
+</html>
+

@@ -13,43 +13,44 @@
 <body>
     <div class="stats-container">
         <div class="fichaje-header">
-            <h1>Estadísticas de Tuneos</h1>
+            <h1>Estadísticas</h1>
             <div>
-                <a href="fichaje.html" class="btn-primary">Fichaje</a>
-                <a href="horas.html" class="btn-primary">Horas</a>
-                <a href="calculador.html" class="btn-primary">Calculador</a>
+                <a href="menu.html" class="btn-primary">Menú</a>
+                <a href="entregas.html" class="btn-primary">Entregas</a>
+                <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
+                <a href="armas.html" class="btn-primary">Armas</a>
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-                <a href="perfil.html" class="btn-primary" style="background: #7c3aed;">Mi Perfil</a>
                 <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
 
         <div class="stats-grid">
             <div class="stats-card">
-                <h3>Quién Tuneó Más</h3>
-                <div id="tuneosMasTable"></div>
+                <h3>Top Vendedores</h3>
+                <div id="topVendedoresTable"></div>
             </div>
 
             <div class="stats-card">
-                <h3>Quién Recaudó Más</h3>
-                <div id="recaudoMasTable"></div>
+                <h3>Productos Más Entregados</h3>
+                <div id="productosMasTable"></div>
             </div>
         </div>
 
         <div class="stats-card" style="margin-top: 2rem;">
-            <h3>Actividad por Horas del Día</h3>
-            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Distribución de horas trabajadas según la hora del día (0-23 horas)</p>
+            <h3>Dinero Entregado por Día (Últimos 30 días)</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Dinero entregado por día en los últimos 30 días</p>
             <div style="position: relative; height: 400px;">
-                <canvas id="actividadHorasChart"></canvas>
+                <canvas id="dineroDiasChart"></canvas>
             </div>
         </div>
 
         <div class="stats-card" style="margin-top: 2rem;">
-            <h3>Actividad por Días (Últimos 30 días)</h3>
-            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Horas trabajadas por día en los últimos 30 días</p>
+            <h3>Dinero Entregado por Semana</h3>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Dinero entregado por semana</p>
             <div style="position: relative; height: 400px;">
-                <canvas id="actividadDiasChart"></canvas>
+                <canvas id="dineroSemanasChart"></canvas>
             </div>
         </div>
     </div>
@@ -58,8 +59,10 @@
     <script src="crypto-utils.js"></script>
     <script src="auth.js"></script>
     <script src="admin.js"></script>
-    <script src="fichaje.js"></script>
-    <script src="estadisticas.js"></script>
+    <script src="productos.js"></script>
+    <script src="metas.js"></script>
+    <script src="tickets.js"></script>
+    <script src="entregas.js"></script>
     <script>
         requireAuth();
         
@@ -67,7 +70,7 @@
         function actualizarBotonAdmin() {
             const btnPanelAdmin = document.getElementById('btnPanelAdmin');
             if (btnPanelAdmin) {
-                if (esJefe()) {
+                if (esDealer()) {
                     btnPanelAdmin.style.visibility = 'visible';
                     btnPanelAdmin.style.width = 'auto';
                     btnPanelAdmin.style.minWidth = '80px';
@@ -85,61 +88,190 @@
         }
         actualizarBotonAdmin();
 
-        let actividadDiasChart = null;
-        let actividadHorasChart = null;
+        let dineroDiasChart = null;
+        let dineroSemanasChart = null;
 
         async function cargarEstadisticas() {
             try {
-                // Esperar a que Firebase esté listo
                 await ensureDb();
                 
-                // Cargar quién tuneó más
-                const tuneosMas = await obtenerQuienTuneoMas();
-                mostrarTuneosMas(tuneosMas);
+                // Cargar top vendedores
+                const topVendedores = await obtenerTopVendedores();
+                mostrarTopVendedores(topVendedores);
 
-                // Cargar quién recaudó más
-                const recaudoMas = await obtenerQuienRecaudoMas();
-                mostrarRecaudoMas(recaudoMas);
+                // Cargar productos más entregados
+                const productosMas = await obtenerProductosMasEntregados();
+                mostrarProductosMas(productosMas);
 
-                // Cargar gráficas de actividad
-                await cargarGraficasActividad();
+                // Cargar gráficas
+                await cargarGraficasDinero();
             } catch (error) {
                 console.error('Error cargando estadísticas:', error);
-                const errorMsg = error.message || 'Error desconocido';
-                if (document.getElementById('tuneosMasTable')) {
-                    document.getElementById('tuneosMasTable').innerHTML = `<p style="color: #dc2626;">Error al cargar estadísticas: ${errorMsg}</p>`;
-                }
-                if (document.getElementById('recaudoMasTable')) {
-                    document.getElementById('recaudoMasTable').innerHTML = `<p style="color: #dc2626;">Error al cargar estadísticas: ${errorMsg}</p>`;
-                }
             }
         }
 
-        async function cargarGraficasActividad() {
+        async function obtenerTopVendedores() {
             try {
-                const datosActividad = await obtenerDatosActividad();
-                mostrarGraficaDias(datosActividad.porDias);
-                mostrarGraficaHoras(datosActividad.porHoras);
+                const snapshot = await db.collection('tickets_dinero')
+                    .where('estado', '==', 'confirmado')
+                    .get();
+                
+                const vendedoresMap = {};
+                
+                snapshot.forEach(doc => {
+                    const ticket = doc.data();
+                    const vendedorId = ticket.vendedorId;
+                    const monto = ticket.montoEntregado || 0;
+                    
+                    if (!vendedoresMap[vendedorId]) {
+                        vendedoresMap[vendedorId] = {
+                            vendedorId,
+                            vendedorNombre: ticket.vendedorNombre,
+                            total: 0
+                        };
+                    }
+                    vendedoresMap[vendedorId].total += monto;
+                });
+                
+                const vendedores = Object.values(vendedoresMap);
+                vendedores.sort((a, b) => b.total - a.total);
+                
+                return vendedores.slice(0, 10);
             } catch (error) {
-                console.error('Error cargando gráficas de actividad:', error);
+                console.error('Error obteniendo top vendedores:', error);
+                return [];
+            }
+        }
+
+        async function obtenerProductosMasEntregados() {
+            try {
+                const snapshot = await db.collection('entregas_productos')
+                    .where('estado', '==', 'confirmado')
+                    .get();
+                
+                const productosMap = {};
+                
+                snapshot.forEach(doc => {
+                    const entrega = doc.data();
+                    entrega.productos.forEach(producto => {
+                        const tipo = producto.tipo;
+                        const cantidad = producto.cantidad || 0;
+                        
+                        if (!productosMap[tipo]) {
+                            productosMap[tipo] = {
+                                tipo,
+                                nombre: obtenerNombreProducto(tipo),
+                                cantidad: 0
+                            };
+                        }
+                        productosMap[tipo].cantidad += cantidad;
+                    });
+                });
+                
+                const productos = Object.values(productosMap);
+                productos.sort((a, b) => b.cantidad - a.cantidad);
+                
+                return productos.slice(0, 10);
+            } catch (error) {
+                console.error('Error obteniendo productos más entregados:', error);
+                return [];
+            }
+        }
+
+        async function cargarGraficasDinero() {
+            try {
+                const datosDias = await obtenerDineroPorDias();
+                mostrarGraficaDias(datosDias);
+                
+                const datosSemanas = await obtenerDineroPorSemanas();
+                mostrarGraficaSemanas(datosSemanas);
+            } catch (error) {
+                console.error('Error cargando gráficas:', error);
+            }
+        }
+
+        async function obtenerDineroPorDias() {
+            try {
+                const snapshot = await db.collection('tickets_dinero')
+                    .where('estado', '==', 'confirmado')
+                    .get();
+                
+                const diasMap = {};
+                const hoy = new Date();
+                
+                // Inicializar últimos 30 días
+                for (let i = 29; i >= 0; i--) {
+                    const fecha = new Date(hoy);
+                    fecha.setDate(fecha.getDate() - i);
+                    const fechaStr = fecha.toISOString().split('T')[0];
+                    diasMap[fechaStr] = 0;
+                }
+                
+                snapshot.forEach(doc => {
+                    const ticket = doc.data();
+                    const fechaConfirmacion = ticket.fechaConfirmacion?.toDate();
+                    if (fechaConfirmacion) {
+                        const fechaStr = fechaConfirmacion.toISOString().split('T')[0];
+                        if (diasMap.hasOwnProperty(fechaStr)) {
+                            diasMap[fechaStr] += ticket.montoEntregado || 0;
+                        }
+                    }
+                });
+                
+                return Object.keys(diasMap).map(fecha => ({
+                    fecha: new Date(fecha).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' }),
+                    dinero: diasMap[fecha]
+                }));
+            } catch (error) {
+                console.error('Error obteniendo dinero por días:', error);
+                return [];
+            }
+        }
+
+        async function obtenerDineroPorSemanas() {
+            try {
+                const snapshot = await db.collection('tickets_dinero')
+                    .where('estado', '==', 'confirmado')
+                    .get();
+                
+                const semanasMap = {};
+                
+                snapshot.forEach(doc => {
+                    const ticket = doc.data();
+                    const fechaConfirmacion = ticket.fechaConfirmacion?.toDate();
+                    if (fechaConfirmacion) {
+                        const semana = getSemanaActual(fechaConfirmacion);
+                        if (!semanasMap[semana]) {
+                            semanasMap[semana] = 0;
+                        }
+                        semanasMap[semana] += ticket.montoEntregado || 0;
+                    }
+                });
+                
+                return Object.keys(semanasMap).sort().map(semana => ({
+                    semana,
+                    dinero: semanasMap[semana]
+                }));
+            } catch (error) {
+                console.error('Error obteniendo dinero por semanas:', error);
+                return [];
             }
         }
 
         function mostrarGraficaDias(datos) {
-            const ctx = document.getElementById('actividadDiasChart').getContext('2d');
+            const ctx = document.getElementById('dineroDiasChart').getContext('2d');
             
-            // Destruir gráfica anterior si existe
-            if (actividadDiasChart) {
-                actividadDiasChart.destroy();
+            if (dineroDiasChart) {
+                dineroDiasChart.destroy();
             }
 
-            actividadDiasChart = new Chart(ctx, {
+            dineroDiasChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: datos.map(d => d.fecha),
                     datasets: [{
-                        label: 'Horas Trabajadas',
-                        data: datos.map(d => d.horas),
+                        label: 'Dinero Entregado ($)',
+                        data: datos.map(d => d.dinero),
                         backgroundColor: 'rgba(59, 130, 246, 0.5)',
                         borderColor: 'rgba(59, 130, 246, 1)',
                         borderWidth: 2
@@ -156,10 +288,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const horas = context.parsed.y;
-                                    const horasEnteras = Math.floor(horas);
-                                    const minutos = Math.round((horas - horasEnteras) * 60);
-                                    return `Horas: ${horasEnteras}h ${minutos}m`;
+                                    return '$' + context.parsed.y.toLocaleString();
                                 }
                             }
                         }
@@ -169,18 +298,12 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Horas'
+                                text: 'Dinero ($)'
                             },
                             ticks: {
                                 callback: function(value) {
-                                    return value + 'h';
+                                    return '$' + value.toLocaleString();
                                 }
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Fecha'
                             }
                         }
                     }
@@ -188,21 +311,20 @@
             });
         }
 
-        function mostrarGraficaHoras(datos) {
-            const ctx = document.getElementById('actividadHorasChart').getContext('2d');
+        function mostrarGraficaSemanas(datos) {
+            const ctx = document.getElementById('dineroSemanasChart').getContext('2d');
             
-            // Destruir gráfica anterior si existe
-            if (actividadHorasChart) {
-                actividadHorasChart.destroy();
+            if (dineroSemanasChart) {
+                dineroSemanasChart.destroy();
             }
 
-            actividadHorasChart = new Chart(ctx, {
+            dineroSemanasChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: datos.map(d => d.hora + ':00'),
+                    labels: datos.map(d => `Semana ${d.semana.split('-')[1]}`),
                     datasets: [{
-                        label: 'Horas Trabajadas',
-                        data: datos.map(d => d.horas),
+                        label: 'Dinero Entregado ($)',
+                        data: datos.map(d => d.dinero),
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         borderColor: 'rgba(16, 185, 129, 1)',
                         borderWidth: 2,
@@ -221,10 +343,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const horas = context.parsed.y;
-                                    const horasEnteras = Math.floor(horas);
-                                    const minutos = Math.round((horas - horasEnteras) * 60);
-                                    return `Horas: ${horasEnteras}h ${minutos}m`;
+                                    return '$' + context.parsed.y.toLocaleString();
                                 }
                             }
                         }
@@ -234,18 +353,12 @@
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Horas'
+                                text: 'Dinero ($)'
                             },
                             ticks: {
                                 callback: function(value) {
-                                    return value + 'h';
+                                    return '$' + value.toLocaleString();
                                 }
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Hora del Día'
                             }
                         }
                     }
@@ -253,11 +366,11 @@
             });
         }
 
-        function mostrarTuneosMas(datos) {
-            const container = document.getElementById('tuneosMasTable');
+        function mostrarTopVendedores(datos) {
+            const container = document.getElementById('topVendedoresTable');
             
             if (datos.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay tuneos registrados</p>';
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay datos</p>';
                 return;
             }
 
@@ -266,8 +379,8 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Usuario</th>
-                            <th>Tuneos</th>
+                            <th>Vendedor</th>
+                            <th>Total Entregado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -280,7 +393,45 @@
                         <td>
                             <span class="rank-badge ${rankClass}">${index + 1}</span>
                         </td>
-                        <td>${item.nombre} ${item.apellido}<br><small style="color: #6b7280;">${item.username}</small></td>
+                        <td>${item.vendedorNombre}</td>
+                        <td><strong>$${item.total.toLocaleString()}</strong></td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function mostrarProductosMas(datos) {
+            const container = document.getElementById('productosMasTable');
+            
+            if (datos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay datos</p>';
+                return;
+            }
+
+            let html = `
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            datos.forEach((item, index) => {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${item.nombre}</td>
                         <td><strong>${item.cantidad}</strong></td>
                     </tr>
                 `;
@@ -294,67 +445,8 @@
             container.innerHTML = html;
         }
 
-        function mostrarRecaudoMas(datos) {
-            const container = document.getElementById('recaudoMasTable');
-            
-            if (datos.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay recaudación registrada</p>';
-                return;
-            }
-
-            let html = `
-                <table class="stats-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Usuario</th>
-                            <th>Recaudación</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            datos.forEach((item, index) => {
-                const rankClass = index === 0 ? 'oro' : index === 1 ? 'plata' : index === 2 ? 'bronce' : '';
-                html += `
-                    <tr>
-                        <td>
-                            <span class="rank-badge ${rankClass}">${index + 1}</span>
-                        </td>
-                        <td>${item.nombre} ${item.apellido}<br><small style="color: #6b7280;">${item.username}</small></td>
-                        <td><strong>${formatPrecio(item.recaudacion)}</strong></td>
-                    </tr>
-                `;
-            });
-
-            html += `
-                    </tbody>
-                </table>
-            `;
-
-            container.innerHTML = html;
-        }
-
-        // Esperar a que Firebase esté listo antes de cargar estadísticas
-        async function iniciar() {
-            try {
-                await ensureDb();
-                await cargarEstadisticas();
-            } catch (error) {
-                console.error('Error inicializando:', error);
-                // Intentar de nuevo después de un momento
-                setTimeout(iniciar, 2000);
-            }
-        }
-
         // Cargar estadísticas al iniciar
-        iniciar();
-
-        // Actualizar cada 30 segundos
-        setInterval(() => {
-            cargarEstadisticas().catch(err => console.error('Error actualizando estadísticas:', err));
-        }, 30000);
+        cargarEstadisticas();
     </script>
 </body>
 </html>
-

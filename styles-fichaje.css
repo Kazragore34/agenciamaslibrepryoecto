@@ -568,6 +568,244 @@
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
+/* Estilos para el nuevo sistema de entregas */
+.meta-card {
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+}
+
+.meta-progress {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.meta-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    transition: width 0.3s;
+}
+
+.meta-text {
+    margin: 0.5rem 0;
+    color: #374151;
+}
+
+.meta-recidido {
+    font-weight: 600;
+    color: #dc2626;
+}
+
+.meta-porcentaje {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.estado-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.estado-badge.pendiente {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.estado-badge.success,
+.estado-badge.confirmado {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.estado-badge.error,
+.estado-badge.rechazado {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.data-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.data-table tr:hover {
+    background: #f9fafb;
+}
+
+.producto-item {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+}
+
+.producto-item select,
+.producto-item input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+}
+
+.btn-remove {
+    padding: 0.5rem 1rem;
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.btn-remove:hover {
+    background: #b91c1c;
+}
+
+.btn-secondary {
+    padding: 0.5rem 1rem;
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-danger {
+    background: #dc2626;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+}
+
+.precio-aprox {
+    padding: 1rem;
+    background: #eff6ff;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    color: #1e40af;
+}
+
+.entregas-list,
+.tickets-list,
+.armas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.entrega-item,
+.ticket-item,
+.arma-item {
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background: white;
+}
+
+.entrega-header,
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.entrega-productos {
+    color: #6b7280;
+    margin: 0.5rem 0;
+}
+
+.entrega-fecha,
+.ticket-fecha {
+    font-size: 0.875rem;
+    color: #9ca3af;
+    margin: 0.5rem 0;
+}
+
+.entrega-acciones,
+.ticket-acciones,
+.arma-acciones {
+    margin-top: 0.75rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.solicitud-pendiente {
+    color: #92400e;
+    font-weight: 500;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 1.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2563eb;
+    margin: 0.5rem 0;
+}
+
+.seccion-dealer,
+.seccion-vendedor {
+    display: block;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .calculador-grid {
@@ -581,6 +819,11 @@
 
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+
+    .producto-item {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 

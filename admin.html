@@ -14,19 +14,20 @@
         <div class="fichaje-header">
             <h1>Administración de Usuarios</h1>
             <div>
-                <a href="fichaje.html" class="btn-primary">Fichaje</a>
-                <a href="horas.html" class="btn-primary">Horas</a>
-                <a href="calculador.html" class="btn-primary">Calculador</a>
+                <a href="menu.html" class="btn-primary">Menú</a>
+                <a href="entregas.html" class="btn-primary">Entregas</a>
+                <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
+                <a href="armas.html" class="btn-primary">Armas</a>
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-                <a href="perfil.html" class="btn-primary" style="background: #7c3aed;">Mi Perfil</a>
                 <a href="admin.html" class="btn-primary" style="background: #059669;">Admin</a>
+                <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
 
         <div class="stats-card" style="margin-top: 2rem;">
             <h3>Gestión de Usuarios</h3>
-            <p style="color: #6b7280; margin-bottom: 1.5rem;">Solo los jefes pueden asignar roles. Los jefes y encargados pueden restablecer contraseñas.</p>
+            <p style="color: #6b7280; margin-bottom: 1.5rem;">Solo los dealers pueden asignar roles y restablecer contraseñas.</p>
             <div id="usuariosTable"></div>
         </div>
     </div>
@@ -34,19 +35,18 @@
     <script src="firebase-config.js"></script>
     <script src="crypto-utils.js"></script>
     <script src="auth.js"></script>
-    <script src="fichaje.js"></script>
     <script src="admin.js"></script>
     <script src="perfil.js"></script>
     <script>
         requireAuth();
 
         const currentUser = getCurrentUser();
-        if (!esJefe()) {
+        if (!esDealer()) {
             document.body.innerHTML = `
                 <div style="padding: 2rem; text-align: center;">
                     <h2>Acceso Denegado</h2>
                     <p>No tienes permisos para acceder a esta página.</p>
-                    <a href="fichaje.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-top: 1rem; display: inline-block;">Volver</a>
+                    <a href="menu.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; margin-top: 1rem; display: inline-block;">Volver</a>
                 </div>
             `;
         }
@@ -70,7 +70,7 @@
                 return;
             }
 
-            const puedeCambiarRoles = esJefe();
+            const puedeCambiarRoles = esDealer();
             const puedeCambiarContrasenas = tienePermisosAdmin();
 
             let html = `
@@ -101,9 +101,8 @@
                         ${puedeCambiarRoles ? `
                         <td>
                             <select id="rol_${usuario.id}" class="form-group select" style="width: 150px;">
-                                <option value="empleado" ${usuario.rol === 'empleado' ? 'selected' : ''}>Empleado</option>
-                                <option value="encargado" ${usuario.rol === 'encargado' ? 'selected' : ''}>Encargado</option>
-                                <option value="jefe" ${usuario.rol === 'jefe' ? 'selected' : ''}>Jefe</option>
+                                <option value="vendedor" ${usuario.rol === 'vendedor' ? 'selected' : ''}>Vendedor</option>
+                                <option value="dealer" ${usuario.rol === 'dealer' ? 'selected' : ''}>Dealer</option>
                             </select>
                         </td>
                         <td>

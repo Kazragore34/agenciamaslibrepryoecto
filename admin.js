@@ -44,7 +44,7 @@ async function obtenerTodosUsuarios() {
 async function actualizarRolUsuario(userId, nuevoRol) {
     await ensureDb();
     try {
-        const rolesValidos = ['jefe', 'encargado', 'empleado'];
+        const rolesValidos = ['dealer', 'vendedor'];
         if (!rolesValidos.includes(nuevoRol)) {
             throw new Error('Rol inválido');
         }
@@ -61,20 +61,20 @@ async function actualizarRolUsuario(userId, nuevoRol) {
 
 /**
  * Verifica si el usuario actual tiene permisos de administración
- * @returns {boolean} - true si es jefe o encargado
+ * @returns {boolean} - true si es dealer (puede gestionar usuarios)
  */
 function tienePermisosAdmin() {
     const user = getCurrentUser();
-    return user && (user.rol === 'jefe' || user.rol === 'encargado');
+    return user && user.rol === 'dealer';
 }
 
 /**
- * Verifica si el usuario actual es jefe
- * @returns {boolean} - true si es jefe
+ * Verifica si el usuario actual es dealer
+ * @returns {boolean} - true si es dealer
  */
-function esJefe() {
+function esDealer() {
     const user = getCurrentUser();
-    return user && user.rol === 'jefe';
+    return user && user.rol === 'dealer';
 }
 
 /**
@@ -88,7 +88,7 @@ async function cambiarContrasenaUsuario(userId, nuevaPassword) {
     
     // Verificar permisos
     const user = getCurrentUser();
-    if (!user || (user.rol !== 'jefe' && user.rol !== 'encargado')) {
+    if (!user || user.rol !== 'dealer') {
         throw new Error('No tienes permisos para cambiar contraseñas');
     }
 

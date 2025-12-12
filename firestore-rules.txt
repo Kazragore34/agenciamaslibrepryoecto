@@ -1,67 +1,144 @@
 // Reglas de seguridad de Firestore
 // Copia estas reglas en Firebase Console > Firestore Database > Rules
+//
+// IMPORTANTE: Este sistema usa autenticación manual (localStorage), por lo que
+// las reglas de Firestore no pueden verificar roles directamente.
+// Estas reglas están configuradas para permitir el funcionamiento básico.
+// Para mayor seguridad, considera implementar Firebase Authentication o Cloud Functions.
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
     // Helper function para verificar autenticación
+    // Nota: Con autenticación manual, esto siempre será false
+    // Por eso las reglas están más permisivas
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Helper function para obtener datos del usuario desde la sesión
-    // Nota: Estas reglas asumen que usas Firebase Auth. Si usas autenticación manual,
-    // necesitarás ajustar las reglas o usar Cloud Functions para validación.
-    
     // Colección de usuarios
     match /users/{userId} {
-      // Cualquiera puede leer (para búsquedas de username)
+      // Permitir lectura para búsquedas de username
       allow read: if true;
-      // Solo el mismo usuario puede actualizar su propio perfil (excepto rol)
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'apellido']);
-      // Cualquiera puede crear (registro)
+      // Permitir creación (registro)
       allow create: if true;
+      // Permitir actualización (la validación se hace en el código)
+      allow update: if true;
     }
     
-    // Colección de fichajes
+    // Colección de entregas de productos
+    match /entregas_productos/{entregaId} {
+      // Permitir lectura a todos (la validación se hace en el código)
+      allow read: if true;
+      // Permitir creación (la validación de rol se hace en el código)
+      allow create: if true;
+      // Permitir actualización (la validación se hace en el código)
+      allow update: if true;
+      // Permitir eliminación (la validación se hace en el código)
+      allow delete: if true;
+    }
+    
+    // Colección de tickets de dinero
+    match /tickets_dinero/{ticketId} {
+      // Permitir lectura a todos
+      allow read: if true;
+      // Permitir creación (la validación de rol se hace en el código)
+      allow create: if true;
+      // Permitir actualización (la validación se hace en el código)
+      allow update: if true;
+    }
+    
+    // Colección de entregas de armas
+    match /entregas_armas/{armaId} {
+      // Permitir lectura a todos
+      allow read: if true;
+      // Permitir creación (la validación de rol se hace en el código)
+      allow create: if true;
+      // Permitir actualización (la validación se hace en el código)
+      allow update: if true;
+    }
+    
+    // Colección de metas
+    match /metas/{metaId} {
+      // Permitir lectura a todos
+      allow read: if true;
+      // Permitir creación y actualización (se hace desde las funciones)
+      allow create, update: if true;
+    }
+    
+    // Colecciones antiguas (mantener para compatibilidad)
     match /fichajes/{fichajeId} {
-      // Usuarios autenticados pueden leer sus propios fichajes
-      // Jefes y encargados pueden leer todos
-      allow read: if true; // Simplificado - ajustar según necesidad
-      // Solo usuarios autenticados pueden crear fichajes
-      allow create: if true;
-      // Solo el usuario que creó el fichaje puede actualizarlo
-      allow update: if true; // Simplificado - ajustar según necesidad
+      allow read, create, update, delete: if true;
     }
     
-    // Colección de semanas
     match /semanas/{semanaId} {
-      // Usuarios autenticados pueden leer sus propias semanas
-      // Jefes y encargados pueden leer todas
-      allow read: if true; // Simplificado - ajustar según necesidad
-      // Solo el sistema puede crear/actualizar semanas
-      allow create, update: if true; // Simplificado - ajustar según necesidad
+      allow read, create, update, delete: if true;
     }
     
-    // Colección de tuneos
     match /tuneos/{tuneoId} {
-      // Todos pueden leer (para estadísticas)
-      allow read: if true;
-      // Solo usuarios autenticados pueden crear tuneos
-      allow create: if true;
-      // Nadie puede actualizar o eliminar tuneos (son registros históricos)
-      allow update, delete: if false;
+      allow read, create, update: if true;
+      allow delete: if false;
     }
   }
 }
 
-// NOTA IMPORTANTE:
-// Estas reglas están simplificadas para facilitar el desarrollo.
-// En producción, deberías:
-// 1. Implementar validación más estricta basada en roles
-// 2. Usar Cloud Functions para validar autenticación manual
-// 3. Agregar validación de estructura de datos
-// 4. Implementar rate limiting
-// 5. Agregar logging y auditoría
-
+// ============================================
+// VERSIÓN ALTERNATIVA (Si implementas Firebase Auth)
+// ============================================
+// Descomenta esta sección y comenta la anterior si implementas Firebase Authentication
+//
+// rules_version = '2';
+// service cloud.firestore {
+//   match /databases/{database}/documents {
+//     
+//     function isAuthenticated() {
+//       return request.auth != null;
+//     }
+//     
+//     function getUserRole() {
+//       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol;
+//     }
+//     
+//     function isDealer() {
+//       return isAuthenticated() && getUserRole() == 'dealer';
+//     }
+//     
+//     function isVendedor() {
+//       return isAuthenticated() && getUserRole() == 'vendedor';
+//     }
+//     
+//     match /users/{userId} {
+//       allow read: if true;
+//       allow create: if true;
+//       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nombre', 'apellido']) ||
+//                     isDealer();
+//     }
+//     
+//     match /entregas_productos/{entregaId} {
+//       allow read: if isAuthenticated();
+//       allow create: if isDealer();
+//       allow update: if (resource.data.dealerId == request.auth.uid && resource.data.estado == 'pendiente') ||
+//                      (resource.data.vendedorId == request.auth.uid && resource.data.estado == 'pendiente');
+//       allow delete: if resource.data.dealerId == request.auth.uid && resource.data.estado == 'pendiente';
+//     }
+//     
+//     match /tickets_dinero/{ticketId} {
+//       allow read: if isAuthenticated();
+//       allow create: if isDealer();
+//       allow update: if resource.data.vendedorId == request.auth.uid && resource.data.estado == 'pendiente';
+//     }
+//     
+//     match /entregas_armas/{armaId} {
+//       allow read: if isAuthenticated();
+//       allow create: if isDealer();
+//       allow update: if resource.data.dealerId == request.auth.uid ||
+//                      (resource.data.vendedorId == request.auth.uid && resource.data.estado == 'activa');
+//     }
+//     
+//     match /metas/{metaId} {
+//       allow read: if isAuthenticated();
+//       allow create, update: if isAuthenticated();
+//     }
+//   }
+// }

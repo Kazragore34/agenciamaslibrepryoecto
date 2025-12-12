@@ -74,7 +74,7 @@
     <script>
         // Verificar si ya está logueado
         if (isAuthenticated()) {
-            window.location.href = 'fichaje.html';
+            window.location.href = 'menu.html';
         }
 
         // Manejo de tabs
@@ -114,7 +114,7 @@
                 const user = await login(username, password);
                 showMessage('¡Login exitoso! Redirigiendo...', 'success');
                 setTimeout(() => {
-                    window.location.href = 'fichaje.html';
+                    window.location.href = 'menu.html';
                 }, 1000);
             } catch (error) {
                 showMessage(error.message || 'Error al iniciar sesión', 'error');

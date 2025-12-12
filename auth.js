@@ -57,7 +57,7 @@ async function registrarUsuario(nombre, apellido, username, password) {
             apellido: apellido,
             username: username,
             password: passwordHash,
-            rol: 'empleado', // Rol por defecto
+            rol: 'vendedor', // Rol por defecto
             fechaRegistro: firebase.firestore.FieldValue.serverTimestamp()
         };
 
@@ -160,5 +160,23 @@ function requireAuth() {
     if (!isAuthenticated()) {
         window.location.href = 'registro.html';
     }
+}
+
+/**
+ * Verifica si el usuario actual es dealer
+ * @returns {boolean} - true si es dealer
+ */
+function esDealer() {
+    const user = getCurrentUser();
+    return user && user.rol === 'dealer';
+}
+
+/**
+ * Verifica si el usuario actual es vendedor
+ * @returns {boolean} - true si es vendedor
+ */
+function esVendedor() {
+    const user = getCurrentUser();
+    return user && user.rol === 'vendedor';
 }
 
