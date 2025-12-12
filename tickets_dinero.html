@@ -169,7 +169,7 @@
                 
                 // Mostrar sección de entrega pendiente
                 document.getElementById('seccionEntregasPendientes').style.display = 'block';
-                document.getElementById('formularioCrear').style.display = 'none';
+                // Formulario de creación ya no existe aquí
                 document.getElementById('listaTickets').parentElement.parentElement.style.display = 'none';
                 
                 const fecha = entrega.fechaCreacion?.toDate();
@@ -750,39 +750,8 @@
             }, 3000);
         }
 
-        // Manejar formulario
-        document.getElementById('formCrearTicket').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!esDealer()) {
-                mostrarMensaje('Solo los dealers pueden crear tickets', 'error');
-                return;
-            }
-            
-            const vendedorId = document.getElementById('vendedorSelectTicket').value;
-            if (!vendedorId) {
-                mostrarMensaje('Selecciona un vendedor', 'error');
-                return;
-            }
-            
-            const montoAprox = document.getElementById('montoAprox').value;
-            const montoAproxNum = montoAprox ? parseFloat(montoAprox) : null;
-            
-            const entregasRelacionadas = [];
-            document.querySelectorAll('.entrega-checkbox:checked').forEach(cb => {
-                entregasRelacionadas.push(cb.value);
-            });
-            
-            try {
-                mostrarMensaje('Creando ticket...', 'info');
-                await crearTicketDinero(currentUser.id, vendedorId, montoAproxNum, entregasRelacionadas);
-                mostrarMensaje('Ticket creado correctamente', 'success');
-                document.getElementById('formCrearTicket').reset();
-                cargarTickets();
-            } catch (error) {
-                mostrarMensaje(error.message, 'error');
-            }
-        });
+        // El formulario de creación de tickets ya no existe - ahora se crean entregas de productos
+        // Los tickets se crean automáticamente cuando un prospect entrega dinero
 
         // Actualizar navegación según rol
         function actualizarNavegacion() {
@@ -790,12 +759,16 @@
             const btnEntregas = document.getElementById('btnEntregas');
             const btnPerdidas = document.getElementById('btnPerdidas');
             
-            if (esDealer()) {
+            if (esAdmin()) {
                 if (btnPanelAdmin) btnPanelAdmin.style.display = 'inline-block';
+            } else {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
+            }
+            
+            if (esSargento()) {
                 if (btnEntregas) btnEntregas.style.display = 'inline-block';
                 if (btnPerdidas) btnPerdidas.style.display = 'inline-block';
             } else {
-                if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
                 if (btnEntregas) btnEntregas.style.display = 'none';
                 if (btnPerdidas) btnPerdidas.style.display = 'none';
             }
@@ -805,12 +778,6 @@
         actualizarNavegacion();
         
         if (!entregaId) {
-            if (esDealer()) {
-                cargarVendedores();
-                cargarEntregasConfirmadas();
-            } else {
-                document.getElementById('formularioCrear').style.display = 'none';
-            }
             cargarTickets();
         }
     </script>
