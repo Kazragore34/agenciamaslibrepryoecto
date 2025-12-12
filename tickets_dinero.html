@@ -239,12 +239,9 @@
             }
         }
         
-        // Cargar entregas pendientes del vendedor
+        // Cargar entregas pendientes del prospect (o sargento que también vende)
         async function cargarListaEntregasPendientes() {
-            if (esDealer()) {
-                document.getElementById('seccionListaEntregasPendientes').style.display = 'none';
-                return;
-            }
+            // Sargentos también pueden recibir entregas, así que no ocultar
             
             try {
                 console.log('Cargando entregas pendientes para:', currentUser.id);
