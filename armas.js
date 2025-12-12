@@ -127,7 +127,7 @@ async function entregarBalas(armaId, solicitudIndex) {
     await ensureDb();
     
     if (!esSargento()) {
-        throw new Error('Solo los dealers pueden entregar balas');
+        throw new Error('Solo los sargentos pueden entregar balas');
     }
     
     const currentUser = getCurrentUser();
@@ -142,9 +142,8 @@ async function entregarBalas(armaId, solicitudIndex) {
         
         const armaData = armaDoc.data();
         
-        if (armaData.dealerId !== currentUser.id) {
-            throw new Error('No puedes entregar balas para armas de otros dealers');
-        }
+        // Cualquier sargento puede confirmar solicitudes de balas, no solo el que entregó el arma
+        // Removida la validación: if (armaData.dealerId !== currentUser.id)
         
         const solicitudesBalas = armaData.solicitudesBalas || [];
         
@@ -156,7 +155,12 @@ async function entregarBalas(armaId, solicitudIndex) {
             throw new Error('Esta solicitud ya fue entregada');
         }
         
+        // Actualizar la solicitud con información del sargento que confirmó
         solicitudesBalas[solicitudIndex].estado = 'entregada';
+        solicitudesBalas[solicitudIndex].sargentoConfirmo = currentUser.id;
+        solicitudesBalas[solicitudIndex].sargentoNombre = `${currentUser.nombre} ${currentUser.apellido}`;
+        solicitudesBalas[solicitudIndex].fechaConfirmacion = firebase.firestore.FieldValue.serverTimestamp();
+        
         const cantidadEntregada = solicitudesBalas[solicitudIndex].cantidad || 0;
         
         // Actualizar cantidad de balas actual
@@ -327,12 +331,17 @@ async function obtenerArmasActivasVendedor(vendedorId) {
  * @param {string} dealerId - ID del dealer
  * @returns {Promise<Array>} - Array de armas con solicitudes pendientes
  */
-async function obtenerSolicitudesBalasPendientes(dealerId) {
+/**
+ * Obtiene todas las solicitudes de balas pendientes (cualquier sargento puede confirmarlas)
+ * @returns {Promise<Array>} - Array de armas con solicitudes pendientes
+ */
+async function obtenerSolicitudesBalasPendientes() {
     await ensureDb();
     
     try {
+        // Obtener todas las armas activas con solicitudes pendientes
+        // Cualquier sargento puede confirmar, no solo el que entregó el arma
         const snapshot = await db.collection('entregas_armas')
-            .where('dealerId', '==', dealerId)
             .where('estado', '==', 'activa')
             .get();
         
