@@ -31,18 +31,18 @@ async function crearEntregaArma(sargentoId, prospectId, tipoArma, chaleco = fals
     }
     
     try {
-        // Obtener datos del vendedor
-        const vendedorDoc = await db.collection('users').doc(vendedorId).get();
-        if (!vendedorDoc.exists) {
-            throw new Error('Vendedor no encontrado');
+        // Obtener datos del prospect
+        const prospectDoc = await db.collection('users').doc(prospectId).get();
+        if (!prospectDoc.exists) {
+            throw new Error('Prospect no encontrado');
         }
-        const vendedorData = vendedorDoc.data();
+        const prospectData = prospectDoc.data();
         
         const entregaData = {
-            dealerId,
+            dealerId: sargentoId, // Mantener nombre de campo para compatibilidad
             dealerNombre: `${currentUser.nombre} ${currentUser.apellido}`,
-            vendedorId,
-            vendedorNombre: `${vendedorData.nombre} ${vendedorData.apellido}`,
+            vendedorId: prospectId, // Mantener nombre de campo para compatibilidad
+            vendedorNombre: `${prospectData.nombre} ${prospectData.apellido}`,
             tipoArma,
             chaleco,
             cantidadBalasInicial: cantidadBalas || 0,
@@ -71,8 +71,8 @@ async function crearEntregaArma(sargentoId, prospectId, tipoArma, chaleco = fals
 async function solicitarRecargaBalas(armaId, cantidad) {
     await ensureDb();
     
-    if (!esVendedor()) {
-        throw new Error('Solo los vendedores pueden solicitar recarga de balas');
+    if (!esProspect()) {
+        throw new Error('Solo los prospects pueden solicitar recarga de balas');
     }
     
     const currentUser = getCurrentUser();
@@ -126,7 +126,7 @@ async function solicitarRecargaBalas(armaId, cantidad) {
 async function entregarBalas(armaId, solicitudIndex) {
     await ensureDb();
     
-    if (!esDealer()) {
+    if (!esSargento()) {
         throw new Error('Solo los dealers pueden entregar balas');
     }
     
@@ -181,7 +181,7 @@ async function entregarBalas(armaId, solicitudIndex) {
 async function marcarArmaPerdida(armaId, motivo) {
     await ensureDb();
     
-    if (!esDealer()) {
+    if (!esSargento()) {
         throw new Error('Solo los dealers pueden marcar armas como perdidas');
     }
     
