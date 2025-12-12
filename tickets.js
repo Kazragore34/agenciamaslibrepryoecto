@@ -127,16 +127,15 @@ async function crearTicketDineroVendedor(dealerId, vendedorId, montoEntregado, e
             vendedorNombre: `${currentUser.nombre} ${currentUser.apellido}`,
             montoAprox: null,
             montoEntregado,
-            estado: 'confirmado',
+            estado: 'pendiente_dealer', // El dealer debe confirmar
             fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-            fechaConfirmacion: firebase.firestore.FieldValue.serverTimestamp(),
+            fechaConfirmacionVendedor: firebase.firestore.FieldValue.serverTimestamp(),
             entregasRelacionadas: entregasRelacionadas || []
         };
         
         const docRef = await db.collection('tickets_dinero').add(ticketData);
         
-        // Actualizar metas del vendedor
-        await actualizarMeta(currentUser.id, montoEntregado);
+        // NO actualizar metas todavía, esperar confirmación del dealer
         
         return docRef.id;
     } catch (error) {
@@ -184,12 +183,11 @@ async function confirmarTicketDinero(ticketId, montoEntregado) {
         
         await ticketRef.update({
             montoEntregado,
-            estado: 'confirmado',
-            fechaConfirmacion: firebase.firestore.FieldValue.serverTimestamp()
+            estado: 'pendiente_dealer', // Primero el vendedor confirma, luego el dealer debe confirmar
+            fechaConfirmacionVendedor: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        // Actualizar metas del vendedor
-        await actualizarMeta(currentUser.id, montoEntregado);
+        // NO actualizar metas todavía, esperar confirmación del dealer
     } catch (error) {
         console.error('Error confirmando ticket:', error);
         throw error;

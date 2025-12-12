@@ -153,6 +153,50 @@
                 </div>
             </div>
         </div>
+
+        <!-- Sección: Tickets Pendientes de Confirmar (Dealer) -->
+        <div id="seccionTicketsPendientes" class="seccion-dealer" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h2 style="margin-bottom: 1rem;">Confirmación de Dinero Entregado</h2>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Aquí puedes confirmar los tickets de dinero que los vendedores han entregado.</p>
+                <div id="listaTicketsPendientes">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Acordeón: Historial de Entregas -->
+        <div id="seccionHistorial" class="seccion-dealer" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h2 style="margin-bottom: 1rem;">Historial de Entregas</h2>
+                
+                <!-- Acordeón de Productos -->
+                <div class="accordion-item" style="margin-bottom: 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden;">
+                    <button class="accordion-header" onclick="toggleAccordion('productosHistorial')" style="width: 100%; padding: 1rem; background: #f9fafb; border: none; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;">Productos Entregados</h3>
+                        <span id="iconProductos" style="font-size: 1.25rem;">▼</span>
+                    </button>
+                    <div id="productosHistorial" class="accordion-content" style="display: none; padding: 1rem;">
+                        <div id="historialProductos">
+                            <!-- Se carga dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acordeón de Armas -->
+                <div class="accordion-item" style="margin-bottom: 1rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow: hidden;">
+                    <button class="accordion-header" onclick="toggleAccordion('armasHistorial')" style="width: 100%; padding: 1rem; background: #f9fafb; border: none; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0;">Armas Entregadas</h3>
+                        <span id="iconArmas" style="font-size: 1.25rem;">▼</span>
+                    </button>
+                    <div id="armasHistorial" class="accordion-content" style="display: none; padding: 1rem;">
+                        <div id="historialArmas">
+                            <!-- Se carga dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="firebase-config.js"></script>
@@ -163,6 +207,7 @@
     <script src="metas.js"></script>
     <script src="entregas.js"></script>
     <script src="armas.js"></script>
+    <script src="tickets.js"></script>
     <script>
         requireAuth();
         

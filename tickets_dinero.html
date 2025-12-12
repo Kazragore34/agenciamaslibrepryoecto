@@ -581,7 +581,8 @@
             ticketsOrdenados.forEach(ticket => {
                 const fecha = ticket.fechaCreacion?.toDate();
                 const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
-                const estadoClass = ticket.estado === 'confirmado' ? 'success' : 'pendiente';
+                const estadoClass = ticket.estado === 'confirmado' ? 'success' : 
+                                   ticket.estado === 'pendiente_dealer' ? 'warning' : 'pendiente';
                 const esCreadoPorMi = ticket.dealerId === currentUser.id;
                 const esRecibidoPorMi = ticket.vendedorId === currentUser.id;
                 const esPendiente = ticket.estado === 'pendiente';
