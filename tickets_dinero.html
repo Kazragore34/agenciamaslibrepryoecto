@@ -66,6 +66,27 @@
             </div>
         </div>
 
+        <!-- Lista de entregas pendientes (para vendedores) -->
+        <div id="seccionListaEntregasPendientes" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h3>Entregas Pendientes de Confirmar</h3>
+                <div id="listaEntregasPendientes">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de entregas confirmadas (para vendedores - crear tickets) -->
+        <div id="seccionEntregasConfirmadasVendedor" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h3>Entregas Confirmadas - Crear Ticket de Dinero</h3>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Selecciona una entrega confirmada para crear un ticket de dinero y registrar el monto que entregaste.</p>
+                <div id="listaEntregasConfirmadasVendedor">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+
         <!-- Lista de tickets -->
         <div style="margin-top: 2rem;">
             <div class="stats-card">
@@ -190,6 +211,165 @@
             }
         }
         
+        // Cargar entregas pendientes del vendedor
+        async function cargarListaEntregasPendientes() {
+            if (esDealer()) {
+                document.getElementById('seccionListaEntregasPendientes').style.display = 'none';
+                return;
+            }
+            
+            try {
+                const entregas = await obtenerEntregasPendientesVendedor(currentUser.id);
+                const listaEl = document.getElementById('listaEntregasPendientes');
+                
+                if (entregas.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas pendientes</p>';
+                    return;
+                }
+                
+                let html = '<div class="entregas-list">';
+                entregas.forEach(entrega => {
+                    const fecha = entrega.fechaCreacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'Fecha no disponible';
+                    
+                    html += `
+                        <div class="entrega-item" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; background: #fef3c7;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                <div>
+                                    <strong>De: ${entrega.dealerNombre}</strong>
+                                    <p style="margin: 0.25rem 0; color: #6b7280;">${fechaStr}</p>
+                                </div>
+                                <span class="estado-badge pendiente">Pendiente</span>
+                            </div>
+                            <div style="margin: 0.5rem 0;">
+                                <strong>Productos:</strong>
+                                <ul style="margin: 0.5rem 0 0 1.5rem;">
+                                    ${entrega.productos.map(p => `<li>${obtenerNombreProducto(p.tipo)}: ${p.cantidad}</li>`).join('')}
+                                </ul>
+                            </div>
+                            ${entrega.itemsAdicionales && entrega.itemsAdicionales.length > 0 ? `
+                                <div style="margin: 0.5rem 0;">
+                                    <strong>Items Adicionales:</strong>
+                                    <ul style="margin: 0.5rem 0 0 1.5rem;">
+                                        ${entrega.itemsAdicionales.map(i => `<li>${i.tipo}: ${i.cantidad}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                                <button class="btn-success btn-sm" onclick="confirmarEntregaDesdeLista('${entrega.id}')">Confirmar</button>
+                                <button class="btn-danger btn-sm" onclick="rechazarEntregaDesdeLista('${entrega.id}')">Rechazar</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                listaEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando entregas pendientes:', error);
+            }
+        }
+
+        async function confirmarEntregaDesdeLista(entregaId) {
+            if (!confirm('¿Confirmas que recibiste esta entrega?')) return;
+            try {
+                mostrarMensaje('Confirmando entrega...', 'info');
+                await confirmarEntrega(entregaId);
+                mostrarMensaje('Entrega confirmada correctamente', 'success');
+                cargarListaEntregasPendientes();
+                cargarEntregasConfirmadasVendedor();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+
+        async function rechazarEntregaDesdeLista(entregaId) {
+            const motivo = prompt('Motivo del rechazo:');
+            if (!motivo) return;
+            try {
+                mostrarMensaje('Rechazando entrega...', 'info');
+                await rechazarEntrega(entregaId, motivo);
+                mostrarMensaje('Entrega rechazada', 'info');
+                cargarListaEntregasPendientes();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+
+        // Cargar entregas confirmadas del vendedor (para crear tickets)
+        async function cargarEntregasConfirmadasVendedor() {
+            if (esDealer()) {
+                document.getElementById('seccionEntregasConfirmadasVendedor').style.display = 'none';
+                return;
+            }
+            
+            try {
+                const entregas = await obtenerEntregasPorVendedor(currentUser.id);
+                const entregasConfirmadas = entregas.filter(e => e.estado === 'confirmado');
+                const listaEl = document.getElementById('listaEntregasConfirmadasVendedor');
+                
+                if (entregasConfirmadas.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas confirmadas. Primero debes confirmar las entregas pendientes.</p>';
+                    return;
+                }
+                
+                // Obtener todos los tickets para verificar cuáles entregas ya tienen ticket
+                const tickets = await obtenerTicketsPorVendedor(currentUser.id);
+                const entregasConTicket = new Set();
+                tickets.forEach(ticket => {
+                    if (ticket.entregasRelacionadas) {
+                        ticket.entregasRelacionadas.forEach(eId => entregasConTicket.add(eId));
+                    }
+                });
+                
+                let html = '<table class="data-table"><thead><tr><th>Dealer</th><th>Productos</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                
+                entregasConfirmadas.forEach(entrega => {
+                    const fecha = entrega.fechaCreacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+                    const tieneTicket = entregasConTicket.has(entrega.id);
+                    
+                    html += `<tr>
+                        <td>${entrega.dealerNombre}</td>
+                        <td>${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')}</td>
+                        <td>${fechaStr}</td>
+                        <td>
+                            ${!tieneTicket ? `
+                                <button class="btn-primary btn-sm" onclick="crearTicketDesdeEntrega('${entrega.id}', '${entrega.dealerId}')">
+                                    Crear Ticket de Dinero
+                                </button>
+                            ` : `
+                                <span style="color: #6b7280;">Ticket ya creado</span>
+                            `}
+                        </td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                listaEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando entregas confirmadas:', error);
+            }
+        }
+
+        async function crearTicketDesdeEntrega(entregaId, dealerId) {
+            const monto = prompt('Ingresa el monto que entregaste por esta venta:');
+            if (!monto || isNaN(monto) || parseFloat(monto) <= 0) {
+                alert('Monto inválido');
+                return;
+            }
+            
+            try {
+                mostrarMensaje('Creando ticket...', 'info');
+                // Los vendedores pueden crear tickets para sí mismos
+                const ticketId = await crearTicketDineroVendedor(dealerId, currentUser.id, parseFloat(monto), [entregaId]);
+                mostrarMensaje('Ticket creado y confirmado correctamente', 'success');
+                cargarEntregasConfirmadasVendedor();
+                cargarTickets();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+
         // Verificar si hay parámetro de entrega en la URL
         const urlParams = new URLSearchParams(window.location.search);
         const entregaId = urlParams.get('entrega');
@@ -201,6 +381,9 @@
             if (esDealer()) {
                 cargarVendedores();
                 cargarEntregasConfirmadas();
+            } else {
+                cargarListaEntregasPendientes();
+                cargarEntregasConfirmadasVendedor();
             }
             cargarTickets();
         }

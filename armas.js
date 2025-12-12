@@ -249,15 +249,25 @@ async function obtenerArmasPorVendedor(vendedorId) {
     await ensureDb();
     
     try {
+        // Obtener todas las armas del vendedor y ordenar en el cliente
+        // para evitar problemas con índices compuestos
         const snapshot = await db.collection('entregas_armas')
             .where('vendedorId', '==', vendedorId)
-            .orderBy('fechaCreacion', 'desc')
             .get();
         
-        return snapshot.docs.map(doc => ({
+        const armas = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+        
+        // Ordenar por fecha de creación (más recientes primero)
+        armas.sort((a, b) => {
+            const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+            const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+            return fechaB - fechaA;
+        });
+        
+        return armas;
     } catch (error) {
         console.error('Error obteniendo armas por vendedor:', error);
         throw error;
@@ -273,16 +283,24 @@ async function obtenerArmasActivasVendedor(vendedorId) {
     await ensureDb();
     
     try {
+        // Obtener todas las armas del vendedor y filtrar por estado en el cliente
         const snapshot = await db.collection('entregas_armas')
             .where('vendedorId', '==', vendedorId)
-            .where('estado', '==', 'activa')
-            .orderBy('fechaCreacion', 'desc')
             .get();
         
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        const armas = snapshot.docs
+            .map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }))
+            .filter(arma => arma.estado === 'activa')
+            .sort((a, b) => {
+                const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+                const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+                return fechaB - fechaA;
+            });
+        
+        return armas;
     } catch (error) {
         console.error('Error obteniendo armas activas:', error);
         throw error;

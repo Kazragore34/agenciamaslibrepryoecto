@@ -43,13 +43,18 @@ async function generarTicketId() {
 async function crearTicketDinero(dealerId, vendedorId, montoAprox = null, entregasRelacionadas = []) {
     await ensureDb();
     
-    if (!esDealer()) {
-        throw new Error('Solo los dealers pueden crear tickets de dinero');
-    }
-    
     const currentUser = getCurrentUser();
-    if (currentUser.id !== dealerId) {
-        throw new Error('No puedes crear tickets en nombre de otro dealer');
+    
+    // Permitir que dealers creen tickets normalmente
+    if (esDealer()) {
+        if (currentUser.id !== dealerId) {
+            throw new Error('No puedes crear tickets en nombre de otro dealer');
+        }
+    } else {
+        // Permitir que vendedores creen tickets para sí mismos
+        if (currentUser.id !== vendedorId) {
+            throw new Error('No puedes crear tickets en nombre de otro vendedor');
+        }
     }
     
     try {
@@ -80,6 +85,62 @@ async function crearTicketDinero(dealerId, vendedorId, montoAprox = null, entreg
         return docRef.id;
     } catch (error) {
         console.error('Error creando ticket de dinero:', error);
+        throw error;
+    }
+}
+
+/**
+ * Crea un ticket de dinero desde el vendedor (y lo confirma automáticamente)
+ * @param {string} dealerId - ID del dealer
+ * @param {string} vendedorId - ID del vendedor
+ * @param {number} montoEntregado - Monto que el vendedor entrega
+ * @param {Array} entregasRelacionadas - IDs de entregas relacionadas
+ * @returns {Promise<string>} - ID del ticket creado
+ */
+async function crearTicketDineroVendedor(dealerId, vendedorId, montoEntregado, entregasRelacionadas = []) {
+    await ensureDb();
+    
+    const currentUser = getCurrentUser();
+    if (currentUser.id !== vendedorId) {
+        throw new Error('No puedes crear tickets en nombre de otro vendedor');
+    }
+    
+    if (!montoEntregado || montoEntregado <= 0) {
+        throw new Error('El monto debe ser mayor a 0');
+    }
+    
+    try {
+        // Obtener datos del dealer
+        const dealerDoc = await db.collection('users').doc(dealerId).get();
+        if (!dealerDoc.exists) {
+            throw new Error('Dealer no encontrado');
+        }
+        const dealerData = dealerDoc.data();
+        
+        const ticketId = await generarTicketId();
+        
+        const ticketData = {
+            ticketId,
+            dealerId,
+            dealerNombre: `${dealerData.nombre} ${dealerData.apellido}`,
+            vendedorId,
+            vendedorNombre: `${currentUser.nombre} ${currentUser.apellido}`,
+            montoAprox: null,
+            montoEntregado,
+            estado: 'confirmado',
+            fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+            fechaConfirmacion: firebase.firestore.FieldValue.serverTimestamp(),
+            entregasRelacionadas: entregasRelacionadas || []
+        };
+        
+        const docRef = await db.collection('tickets_dinero').add(ticketData);
+        
+        // Actualizar metas del vendedor
+        await actualizarMeta(currentUser.id, montoEntregado);
+        
+        return docRef.id;
+    } catch (error) {
+        console.error('Error creando ticket de dinero desde vendedor:', error);
         throw error;
     }
 }
