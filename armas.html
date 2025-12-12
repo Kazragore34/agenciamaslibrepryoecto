@@ -230,7 +230,8 @@
                 return;
             }
             
-            let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>Dealer</th><th>Balas</th><th>Chaleco</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
+            const esSarg = esSargento();
+            let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>' + (esSarg ? 'Prospect' : 'Sargento') + '</th><th>Balas</th><th>Chaleco</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
             
             armas.forEach(arma => {
                 const fecha = arma.fechaCreacion?.toDate();
@@ -242,7 +243,7 @@
                 
                 html += `<tr style="${arma.estado === 'activa' ? 'background: #f0fdf4;' : 'background: #fef2f2;'}">
                     <td><strong>${arma.tipoArma}</strong></td>
-                    <td>${arma.dealerNombre}</td>
+                    <td>${esSarg ? arma.vendedorNombre : arma.dealerNombre}</td>
                     <td>${balasActual} / ${balasInicial}${solicitudesPendientes.length > 0 ? ` <span style="color: #f59e0b;">(${solicitudesPendientes.length} solicitud pendiente)</span>` : ''}</td>
                     <td>${arma.chaleco ? 'Sí' : 'No'}</td>
                     <td><span class="estado-badge ${estadoClass}">${arma.estado}</span></td>
