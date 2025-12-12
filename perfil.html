@@ -15,11 +15,11 @@
             <h1>Mi Perfil</h1>
             <div>
                 <a href="menu.html" class="btn-primary">Menú</a>
-                <a href="entregas.html" class="btn-primary">Entregas</a>
                 <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
                 <a href="armas.html" class="btn-primary">Armas</a>
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="display: none;">Admin</a>
+                <a id="btnEntregas" href="entregas.html" class="btn-primary" style="display: none;">Entregas</a>
                 <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
@@ -88,30 +88,23 @@
             }
         }
 
-        // Mostrar/ocultar botón Panel Admin según el rol del usuario
-        function actualizarBotonAdmin() {
+        // Actualizar navegación según rol
+        function actualizarNavegacion() {
             const btnPanelAdmin = document.getElementById('btnPanelAdmin');
-            if (btnPanelAdmin) {
-                if (esDealer()) {
-                    btnPanelAdmin.style.visibility = 'visible';
-                    btnPanelAdmin.style.width = 'auto';
-                    btnPanelAdmin.style.minWidth = '80px';
-                    btnPanelAdmin.style.padding = '0.5rem 1rem';
-                    btnPanelAdmin.style.margin = '0';
-                } else {
-                    btnPanelAdmin.style.visibility = 'hidden';
-                    btnPanelAdmin.style.width = '0';
-                    btnPanelAdmin.style.minWidth = '0';
-                    btnPanelAdmin.style.padding = '0.5rem 0';
-                    btnPanelAdmin.style.margin = '0';
-                    btnPanelAdmin.style.overflow = 'hidden';
-                }
+            const btnEntregas = document.getElementById('btnEntregas');
+            
+            if (esDealer()) {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'inline-block';
+                if (btnEntregas) btnEntregas.style.display = 'inline-block';
+            } else {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
+                if (btnEntregas) btnEntregas.style.display = 'none';
             }
         }
 
         // Inicializar
         cargarInfoUsuario();
-        actualizarBotonAdmin();
+        actualizarNavegacion();
     </script>
 </body>
 </html>

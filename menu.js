@@ -84,7 +84,7 @@ async function cargarEntregasPendientes() {
                     </div>
                     <div class="entrega-fecha">${fechaStr}</div>
                     <div class="entrega-acciones">
-                        <a href="entregas.html?id=${entrega.id}" class="btn-primary btn-sm">Ver Detalles</a>
+                        <a href="tickets_dinero.html?entrega=${entrega.id}" class="btn-primary btn-sm">Ver Detalles</a>
                     </div>
                 </div>
             `;

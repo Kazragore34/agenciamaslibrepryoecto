@@ -41,11 +41,11 @@
                 <h1>Menú Principal</h1>
                 <div>
                     <a href="menu.html" class="btn-primary">Menú</a>
-                    <a href="entregas.html" class="btn-primary">Entregas</a>
                     <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
                     <a href="armas.html" class="btn-primary">Armas</a>
                     <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-                    <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                    <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="display: none;">Admin</a>
+                    <a id="btnEntregas" href="entregas.html" class="btn-primary" style="display: none;">Entregas</a>
                     <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
                     <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
                 </div>
@@ -142,8 +142,8 @@
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('menuSection').style.display = 'block';
                 
-                // Actualizar botón admin
-                actualizarBotonAdmin();
+                // Actualizar botones de navegación según rol
+                actualizarNavegacion();
                 
                 // Inicializar menú
                 inicializarMenu();
@@ -168,16 +168,24 @@
             }
         });
 
-        // Función para actualizar botón admin
-        function actualizarBotonAdmin() {
+        // Función para actualizar navegación según rol
+        function actualizarNavegacion() {
             const btnPanelAdmin = document.getElementById('btnPanelAdmin');
-            if (btnPanelAdmin) {
-                if (esDealer()) {
-                    btnPanelAdmin.style.visibility = 'visible';
-                    btnPanelAdmin.style.width = 'auto';
-                } else {
-                    btnPanelAdmin.style.visibility = 'hidden';
-                    btnPanelAdmin.style.width = '0';
+            const btnEntregas = document.getElementById('btnEntregas');
+            
+            if (esDealer()) {
+                if (btnPanelAdmin) {
+                    btnPanelAdmin.style.display = 'inline-block';
+                }
+                if (btnEntregas) {
+                    btnEntregas.style.display = 'inline-block';
+                }
+            } else {
+                if (btnPanelAdmin) {
+                    btnPanelAdmin.style.display = 'none';
+                }
+                if (btnEntregas) {
+                    btnEntregas.style.display = 'none';
                 }
             }
         }

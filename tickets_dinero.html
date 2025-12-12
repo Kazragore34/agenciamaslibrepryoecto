@@ -15,11 +15,11 @@
             <h1>Tickets de Dinero</h1>
             <div>
                 <a href="menu.html" class="btn-primary">Menú</a>
-                <a href="entregas.html" class="btn-primary">Entregas</a>
                 <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
                 <a href="armas.html" class="btn-primary">Armas</a>
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="display: none;">Admin</a>
+                <a id="btnEntregas" href="entregas.html" class="btn-primary" style="display: none;">Entregas</a>
                 <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
@@ -56,6 +56,16 @@
             </div>
         </div>
 
+        <!-- Sección de entregas pendientes (para confirmar/rechazar) -->
+        <div id="seccionEntregasPendientes" style="margin-top: 2rem; display: none;">
+            <div class="stats-card">
+                <h3>Entrega Pendiente de Confirmar</h3>
+                <div id="detalleEntregaPendiente">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+
         <!-- Lista de tickets -->
         <div style="margin-top: 2rem;">
             <div class="stats-card">
@@ -73,6 +83,7 @@
     <script src="admin.js"></script>
     <script src="productos.js"></script>
     <script src="metas.js"></script>
+    <script src="entregas.js"></script>
     <script src="tickets.js"></script>
     <script>
         requireAuth();
@@ -80,6 +91,119 @@
         const currentUser = getCurrentUser();
         let todosVendedores = [];
         let entregasConfirmadas = [];
+        
+        // Función para cargar entrega pendiente
+        async function cargarEntregaPendiente(entregaId) {
+            try {
+                await ensureDb();
+                const entregaDoc = await db.collection('entregas_productos').doc(entregaId).get();
+                
+                if (!entregaDoc.exists) {
+                    mostrarMensaje('Entrega no encontrada', 'error');
+                    return;
+                }
+                
+                const entrega = { id: entregaDoc.id, ...entregaDoc.data() };
+                
+                // Verificar que el usuario actual es el vendedor
+                if (entrega.vendedorId !== currentUser.id) {
+                    mostrarMensaje('No tienes permiso para ver esta entrega', 'error');
+                    return;
+                }
+                
+                // Verificar que esté pendiente
+                if (entrega.estado !== 'pendiente') {
+                    mostrarMensaje('Esta entrega ya fue procesada', 'info');
+                    window.location.href = 'tickets_dinero.html';
+                    return;
+                }
+                
+                // Mostrar sección de entrega pendiente
+                document.getElementById('seccionEntregasPendientes').style.display = 'block';
+                document.getElementById('formularioCrear').style.display = 'none';
+                document.getElementById('listaTickets').parentElement.parentElement.style.display = 'none';
+                
+                const fecha = entrega.fechaCreacion?.toDate();
+                const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'Fecha no disponible';
+                
+                let html = `
+                    <div style="padding: 1rem; background: #fef3c7; border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <h4 style="margin-top: 0;">Entrega de Productos</h4>
+                        <p><strong>De:</strong> ${entrega.dealerNombre}</p>
+                        <p><strong>Fecha:</strong> ${fechaStr}</p>
+                        <div style="margin: 1rem 0;">
+                            <strong>Productos:</strong>
+                            <ul style="margin: 0.5rem 0 0 1.5rem;">
+                                ${entrega.productos.map(p => `<li>${obtenerNombreProducto(p.tipo)}: ${p.cantidad}</li>`).join('')}
+                            </ul>
+                        </div>
+                        ${entrega.itemsAdicionales && entrega.itemsAdicionales.length > 0 ? `
+                            <div style="margin: 1rem 0;">
+                                <strong>Items Adicionales:</strong>
+                                <ul style="margin: 0.5rem 0 0 1.5rem;">
+                                    ${entrega.itemsAdicionales.map(i => `<li>${i.tipo}: ${i.cantidad}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        ${entrega.notas ? `<p><strong>Notas:</strong> ${entrega.notas}</p>` : ''}
+                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                            <button class="btn-success" onclick="confirmarEntregaDesdeTicket('${entrega.id}')">Confirmar Entrega</button>
+                            <button class="btn-danger" onclick="rechazarEntregaDesdeTicket('${entrega.id}')">Rechazar Entrega</button>
+                            <button class="btn-secondary" onclick="window.location.href='tickets_dinero.html'">Cancelar</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('detalleEntregaPendiente').innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando entrega:', error);
+                mostrarMensaje('Error cargando entrega: ' + error.message, 'error');
+            }
+        }
+        
+        async function confirmarEntregaDesdeTicket(entregaId) {
+            if (!confirm('¿Confirmas que recibiste esta entrega?')) return;
+            try {
+                mostrarMensaje('Confirmando entrega...', 'info');
+                await confirmarEntrega(entregaId);
+                mostrarMensaje('Entrega confirmada correctamente', 'success');
+                setTimeout(() => {
+                    window.location.href = 'tickets_dinero.html';
+                }, 1500);
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+        
+        async function rechazarEntregaDesdeTicket(entregaId) {
+            const motivo = prompt('Motivo del rechazo:');
+            if (!motivo) return;
+            try {
+                mostrarMensaje('Rechazando entrega...', 'info');
+                await rechazarEntrega(entregaId, motivo);
+                mostrarMensaje('Entrega rechazada', 'info');
+                setTimeout(() => {
+                    window.location.href = 'tickets_dinero.html';
+                }, 1500);
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+        
+        // Verificar si hay parámetro de entrega en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const entregaId = urlParams.get('entrega');
+        
+        if (entregaId) {
+            cargarEntregaPendiente(entregaId);
+        } else {
+            // Cargar tickets normalmente
+            if (esDealer()) {
+                cargarVendedores();
+                cargarEntregasConfirmadas();
+            }
+            cargarTickets();
+        }
 
         // Cargar usuarios (todos excepto el dealer actual)
         async function cargarVendedores() {
@@ -311,15 +435,32 @@
             }
         });
 
-        // Inicializar
-        if (esDealer()) {
-            cargarVendedores();
-            cargarEntregasConfirmadas();
-        } else {
-            document.getElementById('formularioCrear').style.display = 'none';
+        // Actualizar navegación según rol
+        function actualizarNavegacion() {
+            const btnPanelAdmin = document.getElementById('btnPanelAdmin');
+            const btnEntregas = document.getElementById('btnEntregas');
+            
+            if (esDealer()) {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'inline-block';
+                if (btnEntregas) btnEntregas.style.display = 'inline-block';
+            } else {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
+                if (btnEntregas) btnEntregas.style.display = 'none';
+            }
         }
         
-        cargarTickets();
+        // Inicializar
+        actualizarNavegacion();
+        
+        if (!entregaId) {
+            if (esDealer()) {
+                cargarVendedores();
+                cargarEntregasConfirmadas();
+            } else {
+                document.getElementById('formularioCrear').style.display = 'none';
+            }
+            cargarTickets();
+        }
     </script>
 </body>
 </html>

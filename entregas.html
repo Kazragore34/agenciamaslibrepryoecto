@@ -12,23 +12,32 @@
 <body>
     <div class="stats-container">
         <div class="fichaje-header">
-            <h1>Entregas de Productos</h1>
+            <h1>Entregas (Solo Dealers)</h1>
             <div>
                 <a href="menu.html" class="btn-primary">Menú</a>
-                <a href="entregas.html" class="btn-primary">Entregas</a>
                 <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
                 <a href="armas.html" class="btn-primary">Armas</a>
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="display: none;">Admin</a>
+                <a href="entregas.html" class="btn-primary" style="background: #059669;">Entregas</a>
                 <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
 
-        <!-- Formulario de creación (solo para dealers) -->
-        <div id="formularioCrear" class="seccion-dealer" style="margin-top: 2rem;">
+        <!-- Verificar que sea dealer -->
+        <div id="mensajeNoDealer" style="display: none; margin-top: 2rem;">
             <div class="stats-card">
-                <h3>Crear Nueva Entrega</h3>
+                <h3 style="color: #ef4444;">Acceso Restringido</h3>
+                <p>Solo los dealers pueden acceder a esta sección.</p>
+            </div>
+        </div>
+
+        <!-- Sección: Entrega de Productos -->
+        <div id="seccionProductos" class="seccion-dealer" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h2 style="margin-bottom: 1rem;">Entrega de Productos</h2>
+                <h3>Crear Nueva Entrega de Productos</h3>
                 <div id="mensajeEntrega" class="auth-message" style="display: none;"></div>
                 <form id="formCrearEntrega">
                     <div class="form-group">
@@ -81,11 +90,64 @@
             </div>
         </div>
 
-        <!-- Lista de entregas -->
-        <div style="margin-top: 2rem;">
+        <!-- Lista de entregas de productos -->
+        <div id="listaEntregasProductos" class="seccion-dealer" style="margin-top: 2rem;">
             <div class="stats-card">
-                <h3 id="tituloEntregas">Mis Entregas</h3>
+                <h3 id="tituloEntregas">Entregas de Productos</h3>
                 <div id="listaEntregas">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección: Entrega de Armas -->
+        <div id="seccionArmas" class="seccion-dealer" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h2 style="margin-bottom: 1rem;">Entrega de Armas</h2>
+                <h3>Crear Nueva Entrega de Arma</h3>
+                <div id="mensajeArma" class="auth-message" style="display: none;"></div>
+                <form id="formCrearArma">
+                    <div class="form-group">
+                        <label for="vendedorSelectArma">Vendedor</label>
+                        <select id="vendedorSelectArma" required>
+                            <option value="">Seleccionar usuario...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tipoArma">Tipo de Arma</label>
+                        <select id="tipoArma" required>
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="SNS">SNS</option>
+                            <option value="MK2">MK2</option>
+                            <option value="VINTAGE">VINTAGE</option>
+                            <option value=".50">.50</option>
+                            <option value="AP_PISTOL">AP PISTOL</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cantidadBalas">Cantidad de Balas Iniciales</label>
+                        <input type="number" id="cantidadBalas" min="0" value="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center;">
+                            <input type="checkbox" id="chaleco" style="margin-right: 0.5rem;">
+                            <span>Incluir Chaleco</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Crear Entrega de Arma</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de armas entregadas -->
+        <div id="listaArmasEntregadas" class="seccion-dealer" style="margin-top: 2rem;">
+            <div class="stats-card">
+                <h3>Armas Entregadas</h3>
+                <div id="listaArmas">
                     <!-- Se carga dinámicamente -->
                 </div>
             </div>
@@ -99,11 +161,25 @@
     <script src="productos.js"></script>
     <script src="metas.js"></script>
     <script src="entregas.js"></script>
+    <script src="armas.js"></script>
     <script>
         requireAuth();
         
         const currentUser = getCurrentUser();
+        
+        // Verificar que sea dealer
+        if (!esDealer()) {
+            document.getElementById('mensajeNoDealer').style.display = 'block';
+            document.getElementById('seccionProductos').style.display = 'none';
+            document.getElementById('seccionArmas').style.display = 'none';
+            document.getElementById('listaEntregasProductos').style.display = 'none';
+            document.getElementById('listaArmasEntregadas').style.display = 'none';
+        } else {
+            document.getElementById('mensajeNoDealer').style.display = 'none';
+        }
+        
         let todosVendedores = [];
+        let todosVendedoresArmas = [];
 
         // Cargar vendedores para el select (todos los usuarios excepto el dealer actual)
         async function cargarVendedores() {
@@ -434,14 +510,137 @@
             }
         });
 
+        // Cargar vendedores para armas
+        async function cargarVendedoresArmas() {
+            if (!esDealer()) return;
+            
+            try {
+                await ensureDb();
+                const snapshot = await db.collection('users')
+                    .orderBy('nombre')
+                    .get();
+                
+                todosVendedoresArmas = snapshot.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                    .filter(user => user.id !== currentUser.id);
+                
+                const select = document.getElementById('vendedorSelectArma');
+                select.innerHTML = '<option value="">Seleccionar usuario...</option>';
+                
+                todosVendedoresArmas.forEach(v => {
+                    const option = document.createElement('option');
+                    option.value = v.id;
+                    option.textContent = `${v.nombre} ${v.apellido} (${v.username})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando usuarios:', error);
+            }
+        }
+
+        // Cargar armas entregadas
+        async function cargarArmasEntregadas() {
+            if (!esDealer()) return;
+            
+            try {
+                const armas = await obtenerArmasPorDealer(currentUser.id);
+                const listaEl = document.getElementById('listaArmas');
+                
+                if (armas.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay armas entregadas</p>';
+                    return;
+                }
+                
+                let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>Vendedor</th><th>Balas</th><th>Chaleco</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
+                
+                armas.forEach(arma => {
+                    const fecha = arma.fechaCreacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+                    const estadoClass = arma.estado === 'activa' ? 'success' : 'error';
+                    
+                    html += `<tr>
+                        <td><strong>${arma.tipoArma}</strong></td>
+                        <td>${arma.vendedorNombre}</td>
+                        <td>${arma.cantidadBalasActual !== undefined ? arma.cantidadBalasActual : arma.cantidadBalasInicial || 0} / ${arma.cantidadBalasInicial || 0}</td>
+                        <td>${arma.chaleco ? 'Sí' : 'No'}</td>
+                        <td><span class="estado-badge ${estadoClass}">${arma.estado}</span></td>
+                        <td>${fechaStr}</td>
+                        <td>
+                            ${arma.estado === 'activa' ? 
+                                `<button class="btn-danger btn-sm" onclick="marcarArmaPerdidaDesdeEntregas('${arma.id}')">Marcar Perdida</button>` : 
+                                `<span style="color: #ef4444;">${obtenerNombreMotivo(arma.motivoPerdida)}</span>`
+                            }
+                        </td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table>';
+                listaEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando armas:', error);
+            }
+        }
+
+        async function marcarArmaPerdidaDesdeEntregas(armaId) {
+            const motivo = prompt(`Motivo de pérdida:\n1. robo_corte\n2. enfrentamiento\n3. policia\n4. full_muerte\n5. bug\n\nIngresa el valor:`);
+            if (!motivo) return;
+            
+            const motivosValidos = MOTIVOS_PERDIDA.map(m => m.valor);
+            if (!motivosValidos.includes(motivo)) {
+                alert('Motivo inválido. Usa uno de: robo_corte, enfrentamiento, policia, full_muerte, bug');
+                return;
+            }
+            
+            try {
+                mostrarMensaje('Marcando arma como perdida...', 'info');
+                await marcarArmaPerdida(armaId, motivo);
+                mostrarMensaje('Arma marcada como perdida', 'success');
+                cargarArmasEntregadas();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        }
+
+        // Manejar formulario de armas
+        document.getElementById('formCrearArma').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const vendedorId = document.getElementById('vendedorSelectArma').value;
+            if (!vendedorId) {
+                mostrarMensaje('Selecciona un vendedor', 'error');
+                return;
+            }
+            
+            const tipoArma = document.getElementById('tipoArma').value;
+            if (!tipoArma) {
+                mostrarMensaje('Selecciona un tipo de arma', 'error');
+                return;
+            }
+            
+            const cantidadBalas = parseInt(document.getElementById('cantidadBalas').value) || 0;
+            const chaleco = document.getElementById('chaleco').checked;
+            
+            try {
+                mostrarMensaje('Creando entrega de arma...', 'info');
+                await crearEntregaArma(currentUser.id, vendedorId, tipoArma, chaleco, cantidadBalas);
+                mostrarMensaje('Entrega de arma creada correctamente', 'success');
+                document.getElementById('formCrearArma').reset();
+                cargarArmasEntregadas();
+            } catch (error) {
+                mostrarMensaje(error.message, 'error');
+            }
+        });
+
         // Inicializar
         if (esDealer()) {
             cargarVendedores();
-        } else {
-            document.getElementById('formularioCrear').style.display = 'none';
+            cargarVendedoresArmas();
+            cargarEntregas();
+            cargarArmasEntregadas();
         }
-        
-        cargarEntregas();
     </script>
 </body>
 </html>

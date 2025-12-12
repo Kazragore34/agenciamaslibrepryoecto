@@ -12,65 +12,24 @@
 <body>
     <div class="stats-container">
         <div class="fichaje-header">
-            <h1>Gestión de Armas</h1>
+            <h1>Mis Armas</h1>
             <div>
                 <a href="menu.html" class="btn-primary">Menú</a>
-                <a href="entregas.html" class="btn-primary">Entregas</a>
                 <a href="tickets_dinero.html" class="btn-primary">Tickets</a>
                 <a href="armas.html" class="btn-primary">Armas</a>
                 <a href="estadisticas.html" class="btn-primary">Estadísticas</a>
-                <a id="btnPanelAdmin" href="admin.html" class="btn-primary">Admin</a>
+                <a id="btnPanelAdmin" href="admin.html" class="btn-primary" style="display: none;">Admin</a>
+                <a id="btnEntregas" href="entregas.html" class="btn-primary" style="display: none;">Entregas</a>
                 <a href="perfil.html" class="btn-primary" style="background: #6b7280;">Mi Perfil</a>
                 <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
             </div>
         </div>
 
-        <!-- Formulario de creación (solo para dealers) -->
-        <div id="formularioCrear" class="seccion-dealer" style="margin-top: 2rem;">
-            <div class="stats-card">
-                <h3>Crear Nueva Entrega de Arma</h3>
-                <div id="mensajeArma" class="auth-message" style="display: none;"></div>
-                <form id="formCrearArma">
-                    <div class="form-group">
-                        <label for="vendedorSelectArma">Vendedor</label>
-                        <select id="vendedorSelectArma" required>
-                            <option value="">Seleccionar vendedor...</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="tipoArma">Tipo de Arma</label>
-                        <select id="tipoArma" required>
-                            <option value="">Seleccionar tipo...</option>
-                            <option value="SNS">SNS</option>
-                            <option value="MK2">MK2</option>
-                            <option value="VINTAGE">VINTAGE</option>
-                            <option value=".50">.50</option>
-                            <option value="AP_PISTOL">AP PISTOL</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="cantidadBalas">Cantidad de Balas Iniciales</label>
-                        <input type="number" id="cantidadBalas" min="0" value="0" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center;">
-                            <input type="checkbox" id="chaleco" style="margin-right: 0.5rem;">
-                            <span>Incluir Chaleco</span>
-                        </label>
-                    </div>
-
-                    <button type="submit" class="btn-primary">Crear Entrega de Arma</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Lista de armas -->
+        <!-- Lista de armas (activas y perdidas) -->
         <div style="margin-top: 2rem;">
             <div class="stats-card">
-                <h3 id="tituloArmas">Mis Armas</h3>
+                <h3>Historial de Armas</h3>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Todas las armas que has recibido (activas y perdidas). Haz click en "Solicitar Balas" para solicitar más balas en armas activas.</p>
                 <div id="listaArmas">
                     <!-- Se carga dinámicamente -->
                 </div>
@@ -89,80 +48,46 @@
         requireAuth();
         
         const currentUser = getCurrentUser();
-        let todosVendedores = [];
-
-        // Cargar usuarios (todos excepto el dealer actual)
-        async function cargarVendedores() {
-            if (!esDealer()) return;
+        
+        // Actualizar navegación según rol
+        function actualizarNavegacion() {
+            const btnPanelAdmin = document.getElementById('btnPanelAdmin');
+            const btnEntregas = document.getElementById('btnEntregas');
             
-            try {
-                await ensureDb();
-                // Obtener todos los usuarios y filtrar
-                const snapshot = await db.collection('users')
-                    .orderBy('nombre')
-                    .get();
-                
-                const currentUser = getCurrentUser();
-                todosVendedores = snapshot.docs
-                    .map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }))
-                    .filter(user => user.id !== currentUser.id); // Excluir al dealer actual
-                
-                const select = document.getElementById('vendedorSelectArma');
-                select.innerHTML = '<option value="">Seleccionar usuario...</option>';
-                
-                if (todosVendedores.length === 0) {
-                    select.innerHTML = '<option value="">No hay usuarios disponibles</option>';
-                    return;
-                }
-                
-                todosVendedores.forEach(v => {
-                    const option = document.createElement('option');
-                    option.value = v.id;
-                    option.textContent = `${v.nombre} ${v.apellido} (${v.username})`;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error cargando usuarios:', error);
-                alert('Error cargando usuarios: ' + error.message);
+            if (esDealer()) {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'inline-block';
+                if (btnEntregas) btnEntregas.style.display = 'inline-block';
+            } else {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
+                if (btnEntregas) btnEntregas.style.display = 'none';
             }
         }
+        
+        actualizarNavegacion();
 
-        // Cargar armas
+        // Cargar todas las armas (activas y perdidas)
         async function cargarArmas() {
             try {
-                let armas = [];
-                let armasCreadas = [];
-                let armasRecibidas = [];
+                // Todos los usuarios ven las armas que recibieron (activas y perdidas)
+                const armas = await obtenerArmasPorVendedor(currentUser.id);
                 
-                if (esDealer()) {
-                    // Dealers ven tanto las que crearon como las que recibieron
-                    armasCreadas = await obtenerArmasPorDealer(currentUser.id);
-                    armasRecibidas = await obtenerArmasPorVendedor(currentUser.id);
-                    
-                    // Combinar sin duplicados
-                    const armasIds = new Set();
-                    armasCreadas.forEach(a => {
-                        armasIds.add(a.id);
-                        armas.push(a);
-                    });
-                    armasRecibidas.forEach(a => {
-                        if (!armasIds.has(a.id)) {
-                            armas.push(a);
-                        }
-                    });
-                    
-                    document.getElementById('tituloArmas').textContent = 'Mis Armas';
-                } else {
-                    // Vendedores solo ven las que recibieron
-                    armasRecibidas = await obtenerArmasPorVendedor(currentUser.id);
-                    armas = armasRecibidas;
-                    document.getElementById('tituloArmas').textContent = 'Mis Armas';
-                }
+                // Ordenar: primero activas, luego perdidas
+                const armasActivas = armas.filter(a => a.estado === 'activa');
+                const armasPerdidas = armas.filter(a => a.estado === 'perdida');
                 
-                mostrarArmas(armas);
+                // Ordenar por fecha (más recientes primero)
+                const ordenarPorFecha = (a, b) => {
+                    const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+                    const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+                    return fechaB - fechaA;
+                };
+                
+                armasActivas.sort(ordenarPorFecha);
+                armasPerdidas.sort(ordenarPorFecha);
+                
+                const armasOrdenadas = [...armasActivas, ...armasPerdidas];
+                
+                mostrarArmas(armasOrdenadas);
             } catch (error) {
                 console.error('Error cargando armas:', error);
             }
@@ -172,79 +97,40 @@
             const listaEl = document.getElementById('listaArmas');
             
             if (armas.length === 0) {
-                listaEl.innerHTML = '<p style="color: #6b7280;">No hay armas</p>';
+                listaEl.innerHTML = '<p style="color: #6b7280;">No tienes armas registradas</p>';
                 return;
             }
             
-            let html = '';
+            let html = '<table class="data-table"><thead><tr><th>Tipo</th><th>Dealer</th><th>Balas</th><th>Chaleco</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody>';
+            
             armas.forEach(arma => {
                 const fecha = arma.fechaCreacion?.toDate();
                 const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
                 const estadoClass = arma.estado === 'activa' ? 'success' : 'error';
                 const solicitudesPendientes = (arma.solicitudesBalas || []).filter(s => s.estado === 'pendiente');
+                const balasActual = arma.cantidadBalasActual !== undefined ? arma.cantidadBalasActual : arma.cantidadBalasInicial || 0;
+                const balasInicial = arma.cantidadBalasInicial || 0;
                 
-                html += `
-                    <div class="arma-card" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                            <div>
-                                <h4 style="margin: 0;">${arma.tipoArma}</h4>
-                                <p style="margin: 0.25rem 0; color: #6b7280;">
-                                    ${esDealer() ? `Vendedor: ${arma.vendedorNombre}` : `Dealer: ${arma.dealerNombre}`}
-                                </p>
-                                <p style="margin: 0.25rem 0; color: #6b7280; font-size: 0.875rem;">${fechaStr}</p>
-                                ${arma.cantidadBalasInicial !== undefined ? `
-                                    <p style="margin: 0.25rem 0; color: #059669; font-size: 0.875rem;">
-                                        <strong>Balas:</strong> ${arma.cantidadBalasActual !== undefined ? arma.cantidadBalasActual : arma.cantidadBalasInicial} / ${arma.cantidadBalasInicial} (iniciales)
-                                    </p>
-                                ` : ''}
-                            </div>
-                            <div>
-                                <span class="estado-badge ${estadoClass}">${arma.estado}</span>
-                                ${arma.chaleco ? '<span class="badge" style="margin-left: 0.5rem;">Chaleco</span>' : ''}
-                            </div>
-                        </div>
-                        
-                        ${arma.estado === 'perdida' ? `
-                            <p style="color: #ef4444; margin: 0.5rem 0;">
-                                <strong>Motivo:</strong> ${obtenerNombreMotivo(arma.motivoPerdida)}
-                            </p>
-                        ` : ''}
-                        
-                        ${solicitudesPendientes.length > 0 ? `
-                            <div style="margin: 1rem 0; padding: 0.75rem; background: #fef3c7; border-radius: 0.375rem;">
-                                <strong>Solicitudes de Balas Pendientes:</strong>
-                                <ul style="margin: 0.5rem 0 0 1.5rem;">
-                                    ${solicitudesPendientes.map((s, idx) => {
-                                        const fechaSolicitud = s.fecha?.toDate();
-                                        const fechaSolicitudStr = fechaSolicitud ? fechaSolicitud.toLocaleString('es-PE') : '';
-                                        return `<li>Cantidad: ${s.cantidad} - ${fechaSolicitudStr}</li>`;
-                                    }).join('')}
-                                </ul>
-                                ${esDealer() ? `
-                                    <button class="btn-success btn-sm" onclick="entregarBalasConfirm('${arma.id}', ${solicitudesPendientes.length - 1})">
-                                        Marcar como Entregada
-                                    </button>
-                                ` : ''}
-                            </div>
-                        ` : ''}
-                        
-                        <div style="margin-top: 1rem;">
-                            ${arma.estado === 'activa' && esVendedor() ? `
-                                <button class="btn-primary btn-sm" onclick="solicitarBalasModal('${arma.id}')">
-                                    Solicitar Recarga de Balas
-                                </button>
-                            ` : ''}
-                            
-                            ${arma.estado === 'activa' && esDealer() ? `
-                                <button class="btn-danger btn-sm" onclick="marcarPerdidaModal('${arma.id}')">
-                                    Marcar como Perdida
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
+                html += `<tr style="${arma.estado === 'activa' ? 'background: #f0fdf4;' : 'background: #fef2f2;'}">
+                    <td><strong>${arma.tipoArma}</strong></td>
+                    <td>${arma.dealerNombre}</td>
+                    <td>${balasActual} / ${balasInicial}${solicitudesPendientes.length > 0 ? ` <span style="color: #f59e0b;">(${solicitudesPendientes.length} solicitud pendiente)</span>` : ''}</td>
+                    <td>${arma.chaleco ? 'Sí' : 'No'}</td>
+                    <td><span class="estado-badge ${estadoClass}">${arma.estado}</span></td>
+                    <td>${fechaStr}</td>
+                    <td>
+                        ${arma.estado === 'activa' ? `
+                            <button class="btn-primary btn-sm" onclick="solicitarBalasModal('${arma.id}')" style="margin-right: 0.5rem;">
+                                Solicitar Balas
+                            </button>
+                        ` : `
+                            <span style="color: #ef4444; font-size: 0.875rem;">${obtenerNombreMotivo(arma.motivoPerdida)}</span>
+                        `}
+                    </td>
+                </tr>`;
             });
             
+            html += '</tbody></table>';
             listaEl.innerHTML = html;
         }
 
@@ -307,48 +193,8 @@
             }, 3000);
         }
 
-        // Manejar formulario
-        document.getElementById('formCrearArma').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            if (!esDealer()) {
-                mostrarMensaje('Solo los dealers pueden crear entregas de armas', 'error');
-                return;
-            }
-            
-            const vendedorId = document.getElementById('vendedorSelectArma').value;
-            if (!vendedorId) {
-                mostrarMensaje('Selecciona un vendedor', 'error');
-                return;
-            }
-            
-            const tipoArma = document.getElementById('tipoArma').value;
-            if (!tipoArma) {
-                mostrarMensaje('Selecciona un tipo de arma', 'error');
-                return;
-            }
-            
-            const cantidadBalas = parseInt(document.getElementById('cantidadBalas').value) || 0;
-            const chaleco = document.getElementById('chaleco').checked;
-            
-            try {
-                mostrarMensaje('Creando entrega de arma...', 'info');
-                await crearEntregaArma(currentUser.id, vendedorId, tipoArma, chaleco, cantidadBalas);
-                mostrarMensaje('Entrega de arma creada correctamente', 'success');
-                document.getElementById('formCrearArma').reset();
-                cargarArmas();
-            } catch (error) {
-                mostrarMensaje(error.message, 'error');
-            }
-        });
 
         // Inicializar
-        if (esDealer()) {
-            cargarVendedores();
-        } else {
-            document.getElementById('formularioCrear').style.display = 'none';
-        }
-        
         cargarArmas();
     </script>
 </body>
