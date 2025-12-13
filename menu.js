@@ -49,6 +49,7 @@ async function cargarResumenMetas() {
 
 /**
  * Carga las entregas pendientes de confirmar (para vendedores y dealers que reciben)
+ * Versión compacta con opción de expandir
  */
 async function cargarEntregasPendientes() {
     const currentUser = getCurrentUser();
@@ -58,34 +59,84 @@ async function cargarEntregasPendientes() {
         // Tanto vendedores como dealers pueden recibir entregas
         const entregas = await obtenerEntregasPendientesVendedor(currentUser.id);
         const entregasEl = document.getElementById('entregasPendientes');
+        const contadorEl = document.getElementById('contadorEntregas');
         
         if (!entregasEl) return;
         
+        if (contadorEl) {
+            if (entregas.length > 0) {
+                contadorEl.textContent = entregas.length;
+                contadorEl.style.display = 'inline-block';
+            } else {
+                contadorEl.style.display = 'none';
+            }
+        }
+        
         if (entregas.length === 0) {
-            entregasEl.innerHTML = '<p style="color: #6b7280;">No hay entregas pendientes</p>';
+            entregasEl.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 1rem;">No hay entregas pendientes</p>';
             return;
         }
         
-        let html = '<div class="entregas-list">';
-        entregas.forEach(entrega => {
+        let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+        entregas.forEach((entrega, index) => {
             const fecha = entrega.fechaCreacion?.toDate();
             const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'Fecha no disponible';
+            const productosResumen = entrega.productos.slice(0, 2).map(p => 
+                `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`
+            ).join(', ');
+            const tieneMasProductos = entrega.productos.length > 2;
+            const expandId = `expandEntrega_${index}`;
             
             html += `
-                <div class="entrega-item">
-                    <div class="entrega-header">
-                        <strong>De: ${entrega.dealerNombre}</strong>
-                        <span class="estado-badge pendiente">Pendiente</span>
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #fef3c7; transition: all 0.2s;" 
+                     onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                     onmouseout="this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
+                                ${entrega.dealerNombre || 'Sargento'}
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                ${productosResumen}${tieneMasProductos ? '...' : ''}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #9ca3af;">
+                                ${fechaStr}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: start;">
+                            <span style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; white-space: nowrap;">
+                                Pendiente
+                            </span>
+                        </div>
                     </div>
-                    <div class="entrega-productos">
-                        ${entrega.productos.map(p => 
-                            `<span>${obtenerNombreProducto(p.tipo)}: ${p.cantidad}</span>`
-                        ).join(', ')}
+                    
+                    <!-- Detalles expandibles -->
+                    <div id="${expandId}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
+                        <div style="margin-bottom: 0.5rem;">
+                            <strong style="font-size: 0.875rem; color: #374151;">Productos completos:</strong>
+                            <div style="margin-top: 0.25rem; font-size: 0.875rem; color: #6b7280;">
+                                ${entrega.productos.map(p => 
+                                    `<div>• ${obtenerNombreProducto(p.tipo)}: ${p.cantidad}</div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button onclick="confirmarEntregaRapida('${entrega.id}')" 
+                                    style="flex: 1; background: #10b981; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                                ✅ Confirmar
+                            </button>
+                            <button onclick="verDetallesEntrega('${entrega.id}')" 
+                                    style="flex: 1; background: #3b82f6; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                                📋 Ver Detalles
+                            </button>
+                        </div>
                     </div>
-                    <div class="entrega-fecha">${fechaStr}</div>
-                    <div class="entrega-acciones">
-                        <a href="tickets_dinero.html?entrega=${entrega.id}" class="btn-primary btn-sm">Ver Detalles</a>
-                    </div>
+                    
+                    <!-- Botón para expandir/colapsar -->
+                    <button onclick="toggleExpand('${expandId}')" 
+                            style="width: 100%; margin-top: 0.5rem; background: transparent; border: 1px solid #d1d5db; color: #6b7280; padding: 0.375rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer;">
+                        <span id="${expandId}_icon">▼</span> Ver más
+                    </button>
                 </div>
             `;
         });
@@ -97,8 +148,40 @@ async function cargarEntregasPendientes() {
     }
 }
 
+// Función para expandir/colapsar detalles
+function toggleExpand(expandId) {
+    const expandEl = document.getElementById(expandId);
+    const iconEl = document.getElementById(expandId + '_icon');
+    
+    if (expandEl.style.display === 'none' || !expandEl.style.display) {
+        expandEl.style.display = 'block';
+        if (iconEl) iconEl.textContent = '▲';
+    } else {
+        expandEl.style.display = 'none';
+        if (iconEl) iconEl.textContent = '▼';
+    }
+}
+
+// Función para confirmar entrega rápidamente
+async function confirmarEntregaRapida(entregaId) {
+    mostrarConfirmacion('¿Confirmas que recibiste estos productos?', async () => {
+        try {
+            await confirmarEntrega(entregaId);
+            mostrarModal('Entrega confirmada correctamente', 'success');
+            cargarEntregasPendientes();
+        } catch (error) {
+            mostrarModal('Error: ' + error.message, 'error');
+        }
+    });
+}
+
+// Función para ver detalles de entrega
+function verDetallesEntrega(entregaId) {
+    window.location.href = `tickets_dinero.html?entrega=${entregaId}`;
+}
+
 /**
- * Carga los tickets de dinero pendientes (para vendedores y dealers que reciben)
+ * Carga los tickets de dinero pendientes (versión compacta)
  */
 async function cargarTicketsPendientes() {
     const currentUser = getCurrentUser();
@@ -108,32 +191,75 @@ async function cargarTicketsPendientes() {
         // Tanto vendedores como dealers pueden recibir tickets
         const tickets = await obtenerTicketsPendientesVendedor(currentUser.id);
         const ticketsEl = document.getElementById('ticketsPendientes');
+        const contadorEl = document.getElementById('contadorTickets');
         
         if (!ticketsEl) return;
         
+        if (contadorEl) {
+            if (tickets.length > 0) {
+                contadorEl.textContent = tickets.length;
+                contadorEl.style.display = 'inline-block';
+            } else {
+                contadorEl.style.display = 'none';
+            }
+        }
+        
         if (tickets.length === 0) {
-            ticketsEl.innerHTML = '<p style="color: #6b7280;">No hay tickets pendientes</p>';
+            ticketsEl.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 1rem;">No hay tickets pendientes</p>';
             return;
         }
         
-        let html = '<div class="tickets-list">';
-        tickets.forEach(ticket => {
+        let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+        tickets.forEach((ticket, index) => {
             const fecha = ticket.fechaCreacion?.toDate();
             const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'Fecha no disponible';
+            const expandId = `expandTicket_${index}`;
+            const montoAprox = ticket.montoAprox ? `$${ticket.montoAprox.toLocaleString()}` : 'N/A';
             
             html += `
-                <div class="ticket-item">
-                    <div class="ticket-header">
-                        <strong>${ticket.ticketId}</strong>
-                        <span class="estado-badge pendiente">Pendiente</span>
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #dbeafe; transition: all 0.2s;" 
+                     onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                     onmouseout="this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
+                                ${ticket.ticketId || 'N/A'}
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                De: ${ticket.dealerNombre || 'Sargento'}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #9ca3af;">
+                                ${fechaStr}
+                            </div>
+                        </div>
+                        <span style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; white-space: nowrap;">
+                            Pendiente
+                        </span>
                     </div>
-                    <div class="ticket-info">
-                        <p>De: ${ticket.dealerNombre}</p>
-                        <p class="ticket-fecha">${fechaStr}</p>
+                    
+                    <!-- Detalles expandibles -->
+                    <div id="${expandId}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
+                        <div style="margin-bottom: 0.5rem; font-size: 0.875rem; color: #6b7280;">
+                            <div><strong>Monto Aprox:</strong> ${montoAprox}</div>
+                            <div style="margin-top: 0.25rem;"><strong>Monto Entregado:</strong> ${ticket.montoEntregado ? `$${ticket.montoEntregado.toLocaleString()}` : 'Pendiente'}</div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button onclick="confirmarTicketRapido('${ticket.id}')" 
+                                    style="flex: 1; background: #10b981; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                                ✅ Confirmar
+                            </button>
+                            <button onclick="verDetallesTicket('${ticket.id}')" 
+                                    style="flex: 1; background: #3b82f6; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                                📋 Ver Detalles
+                            </button>
+                        </div>
                     </div>
-                    <div class="ticket-acciones">
-                        <a href="tickets_dinero.html?id=${ticket.id}" class="btn-primary btn-sm">Confirmar</a>
-                    </div>
+                    
+                    <!-- Botón para expandir/colapsar -->
+                    <button onclick="toggleExpand('${expandId}')" 
+                            style="width: 100%; margin-top: 0.5rem; background: transparent; border: 1px solid #d1d5db; color: #6b7280; padding: 0.375rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer;">
+                        <span id="${expandId}_icon">▼</span> Ver más
+                    </button>
                 </div>
             `;
         });
@@ -143,6 +269,29 @@ async function cargarTicketsPendientes() {
     } catch (error) {
         console.error('Error cargando tickets pendientes:', error);
     }
+}
+
+// Función para confirmar ticket rápidamente
+async function confirmarTicketRapido(ticketId) {
+    mostrarPrompt('Ingresa el monto entregado:', '0', 'number', async (monto) => {
+        if (!monto || parseFloat(monto) <= 0) {
+            mostrarModal('Por favor, ingresa un monto válido', 'error');
+            return;
+        }
+        
+        try {
+            await confirmarTicketDineroDealer(ticketId, parseFloat(monto));
+            mostrarModal('Ticket confirmado correctamente', 'success');
+            cargarTicketsPendientes();
+        } catch (error) {
+            mostrarModal('Error: ' + error.message, 'error');
+        }
+    });
+}
+
+// Función para ver detalles de ticket
+function verDetallesTicket(ticketId) {
+    window.location.href = `tickets_dinero.html?id=${ticketId}`;
 }
 
 /**
@@ -194,86 +343,233 @@ async function cargarEstadisticasSemanales() {
 }
 
 /**
- * Carga las armas activas y solicitudes de balas
+ * Carga las armas activas y solicitudes de balas (versión compacta)
  */
 async function cargarArmasActivas() {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
     
     try {
-        if (esVendedor()) {
-            const armas = await obtenerArmasActivasVendedor(currentUser.id);
-            const armasEl = document.getElementById('armasActivas');
+        const armasEl = document.getElementById('armasActivas');
+        const contadorEl = document.getElementById('contadorArmas');
+        const seccionAccesos = document.getElementById('seccionAccesosRapidos');
+        
+        if (!armasEl) return;
+        
+        if (esProspect()) {
+            // Para prospects: mostrar armas activas y acceso rápido para solicitar balas
+            const armas = await obtenerArmasPorVendedor(currentUser.id);
+            const armasActivas = armas.filter(a => a.estado === 'activa');
             
-            if (!armasEl) return;
+            if (contadorEl) {
+                if (armasActivas.length > 0) {
+                    contadorEl.textContent = armasActivas.length;
+                    contadorEl.style.display = 'inline-block';
+                } else {
+                    contadorEl.style.display = 'none';
+                }
+            }
             
-            if (armas.length === 0) {
-                armasEl.innerHTML = '<p style="color: #6b7280;">No tienes armas activas</p>';
+            // Mostrar sección de accesos rápidos
+            if (seccionAccesos) {
+                seccionAccesos.style.display = 'block';
+            }
+            
+            if (armasActivas.length === 0) {
+                armasEl.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 1rem;">No tienes armas activas</p>';
                 return;
             }
             
-            let html = '<div class="armas-list">';
-            armas.forEach(arma => {
+            let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+            armasActivas.forEach((arma, index) => {
                 const solicitudesPendientes = (arma.solicitudesBalas || []).filter(s => s.estado === 'pendiente');
+                const balasActual = arma.cantidadBalasActual !== undefined ? arma.cantidadBalasActual : arma.cantidadBalasInicial || 0;
+                const balasInicial = arma.cantidadBalasInicial || 0;
+                const expandId = `expandArma_${index}`;
                 
                 html += `
-                    <div class="arma-item">
-                        <div class="arma-header">
-                            <strong>${arma.tipoArma}</strong>
-                            ${arma.chaleco ? '<span class="badge">Con Chaleco</span>' : ''}
-                        </div>
-                        <div class="arma-info">
-                            <p>De: ${arma.dealerNombre}</p>
+                    <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #f0fdf4; transition: all 0.2s;" 
+                         onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                         onmouseout="this.style.boxShadow='none'">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
+                                    ${arma.tipoArma}
+                                </div>
+                                <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                    De: ${arma.dealerNombre || 'Sargento'}
+                                </div>
+                                <div style="font-size: 0.75rem; color: #9ca3af;">
+                                    Balas: ${balasActual} / ${balasInicial}
+                                    ${arma.chaleco ? ' | 🛡️ Con Chaleco' : ''}
+                                </div>
+                            </div>
                             ${solicitudesPendientes.length > 0 ? 
-                                `<p class="solicitud-pendiente">${solicitudesPendientes.length} solicitud(es) de balas pendiente(s)</p>` : 
-                                ''
+                                `<span style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; white-space: nowrap;">
+                                    ${solicitudesPendientes.length} solicitud(es)
+                                </span>` : 
+                                '<span style="background: #10b981; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; white-space: nowrap;">Activa</span>'
                             }
                         </div>
-                        <div class="arma-acciones">
-                            <a href="armas.html?id=${arma.id}" class="btn-primary btn-sm">Ver Detalles</a>
+                        
+                        <!-- Detalles expandibles -->
+                        <div id="${expandId}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button onclick="solicitarBalasRapido('${arma.id}')" 
+                                        style="flex: 1; background: #2563eb; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                                    🎯 Solicitar Balas
+                                </button>
+                                ${!arma.chaleco ? `
+                                    <button onclick="solicitarChalecoRapido('${arma.id}')" 
+                                            style="flex: 1; background: #3b82f6; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                                        🛡️ Solicitar Chaleco
+                                    </button>
+                                ` : ''}
+                                <button onclick="verDetallesArma('${arma.id}')" 
+                                        style="flex: 1; background: #6b7280; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                                    📋 Ver Detalles
+                                </button>
+                            </div>
                         </div>
+                        
+                        <!-- Botón para expandir/colapsar -->
+                        <button onclick="toggleExpand('${expandId}')" 
+                                style="width: 100%; margin-top: 0.5rem; background: transparent; border: 1px solid #d1d5db; color: #6b7280; padding: 0.375rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer;">
+                            <span id="${expandId}_icon">▼</span> Ver más
+                        </button>
                     </div>
                 `;
             });
             html += '</div>';
             
             armasEl.innerHTML = html;
-        } else if (esDealer()) {
-            const solicitudes = await obtenerSolicitudesBalasPendientes(currentUser.id);
-            const armasEl = document.getElementById('armasActivas');
+        } else if (esSargentoOAdmin()) {
+            // Para sargentos: mostrar solicitudes pendientes
+            const solicitudes = await obtenerSolicitudesBalasPendientes();
+            const solicitudesChalecos = await obtenerSolicitudesChalecosPendientes();
+            const totalSolicitudes = solicitudes.length + solicitudesChalecos.length;
             
-            if (!armasEl) return;
+            if (contadorEl) {
+                if (totalSolicitudes > 0) {
+                    contadorEl.textContent = totalSolicitudes;
+                    contadorEl.style.display = 'inline-block';
+                } else {
+                    contadorEl.style.display = 'none';
+                }
+            }
             
-            if (solicitudes.length === 0) {
-                armasEl.innerHTML = '<p style="color: #6b7280;">No hay solicitudes de balas pendientes</p>';
+            if (seccionAccesos) {
+                seccionAccesos.style.display = 'none';
+            }
+            
+            if (totalSolicitudes === 0) {
+                armasEl.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 1rem;">No hay solicitudes pendientes</p>';
                 return;
             }
             
-            let html = '<div class="armas-list">';
-            solicitudes.forEach(arma => {
+            let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+            
+            // Solicitudes de balas
+            solicitudes.forEach((arma, index) => {
+                const expandId = `expandSolicitudBalas_${index}`;
                 html += `
-                    <div class="arma-item">
-                        <div class="arma-header">
-                            <strong>${arma.tipoArma}</strong>
-                            <span class="estado-badge pendiente">Solicitudes Pendientes</span>
+                    <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #fef3c7; transition: all 0.2s;" 
+                         onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                         onmouseout="this.style.boxShadow='none'">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
+                                    ${arma.tipoArma} - Solicitud de Balas
+                                </div>
+                                <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                    De: ${arma.vendedorNombre || 'Prospect'}
+                                </div>
+                                <div style="font-size: 0.75rem; color: #9ca3af;">
+                                    ${arma.solicitudesPendientes.length} solicitud(es) pendiente(s)
+                                </div>
+                            </div>
+                            <span style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; white-space: nowrap;">
+                                Pendiente
+                            </span>
                         </div>
-                        <div class="arma-info">
-                            <p>Vendedor: ${arma.vendedorNombre}</p>
-                            <p class="solicitud-pendiente">${arma.solicitudesPendientes.length} solicitud(es) pendiente(s)</p>
-                        </div>
-                        <div class="arma-acciones">
-                            <a href="armas.html?id=${arma.id}" class="btn-primary btn-sm">Ver Detalles</a>
-                        </div>
+                        <button onclick="window.location.href='entregas.html'" 
+                                style="width: 100%; background: #2563eb; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                            Ver en Entregas
+                        </button>
                     </div>
                 `;
             });
-            html += '</div>';
             
+            // Solicitudes de chalecos
+            solicitudesChalecos.forEach((arma, index) => {
+                html += `
+                    <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #dbeafe; transition: all 0.2s;" 
+                         onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                         onmouseout="this.style.boxShadow='none'">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
+                                    ${arma.tipoArma} - Solicitud de Chaleco
+                                </div>
+                                <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                    De: ${arma.vendedorNombre || 'Prospect'}
+                                </div>
+                                <div style="font-size: 0.75rem; color: #9ca3af;">
+                                    ${arma.solicitudesChalecosPendientes.length} solicitud(es) pendiente(s)
+                                </div>
+                            </div>
+                            <span style="background: #3b82f6; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; white-space: nowrap;">
+                                Pendiente
+                            </span>
+                        </div>
+                        <button onclick="window.location.href='entregas.html'" 
+                                style="width: 100%; background: #2563eb; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                            Ver en Entregas
+                        </button>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
             armasEl.innerHTML = html;
         }
     } catch (error) {
         console.error('Error cargando armas activas:', error);
     }
+}
+
+// Funciones de acceso rápido
+async function solicitarBalasRapido(armaId) {
+    mostrarPrompt('Ingresa la cantidad de balas que necesitas:', '0', 'number', async (cantidad) => {
+        if (!cantidad || parseInt(cantidad) <= 0) {
+            mostrarModal('Por favor, ingresa una cantidad válida', 'error');
+            return;
+        }
+        
+        try {
+            await solicitarRecargaBalas(armaId, parseInt(cantidad));
+            mostrarModal('Solicitud de balas enviada correctamente', 'success');
+            cargarArmasActivas();
+        } catch (error) {
+            mostrarModal('Error: ' + error.message, 'error');
+        }
+    });
+}
+
+async function solicitarChalecoRapido(armaId) {
+    mostrarConfirmacion('¿Deseas solicitar un chaleco para esta arma?', async () => {
+        try {
+            await solicitarChaleco(armaId);
+            mostrarModal('Solicitud de chaleco enviada correctamente', 'success');
+            cargarArmasActivas();
+        } catch (error) {
+            mostrarModal('Error: ' + error.message, 'error');
+        }
+    });
+}
+
+function verDetallesArma(armaId) {
+    window.location.href = `armas.html?id=${armaId}`;
 }
 
 /**
@@ -288,8 +584,69 @@ async function inicializarMenu() {
         return;
     }
     
-    // Los dealers también ven las secciones de vendedor (metas, entregas, tickets)
-    // No ocultamos secciones, todos ven todo
+    // Configurar botones de acceso rápido
+    const btnSolicitarBalas = document.getElementById('btnSolicitarBalasRapido');
+    const btnSolicitarChaleco = document.getElementById('btnSolicitarChalecoRapido');
+    
+    if (btnSolicitarBalas && esProspect()) {
+        btnSolicitarBalas.addEventListener('click', async () => {
+            try {
+                const armas = await obtenerArmasPorVendedor(currentUser.id);
+                const armasActivas = armas.filter(a => a.estado === 'activa');
+                
+                if (armasActivas.length === 0) {
+                    mostrarModal('No tienes armas activas', 'warning');
+                    return;
+                }
+                
+                if (armasActivas.length === 1) {
+                    solicitarBalasRapido(armasActivas[0].id);
+                } else {
+                    const opciones = armasActivas.map((a, i) => `${i + 1}. ${a.tipoArma}`).join('\n');
+                    mostrarPrompt(`Tienes ${armasActivas.length} armas activas:\n${opciones}\n\nIngresa el número del arma (1-${armasActivas.length}):`, '1', 'number', (seleccion) => {
+                        const indice = parseInt(seleccion) - 1;
+                        if (isNaN(indice) || indice < 0 || indice >= armasActivas.length) {
+                            mostrarModal('Selección inválida', 'error');
+                            return;
+                        }
+                        solicitarBalasRapido(armasActivas[indice].id);
+                    });
+                }
+            } catch (error) {
+                mostrarModal('Error: ' + error.message, 'error');
+            }
+        });
+    }
+    
+    if (btnSolicitarChaleco && esProspect()) {
+        btnSolicitarChaleco.addEventListener('click', async () => {
+            try {
+                const armas = await obtenerArmasPorVendedor(currentUser.id);
+                const armasActivasSinChaleco = armas.filter(a => a.estado === 'activa' && !a.chaleco);
+                
+                if (armasActivasSinChaleco.length === 0) {
+                    mostrarModal('No tienes armas activas sin chaleco', 'warning');
+                    return;
+                }
+                
+                if (armasActivasSinChaleco.length === 1) {
+                    solicitarChalecoRapido(armasActivasSinChaleco[0].id);
+                } else {
+                    const opciones = armasActivasSinChaleco.map((a, i) => `${i + 1}. ${a.tipoArma}`).join('\n');
+                    mostrarPrompt(`Tienes ${armasActivasSinChaleco.length} armas sin chaleco:\n${opciones}\n\nIngresa el número del arma (1-${armasActivasSinChaleco.length}):`, '1', 'number', (seleccion) => {
+                        const indice = parseInt(seleccion) - 1;
+                        if (isNaN(indice) || indice < 0 || indice >= armasActivasSinChaleco.length) {
+                            mostrarModal('Selección inválida', 'error');
+                            return;
+                        }
+                        solicitarChalecoRapido(armasActivasSinChaleco[indice].id);
+                    });
+                }
+            } catch (error) {
+                mostrarModal('Error: ' + error.message, 'error');
+            }
+        });
+    }
     
     // Cargar datos
     await cargarResumenMetas();
