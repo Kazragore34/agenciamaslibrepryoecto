@@ -181,6 +181,165 @@ function verDetallesEntrega(entregaId) {
 }
 
 /**
+ * Carga las entregas confirmadas para crear tickets (versión compacta)
+ */
+async function cargarEntregasConfirmadas() {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    try {
+        const entregas = await obtenerEntregasPorVendedor(currentUser.id);
+        const entregasConfirmadas = entregas.filter(e => e.estado === 'confirmado');
+        const entregasEl = document.getElementById('entregasConfirmadas');
+        const contadorEl = document.getElementById('contadorEntregasConfirmadas');
+        
+        if (!entregasEl) return;
+        
+        if (contadorEl) {
+            if (entregasConfirmadas.length > 0) {
+                contadorEl.textContent = entregasConfirmadas.length;
+                contadorEl.style.display = 'inline-block';
+            } else {
+                contadorEl.style.display = 'none';
+            }
+        }
+        
+        // Obtener tickets para verificar cuáles entregas ya tienen ticket
+        const tickets = await obtenerTicketsPorVendedor(currentUser.id);
+        const entregasConTicketConfirmado = new Set();
+        const entregasConTicketPendiente = new Set();
+        
+        tickets.forEach(ticket => {
+            if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas)) {
+                ticket.entregasRelacionadas.forEach(entId => {
+                    if (ticket.estado === 'confirmado_dealer') {
+                        entregasConTicketConfirmado.add(entId);
+                    } else if (ticket.estado === 'pendiente_dealer') {
+                        entregasConTicketPendiente.add(entId);
+                    }
+                });
+            }
+        });
+        
+        if (entregasConfirmadas.length === 0) {
+            entregasEl.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 1rem;">No hay entregas confirmadas</p>';
+            return;
+        }
+        
+        let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+        entregasConfirmadas.forEach((entrega, index) => {
+            const fecha = entrega.fechaCreacion?.toDate();
+            const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'Fecha no disponible';
+            const productosResumen = entrega.productos.slice(0, 2).map(p => 
+                `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`
+            ).join(', ');
+            const tieneMasProductos = entrega.productos.length > 2;
+            const tieneTicketConfirmado = entregasConTicketConfirmado.has(entrega.id);
+            const tieneTicketPendiente = entregasConTicketPendiente.has(entrega.id);
+            const expandId = `expandEntregaConfirmada_${index}`;
+            
+            let estadoBadge = '';
+            let botonAccion = '';
+            
+            if (tieneTicketConfirmado) {
+                estadoBadge = '<span style="background: #10b981; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">✓ Ticket Confirmado</span>';
+                botonAccion = '<span style="color: #10b981; font-size: 0.75rem;">No se puede modificar</span>';
+            } else if (tieneTicketPendiente) {
+                estadoBadge = '<span style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">Pendiente</span>';
+                botonAccion = '<span style="color: #f59e0b; font-size: 0.75rem;">Esperando confirmación</span>';
+            } else {
+                estadoBadge = '<span style="background: #6b7280; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">Sin Ticket</span>';
+                botonAccion = `<button onclick="crearTicketDesdeEntregaRapido('${entrega.id}', '${entrega.dealerId}')" 
+                                    style="background: #3b82f6; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                                    Crear Ticket
+                                </button>`;
+            }
+            
+            html += `
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #f0fdf4; transition: all 0.2s;" 
+                     onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                     onmouseout="this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
+                                ${entrega.dealerNombre || 'Sargento'}
+                            </div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                ${productosResumen}${tieneMasProductos ? '...' : ''}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #9ca3af;">
+                                ${fechaStr}
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem; align-items: end;">
+                            ${estadoBadge}
+                        </div>
+                    </div>
+                    
+                    <!-- Detalles expandibles -->
+                    <div id="${expandId}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
+                        <div style="margin-bottom: 0.5rem;">
+                            <strong style="font-size: 0.875rem; color: #374151;">Productos completos:</strong>
+                            <div style="margin-top: 0.25rem; font-size: 0.875rem; color: #6b7280;">
+                                ${entrega.productos.map(p => 
+                                    `<div>• ${obtenerNombreProducto(p.tipo)}: ${p.cantidad}</div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            ${botonAccion}
+                        </div>
+                    </div>
+                    
+                    <!-- Botón para expandir/colapsar -->
+                    <button onclick="toggleExpand('${expandId}')" 
+                            style="width: 100%; margin-top: 0.5rem; background: transparent; border: 1px solid #d1d5db; color: #6b7280; padding: 0.375rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer;">
+                        <span id="${expandId}_icon">▼</span> Ver más
+                    </button>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        entregasEl.innerHTML = html;
+    } catch (error) {
+        console.error('Error cargando entregas confirmadas:', error);
+    }
+}
+
+// Función para crear ticket desde entrega (versión rápida del menú)
+async function crearTicketDesdeEntregaRapido(entregaId, dealerId) {
+    try {
+        await ensureDb();
+        const entregaDoc = await db.collection('entregas_productos').doc(entregaId).get();
+        if (!entregaDoc.exists) {
+            mostrarModal('Entrega no encontrada', 'error');
+            return;
+        }
+        const entrega = entregaDoc.data();
+        const montoAprox = entrega.precioAprox || null;
+        
+        mostrarPrompt('Ingresa el monto que entregaste por esta venta:', '0', 'number', async (monto) => {
+            if (!monto || isNaN(monto) || parseFloat(monto) <= 0) {
+                mostrarModal('Monto inválido', 'error');
+                return;
+            }
+            
+            try {
+                const ticketId = await crearTicketDineroVendedorConAprox(dealerId, getCurrentUser().id, parseFloat(monto), montoAprox, [entregaId]);
+                mostrarModal('Ticket creado correctamente', 'success');
+                cargarEntregasConfirmadas();
+                cargarTicketsDepositosResumen();
+            } catch (error) {
+                mostrarModal('Error: ' + error.message, 'error');
+            }
+        });
+    } catch (error) {
+        mostrarModal('Error: ' + error.message, 'error');
+    }
+}
+
+/**
  * Carga tickets y depósitos resumidos (debajo de Armas Activas)
  */
 async function cargarTicketsDepositosResumen() {
@@ -690,12 +849,157 @@ async function inicializarMenu() {
         });
     }
     
+    // Configurar botón de depósito rápido
+    const btnDepositoRapido = document.getElementById('btnDepositoRapido');
+    if (btnDepositoRapido && (esProspect() || esSargentoOAdmin())) {
+        btnDepositoRapido.style.display = 'block';
+        btnDepositoRapido.addEventListener('click', () => {
+            mostrarModalDepositoRapido();
+        });
+    }
+    
     // Cargar datos
     await cargarResumenMetas();
     await cargarEntregasPendientes();
+    await cargarEntregasConfirmadas();
     await cargarEstadisticasDiarias();
     await cargarEstadisticasSemanales();
     await cargarArmasActivas();
     await cargarTicketsDepositosResumen();
+}
+
+/**
+ * Muestra un modal para registrar depósito rápido
+ */
+function mostrarModalDepositoRapido() {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    // Crear modal HTML
+    const modalHTML = `
+        <div id="modalDepositoRapido" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 0.5rem; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="margin: 0; color: #1f2937;">Registrar Depósito Rápido</h2>
+                    <button onclick="cerrarModalDepositoRapido()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">Seleccionar Sargento:</label>
+                    <select id="sargentoSelectDepositoRapido" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
+                        <option value="">Cargando sargentos...</option>
+                    </select>
+                </div>
+                
+                <div id="listaDineroNegroRapido" style="margin-bottom: 1.5rem;">
+                    <!-- Se carga dinámicamente -->
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button onclick="cerrarModalDepositoRapido()" style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; background: white; border-radius: 0.375rem; cursor: pointer; color: #374151;">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Cargar sargentos y tipos de dinero negro
+    cargarSargentosDepositoRapido();
+    cargarTiposDineroNegroRapido();
+}
+
+function cerrarModalDepositoRapido() {
+    const modal = document.getElementById('modalDepositoRapido');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function cargarSargentosDepositoRapido() {
+    try {
+        await ensureDb();
+        const snapshot = await db.collection('users').get();
+        const sargentos = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(user => user.rol === 'sargento' || user.rol === 'admin')
+            .sort((a, b) => (a.username || '').localeCompare(b.username || ''));
+        
+        const select = document.getElementById('sargentoSelectDepositoRapido');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">Selecciona un sargento...</option>';
+        sargentos.forEach(sargento => {
+            const option = document.createElement('option');
+            option.value = sargento.id;
+            option.textContent = sargento.username || sargento.nombre || 'Sin nombre';
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error cargando sargentos:', error);
+        mostrarModal('Error cargando sargentos: ' + error.message, 'error');
+    }
+}
+
+function cargarTiposDineroNegroRapido() {
+    if (typeof TIPOS_DINERO_NEGRO === 'undefined') {
+        mostrarModal('Error: TIPOS_DINERO_NEGRO no está definido. Recarga la página.', 'error');
+        return;
+    }
+    
+    const listaEl = document.getElementById('listaDineroNegroRapido');
+    if (!listaEl) return;
+    
+    let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+    TIPOS_DINERO_NEGRO.forEach(tipo => {
+        html += `
+            <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background: #f9fafb;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 500; color: #374151; margin-bottom: 0.25rem;">${tipo.nombre}</div>
+                    </div>
+                    <button onclick="registrarDepositoTipoRapido('${tipo.id}')" 
+                            style="background: #8b5cf6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
+                        Registrar
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    listaEl.innerHTML = html;
+}
+
+async function registrarDepositoTipoRapido(tipoId) {
+    const sargentoSelect = document.getElementById('sargentoSelectDepositoRapido');
+    if (!sargentoSelect || !sargentoSelect.value) {
+        mostrarModal('Por favor, selecciona un sargento primero', 'warning');
+        return;
+    }
+    
+    const sargentoId = sargentoSelect.value;
+    const tipo = TIPOS_DINERO_NEGRO.find(t => t.id === tipoId);
+    
+    mostrarPrompt(`Ingresa el importe para ${tipo?.nombre}:`, '0', 'number', async (importe) => {
+        if (!importe || isNaN(importe) || parseFloat(importe) <= 0) {
+            mostrarModal('Importe inválido', 'error');
+            return;
+        }
+        
+        try {
+            const importes = {};
+            importes[tipoId] = parseFloat(importe);
+            
+            await crearDepositoDineroNegroConSargento(importes, sargentoId);
+            mostrarModal('Depósito registrado correctamente. Quedará pendiente hasta que el sargento lo apruebe.', 'success');
+            cerrarModalDepositoRapido();
+            cargarTicketsDepositosResumen();
+        } catch (error) {
+            console.error('Error registrando depósito:', error);
+            mostrarModal('Error: ' + error.message, 'error');
+        }
+    });
 }
 

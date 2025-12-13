@@ -208,29 +208,29 @@
         }
 
         async function confirmarTicketDealer(ticketId) {
-            if (!confirm('¿Confirmas que recibiste este dinero del prospect?')) return;
-            try {
-                await confirmarTicketDineroDealer(ticketId);
-                alert('Ticket confirmado correctamente');
-                cargarTicketsPendientesDealer();
-            } catch (error) {
-                alert(error.message);
-            }
+            mostrarConfirmacion('¿Confirmas que recibiste este dinero del prospect?', async () => {
+                try {
+                    await confirmarTicketDineroDealer(ticketId);
+                    mostrarModal('Ticket confirmado correctamente', 'success');
+                    cargarTicketsPendientesDealer();
+                } catch (error) {
+                    mostrarModal(error.message, 'error');
+                }
+            });
         }
 
         async function rechazarTicketDealer(ticketId) {
-            const motivo = prompt('Motivo del rechazo (opcional):');
-            if (motivo === null) return; // Usuario canceló
-            
-            if (!confirm('¿Estás seguro de rechazar este ticket? El prospect podrá crear uno nuevo con un monto diferente.')) return;
-            
-            try {
-                await rechazarTicketDineroDealer(ticketId, motivo || '');
-                alert('Ticket rechazado. El prospect podrá crear un nuevo ticket.');
-                cargarTicketsPendientesDealer();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+            mostrarPrompt('Motivo del rechazo (opcional):', '', 'text', async (motivo) => {
+                mostrarConfirmacion('¿Estás seguro de rechazar este ticket? El prospect podrá crear uno nuevo con un monto diferente.', async () => {
+                    try {
+                        await rechazarTicketDineroDealer(ticketId, motivo || '');
+                        mostrarModal('Ticket rechazado. El prospect podrá crear un nuevo ticket.', 'success');
+                        cargarTicketsPendientesDealer();
+                    } catch (error) {
+                        mostrarModal('Error: ' + error.message, 'error');
+                    }
+                });
+            });
         }
 
         // Cargar solicitudes de balas y chalecos pendientes
@@ -409,81 +409,81 @@
         }
 
         async function confirmarEntregaBalas(armaId, solicitudIndex) {
-            if (!confirm('¿Confirmas que entregaste estas balas al prospect?')) return;
-            try {
-                await entregarBalas(armaId, solicitudIndex);
-                alert('Balas confirmadas como entregadas correctamente');
-                cargarSolicitudesBalasPendientes();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+            mostrarConfirmacion('¿Confirmas que entregaste estas balas al prospect?', async () => {
+                try {
+                    await entregarBalas(armaId, solicitudIndex);
+                    mostrarModal('Balas confirmadas como entregadas correctamente', 'success');
+                    cargarSolicitudesBalasPendientes();
+                } catch (error) {
+                    mostrarModal('Error: ' + error.message, 'error');
+                }
+            });
         }
 
         async function rechazarSolicitudBalasUI(armaId, solicitudIndex) {
-            const motivo = prompt('¿Por qué rechazas esta solicitud? (opcional):');
-            if (motivo === null) return; // Usuario canceló
-            
-            if (!confirm('¿Estás seguro de rechazar esta solicitud de balas?')) return;
-            
-            try {
-                await rechazarSolicitudBalas(armaId, solicitudIndex, motivo || '');
-                alert('Solicitud rechazada correctamente');
-                cargarSolicitudesBalasPendientes();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+            mostrarPrompt('¿Por qué rechazas esta solicitud? (opcional):', '', 'text', async (motivo) => {
+                mostrarConfirmacion('¿Estás seguro de rechazar esta solicitud de balas?', async () => {
+                    try {
+                        await rechazarSolicitudBalas(armaId, solicitudIndex, motivo || '');
+                        mostrarModal('Solicitud rechazada correctamente', 'success');
+                        cargarSolicitudesBalasPendientes();
+                    } catch (error) {
+                        mostrarModal('Error: ' + error.message, 'error');
+                    }
+                });
+            });
         }
 
         async function confirmarEntregaChaleco(armaId, solicitudIndex) {
-            if (!confirm('¿Confirmas que entregaste el chaleco al prospect?')) return;
-            try {
-                await entregarChaleco(armaId, solicitudIndex);
-                alert('Chaleco confirmado como entregado correctamente');
-                cargarSolicitudesBalasPendientes();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+            mostrarConfirmacion('¿Confirmas que entregaste el chaleco al prospect?', async () => {
+                try {
+                    await entregarChaleco(armaId, solicitudIndex);
+                    mostrarModal('Chaleco confirmado como entregado correctamente', 'success');
+                    cargarSolicitudesBalasPendientes();
+                } catch (error) {
+                    mostrarModal('Error: ' + error.message, 'error');
+                }
+            });
         }
 
         async function rechazarSolicitudChalecoUI(armaId, solicitudIndex) {
-            const motivo = prompt('¿Por qué rechazas esta solicitud de chaleco? (opcional):');
-            if (motivo === null) return; // Usuario canceló
-            
-            if (!confirm('¿Estás seguro de rechazar esta solicitud de chaleco?')) return;
-            
-            try {
-                await rechazarSolicitudChaleco(armaId, solicitudIndex, motivo || '');
-                alert('Solicitud rechazada correctamente');
-                cargarSolicitudesBalasPendientes();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+            mostrarPrompt('¿Por qué rechazas esta solicitud de chaleco? (opcional):', '', 'text', async (motivo) => {
+                mostrarConfirmacion('¿Estás seguro de rechazar esta solicitud de chaleco?', async () => {
+                    try {
+                        await rechazarSolicitudChaleco(armaId, solicitudIndex, motivo || '');
+                        mostrarModal('Solicitud rechazada correctamente', 'success');
+                        cargarSolicitudesBalasPendientes();
+                    } catch (error) {
+                        mostrarModal('Error: ' + error.message, 'error');
+                    }
+                });
+            });
         }
 
         async function confirmarChalecoIndependiente(solicitudId) {
-            if (!confirm('¿Confirmas que entregaste este chaleco al prospect?')) return;
-            try {
-                await aprobarChalecoIndependiente(solicitudId);
-                alert('Chaleco confirmado como entregado correctamente');
-                cargarSolicitudesBalasPendientes();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+            mostrarConfirmacion('¿Confirmas que entregaste este chaleco al prospect?', async () => {
+                try {
+                    await aprobarChalecoIndependiente(solicitudId);
+                    mostrarModal('Chaleco confirmado como entregado correctamente', 'success');
+                    cargarSolicitudesBalasPendientes();
+                } catch (error) {
+                    mostrarModal('Error: ' + error.message, 'error');
+                }
+            });
         }
 
         async function rechazarChalecoIndependienteUI(solicitudId) {
-            const motivo = prompt('¿Por qué rechazas esta solicitud de chaleco? (opcional):');
-            if (motivo === null) return; // Usuario canceló
-            
-            if (!confirm('¿Estás seguro de rechazar esta solicitud de chaleco?')) return;
-            
-            try {
-                await rechazarChalecoIndependiente(solicitudId, motivo || '');
-                alert('Solicitud de chaleco rechazada correctamente');
-                cargarSolicitudesBalasPendientes();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+            mostrarPrompt('¿Por qué rechazas esta solicitud de chaleco? (opcional):', '', 'text', async (motivo) => {
+                mostrarConfirmacion('¿Estás seguro de rechazar esta solicitud de chaleco?', async () => {
+                    try {
+                        await rechazarChalecoIndependiente(solicitudId, motivo || '');
+                        mostrarModal('Solicitud de chaleco rechazada correctamente', 'success');
+                        cargarSolicitudesBalasPendientes();
+                    } catch (error) {
+                        mostrarModal('Error: ' + error.message, 'error');
+                    }
+                });
+            });
         }
 
         // Cargar historial de productos
@@ -558,7 +558,7 @@
                 const entregaDoc = await db.collection('entregas_productos').doc(entregaId).get();
                 
                 if (!entregaDoc.exists) {
-                    alert('Entrega no encontrada');
+                    mostrarModal('Entrega no encontrada', 'error');
                     return;
                 }
                 
@@ -640,7 +640,7 @@
                 modal.innerHTML = html;
             } catch (error) {
                 console.error('Error cargando detalles:', error);
-                alert('Error cargando detalles: ' + error.message);
+                mostrarModal('Error cargando detalles: ' + error.message, 'error');
             }
         }
         
@@ -726,7 +726,7 @@
                 const armaDoc = await db.collection('entregas_armas').doc(armaId).get();
                 
                 if (!armaDoc.exists) {
-                    alert('Arma no encontrada');
+                    mostrarModal('Arma no encontrada', 'error');
                     return;
                 }
                 
@@ -844,7 +844,7 @@
                 modal.innerHTML = html;
             } catch (error) {
                 console.error('Error cargando detalles del arma:', error);
-                alert('Error cargando detalles: ' + error.message);
+                mostrarModal('Error cargando detalles: ' + error.message, 'error');
             }
         }
         
@@ -957,30 +957,29 @@
         }
 
         async function aprobarDeposito(depositoId) {
-            if (!confirm('¿Estás seguro de aprobar este depósito? El monto se agregará a las metas del usuario.')) return;
-            
-            try {
-                await aprobarDepositoDineroNegro(depositoId);
-                alert('Depósito aprobado correctamente');
-                cargarDepositosPendientes();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+            mostrarConfirmacion('¿Estás seguro de aprobar este depósito? El monto se agregará a las metas del usuario.', async () => {
+                try {
+                    await aprobarDepositoDineroNegro(depositoId);
+                    mostrarModal('Depósito aprobado correctamente', 'success');
+                    cargarDepositosPendientes();
+                } catch (error) {
+                    mostrarModal('Error: ' + error.message, 'error');
+                }
+            });
         }
 
         async function rechazarDeposito(depositoId) {
-            const motivo = prompt('¿Por qué rechazas este depósito? (opcional):');
-            if (motivo === null) return; // Usuario canceló
-            
-            if (!confirm('¿Estás seguro de rechazar este depósito?')) return;
-            
-            try {
-                await rechazarDepositoDineroNegro(depositoId, motivo || '');
-                alert('Depósito rechazado correctamente');
-                cargarDepositosPendientes();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
+            mostrarPrompt('¿Por qué rechazas este depósito? (opcional):', '', 'text', async (motivo) => {
+                mostrarConfirmacion('¿Estás seguro de rechazar este depósito?', async () => {
+                    try {
+                        await rechazarDepositoDineroNegro(depositoId, motivo || '');
+                        mostrarModal('Depósito rechazado correctamente', 'success');
+                        cargarDepositosPendientes();
+                    } catch (error) {
+                        mostrarModal('Error: ' + error.message, 'error');
+                    }
+                });
+            });
         }
 
         // Inicializar - Solo sargentos y admins pueden ver esto
