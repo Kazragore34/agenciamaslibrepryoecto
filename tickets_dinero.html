@@ -139,6 +139,17 @@
             </div>
         </div>
 
+        <!-- Sección: Depósitos Pendientes (para prospects) -->
+        <div id="seccionDepositosPendientesProspect" style="margin-top: 2rem; display: none;">
+            <div class="stats-card">
+                <h2>Mis Depósitos Pendientes</h2>
+                <p style="color: #6b7280; margin-bottom: 1rem;">Aquí puedes ver el estado de los depósitos de dinero negro que has registrado. Quedarán pendientes hasta que un sargento los apruebe.</p>
+                <div id="listaDepositosPendientesProspect">
+                    <!-- Se carga dinámicamente -->
+                </div>
+            </div>
+        </div>
+
         <!-- Sección MESAS (para prospect y sargentos) -->
         <div id="seccionMesas" style="margin-top: 2rem; display: none;">
             <div class="stats-card">
@@ -532,11 +543,13 @@
                 document.getElementById('seccionEntregasConfirmadasVendedor').style.display = 'block';
                 cargarListaEntregasPendientes();
                 cargarEntregasConfirmadasVendedor();
-                // Mostrar secciones DEPOSITO y MESAS
+                // Mostrar secciones DEPOSITO, DEPOSITOS PENDIENTES y MESAS
                 document.getElementById('seccionDeposito').style.display = 'block';
+                document.getElementById('seccionDepositosPendientesProspect').style.display = 'block';
                 document.getElementById('seccionMesas').style.display = 'block';
                 cargarSargentosDeposito();
                 cargarDineroNegro();
+                cargarDepositosPendientesProspect();
             }
             cargarTickets();
         }
@@ -1238,6 +1251,64 @@
                 setTimeout(() => {
                     mensajeEl.style.display = 'none';
                 }, 5000);
+            }
+        }
+
+        // Función para cargar depósitos pendientes del prospect
+        async function cargarDepositosPendientesProspect() {
+            if (!esProspect()) return;
+            
+            try {
+                const depositos = await obtenerDepositosPendientesProspect(currentUser.id);
+                const listaEl = document.getElementById('listaDepositosPendientesProspect');
+                
+                if (!listaEl) {
+                    console.error('Elemento listaDepositosPendientesProspect no encontrado');
+                    return;
+                }
+                
+                if (depositos.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No tienes depósitos pendientes</p>';
+                    return;
+                }
+                
+                let html = '<div style="display: grid; gap: 1rem;">';
+                
+                depositos.forEach(deposito => {
+                    const fechaCreacion = deposito.fechaCreacion?.toDate();
+                    const fechaCreacionStr = fechaCreacion ? fechaCreacion.toLocaleString('es-PE') : 'N/A';
+                    
+                    html += `<div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background: #fef3c7;">`;
+                    html += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">`;
+                    html += `<div>`;
+                    html += `<h3 style="margin: 0 0 0.5rem 0;">Depósito para ${deposito.sargentoNombre}</h3>`;
+                    html += `<p style="color: #6b7280; margin: 0; font-size: 0.875rem;">Fecha: ${fechaCreacionStr}</p>`;
+                    html += `<p style="color: #6b7280; margin: 0.25rem 0 0 0; font-size: 0.875rem;">Monto Total: <strong>$${deposito.montoTotal.toLocaleString()}</strong></p>`;
+                    html += `</div>`;
+                    html += `<span class="estado-badge pendiente">Pendiente</span>`;
+                    html += `</div>`;
+                    
+                    html += `<div style="margin-top: 1rem;">`;
+                    html += `<h4 style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #374151;">Detalles del Depósito:</h4>`;
+                    html += `<div style="background: white; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid #d1d5db;">`;
+                    html += `<ul style="margin: 0; padding-left: 1.5rem;">`;
+                    deposito.detalles.forEach(detalle => {
+                        html += `<li style="margin-bottom: 0.25rem;">${detalle.tipoNombre}: <strong>$${detalle.monto.toLocaleString()}</strong></li>`;
+                    });
+                    html += `</ul>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                });
+                
+                html += '</div>';
+                listaEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando depósitos pendientes del prospect:', error);
+                const listaEl = document.getElementById('listaDepositosPendientesProspect');
+                if (listaEl) {
+                    listaEl.innerHTML = '<p style="color: #ef4444;">Error cargando depósitos: ' + error.message + '</p>';
+                }
             }
         }
 

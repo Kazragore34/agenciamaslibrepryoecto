@@ -700,7 +700,7 @@ async function crearDepositoDineroNegro(importes) {
 }
 
 /**
- * Obtiene todos los depósitos de dinero negro pendientes
+ * Obtiene todos los depósitos de dinero negro pendientes (para sargentos)
  * @returns {Promise<Array>} - Array de depósitos pendientes
  */
 async function obtenerDepositosPendientes() {
@@ -722,6 +722,36 @@ async function obtenerDepositosPendientes() {
         }));
     } catch (error) {
         console.error('Error obteniendo depósitos pendientes:', error);
+        throw error;
+    }
+}
+
+/**
+ * Obtiene los depósitos de dinero negro pendientes de un prospect específico
+ * @param {string} prospectId - ID del prospect
+ * @returns {Promise<Array>} - Array de depósitos pendientes del prospect
+ */
+async function obtenerDepositosPendientesProspect(prospectId) {
+    await ensureDb();
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser || currentUser.id !== prospectId) {
+        throw new Error('Solo puedes ver tus propios depósitos pendientes');
+    }
+    
+    try {
+        const snapshot = await db.collection('depositos_dinero_negro')
+            .where('usuarioId', '==', prospectId)
+            .where('estado', '==', 'pendiente')
+            .orderBy('fechaCreacion', 'desc')
+            .get();
+        
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        console.error('Error obteniendo depósitos pendientes del prospect:', error);
         throw error;
     }
 }
