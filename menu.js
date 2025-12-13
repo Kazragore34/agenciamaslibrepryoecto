@@ -474,12 +474,6 @@ async function cargarArmasActivas() {
                                         style="flex: 1; background: #2563eb; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
                                     🎯 Solicitar Balas
                                 </button>
-                                ${!arma.chaleco ? `
-                                    <button onclick="solicitarChalecoRapido('${arma.id}')" 
-                                            style="flex: 1; background: #3b82f6; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
-                                        🛡️ Solicitar Chaleco
-                                    </button>
-                                ` : ''}
                                 <button onclick="verDetallesArma('${arma.id}')" 
                                         style="flex: 1; background: #6b7280; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
                                     📋 Ver Detalles
@@ -611,17 +605,7 @@ async function solicitarBalasRapido(armaId) {
     });
 }
 
-async function solicitarChalecoRapido(armaId) {
-    mostrarConfirmacion('¿Deseas solicitar un chaleco para esta arma?', async () => {
-        try {
-            await solicitarChaleco(armaId);
-            mostrarModal('Solicitud de chaleco enviada correctamente', 'success');
-            cargarArmasActivas();
-        } catch (error) {
-            mostrarModal('Error: ' + error.message, 'error');
-        }
-    });
-}
+// Función eliminada - los chalecos ahora son independientes y se solicitan desde el botón de acceso rápido
 
 function verDetallesArma(armaId) {
     window.location.href = `armas.html?id=${armaId}`;
