@@ -98,11 +98,13 @@
         const originalError = console.error;
         
         function addLog(message, type = 'log') {
-            logDiv.style.display = 'block';
-            const timestamp = new Date().toLocaleTimeString();
-            const color = type === 'error' ? '#ef4444' : '#10b981';
-            logDiv.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
-            logDiv.scrollTop = logDiv.scrollHeight;
+            if (logDiv) {
+                logDiv.style.display = 'block';
+                const timestamp = new Date().toLocaleTimeString();
+                const color = type === 'error' ? '#ef4444' : '#10b981';
+                logDiv.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+                logDiv.scrollTop = logDiv.scrollHeight;
+            }
         }
 
         console.log = function(...args) {
@@ -115,7 +117,22 @@
             addLog(args.join(' '), 'error');
         };
 
+        // Función para esperar a que db esté disponible
+        async function ensureDb() {
+            let attempts = 0;
+            while (typeof db === 'undefined' && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (typeof db === 'undefined') {
+                throw new Error('Firebase no está inicializado. Por favor, recarga la página.');
+            }
+            return db;
+        }
+
         async function ejecutarMigracion() {
+            // Asegurar que db esté disponible
+            await ensureDb();
             const btn = document.getElementById('btnMigrar');
             const resultado = document.getElementById('resultado');
             
@@ -140,11 +157,14 @@
                 let armasActualizadas = 0;
                 let solicitudesCorregidas = 0;
                 
-                const batch = db.batch();
+                let batch = db.batch();
                 let batchCount = 0;
                 const BATCH_SIZE = 500;
                 
-                snapshot.forEach((doc) => {
+                // Usar for...of en lugar de forEach para poder usar await
+                const docs = snapshot.docs;
+                for (let i = 0; i < docs.length; i++) {
+                    const doc = docs[i];
                     const armaData = doc.data();
                     let necesitaActualizacion = false;
                     const actualizaciones = {};
@@ -202,10 +222,11 @@
                         if (batchCount >= BATCH_SIZE) {
                             await batch.commit();
                             console.log(`Batch de ${batchCount} actualizaciones guardado`);
+                            batch = db.batch(); // Crear nuevo batch
                             batchCount = 0;
                         }
                     }
-                });
+                }
                 
                 // Hacer commit del batch final si hay actualizaciones pendientes
                 if (batchCount > 0) {
