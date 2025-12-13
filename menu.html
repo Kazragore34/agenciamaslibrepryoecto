@@ -8,8 +8,18 @@
     <link rel="stylesheet" href="styles-fichaje.css">
     <style>
         /* Estilos para el menú compacto */
+        @media (max-width: 1400px) {
+            #gridPrincipal[style*="grid-template-columns: 1fr 1fr 1fr 1fr"] {
+                grid-template-columns: 1fr 1fr 1fr !important;
+            }
+        }
+        
         @media (max-width: 1200px) {
             .stats-container > div[style*="grid-template-columns: 1fr 1fr 1fr"] {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            
+            #gridPrincipal[style*="grid-template-columns: 1fr 1fr 1fr 1fr"] {
                 grid-template-columns: 1fr 1fr !important;
             }
         }
