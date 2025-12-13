@@ -822,6 +822,9 @@ async function solicitarBalasRapido(armaId) {
             await solicitarRecargaBalas(armaId, parseInt(cantidad));
             mostrarModal('Solicitud de balas enviada correctamente', 'success');
             cargarArmasActivas();
+            if (esSargentoOAdmin()) {
+                await cargarSolicitudesPendientesSargento();
+            }
         } catch (error) {
             mostrarModal('Error: ' + error.message, 'error');
         }
