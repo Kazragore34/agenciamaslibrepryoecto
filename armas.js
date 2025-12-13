@@ -69,35 +69,67 @@ async function crearEntregaArma(sargentoId, prospectId, tipoArma, chaleco = fals
  * @returns {Promise<void>}
  */
 async function solicitarRecargaBalas(armaId, cantidad) {
+    console.log('=== solicitarRecargaBalas INICIADO ===');
+    console.log('Parámetros:', { armaId, cantidad });
+    
     await ensureDb();
+    console.log('Firebase db disponible');
     
     if (!esProspect()) {
-        throw new Error('Solo los prospects pueden solicitar recarga de balas');
+        const error = new Error('Solo los prospects pueden solicitar recarga de balas');
+        console.error('Error de permisos:', error);
+        throw error;
     }
+    console.log('Permisos verificados: es prospect');
     
     const currentUser = getCurrentUser();
+    console.log('Usuario actual:', currentUser);
+    
+    if (!currentUser) {
+        const error = new Error('No hay usuario autenticado');
+        console.error('Error de autenticación:', error);
+        throw error;
+    }
     
     if (!cantidad || cantidad <= 0) {
-        throw new Error('La cantidad debe ser mayor a 0');
+        const error = new Error('La cantidad debe ser mayor a 0');
+        console.error('Error de validación:', error);
+        throw error;
     }
     
     try {
+        console.log('Obteniendo documento del arma...');
         const armaRef = db.collection('entregas_armas').doc(armaId);
         const armaDoc = await armaRef.get();
         
         if (!armaDoc.exists) {
-            throw new Error('Arma no encontrada');
+            const error = new Error('Arma no encontrada');
+            console.error('Error:', error);
+            throw error;
         }
+        console.log('Arma encontrada en base de datos');
         
         const armaData = armaDoc.data();
+        console.log('Datos del arma:', {
+            id: armaId,
+            vendedorId: armaData.vendedorId,
+            estado: armaData.estado,
+            solicitudesBalas: armaData.solicitudesBalas
+        });
         
         if (armaData.vendedorId !== currentUser.id) {
-            throw new Error('Esta arma no es tuya');
+            const error = new Error('Esta arma no es tuya');
+            console.error('Error de propiedad:', error);
+            throw error;
         }
+        console.log('Propiedad del arma verificada');
         
         if (armaData.estado !== 'activa') {
-            throw new Error('No puedes solicitar balas para un arma perdida');
+            const error = new Error('No puedes solicitar balas para un arma perdida');
+            console.error('Error de estado:', error);
+            throw error;
         }
+        console.log('Estado del arma verificado: activa');
         
         // Verificar estado actual de las solicitudes
         console.log('=== SOLICITANDO BALAS ===');
@@ -135,14 +167,33 @@ async function solicitarRecargaBalas(armaId, cantidad) {
         console.log('✅ Solicitud de balas guardada correctamente');
         
         // Verificar que se guardó correctamente leyendo de nuevo
+        console.log('Esperando 1 segundo antes de verificar...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         const armaDocVerificacion = await armaRef.get();
         const armaDataVerificacion = armaDocVerificacion.data();
-        console.log('Verificación después de guardar:', {
-            cantidadSolicitudesGuardadas: (armaDataVerificacion.solicitudesBalas || []).length,
-            ultimaSolicitud: armaDataVerificacion.solicitudesBalas?.[armaDataVerificacion.solicitudesBalas.length - 1]
-        });
+        const solicitudesGuardadas = armaDataVerificacion.solicitudesBalas || [];
+        
+        console.log('=== VERIFICACIÓN DESPUÉS DE GUARDAR ===');
+        console.log('Cantidad de solicitudes guardadas:', solicitudesGuardadas.length);
+        console.log('Última solicitud:', solicitudesGuardadas[solicitudesGuardadas.length - 1]);
+        console.log('Todas las solicitudes:', JSON.stringify(solicitudesGuardadas, null, 2));
+        
+        if (solicitudesGuardadas.length === 0) {
+            console.warn('⚠️ ADVERTENCIA: No se encontraron solicitudes después de guardar');
+        } else {
+            const ultimaSolicitud = solicitudesGuardadas[solicitudesGuardadas.length - 1];
+            if (ultimaSolicitud.estado !== 'pendiente') {
+                console.warn('⚠️ ADVERTENCIA: La última solicitud no tiene estado pendiente:', ultimaSolicitud.estado);
+            } else {
+                console.log('✅ Verificación exitosa: La solicitud se guardó correctamente con estado pendiente');
+            }
+        }
+        
+        console.log('=== solicitarRecargaBalas COMPLETADO ===');
     } catch (error) {
-        console.error('Error solicitando recarga de balas:', error);
+        console.error('❌ ERROR en solicitarRecargaBalas:', error);
+        console.error('Stack trace:', error.stack);
         throw error;
     }
 }
