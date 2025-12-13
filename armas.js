@@ -343,8 +343,9 @@ async function marcarArmaPerdida(armaId, motivo) {
         
         const armaData = armaDoc.data();
         
+        // Solo el sargento que asignó el arma puede marcarla como perdida
         if (armaData.dealerId !== currentUser.id) {
-            throw new Error('No puedes marcar armas de otros dealers como perdidas');
+            throw new Error('Solo el sargento que asignó esta arma puede marcarla como perdida');
         }
         
         if (armaData.estado === 'perdida') {
