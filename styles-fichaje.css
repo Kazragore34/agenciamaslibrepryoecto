@@ -161,41 +161,61 @@
     color: #1f2937;
 }
 
-/* Botones del header - Tamaño consistente */
+/* Botones del header - Diseño moderno */
 .fichaje-header .btn-primary,
 .fichaje-header .btn-logout,
-.fichaje-header #btnPanelAdmin {
-    padding: 0.5rem 1rem;
+.fichaje-header #btnPanelAdmin,
+.fichaje-header #btnEntregas,
+.fichaje-header #btnPerdidas {
+    padding: 0.625rem 1.25rem;
     font-size: 0.875rem;
     font-weight: 500;
     line-height: 1.5;
-    border-radius: 0.5rem;
+    border-radius: 0.375rem;
     text-decoration: none;
     display: inline-block;
     text-align: center;
     min-width: 80px;
     white-space: nowrap;
-    transition: all 0.3s;
+    transition: all 0.2s ease;
     border: none;
     cursor: pointer;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* Botones normales - Colores neutros/oscuros */
 .fichaje-header .btn-primary {
-    background: #2563eb;
-    color: white;
+    background: #374151;
+    color: #ffffff;
 }
 
 .fichaje-header .btn-primary:hover {
-    background: #1d4ed8;
+    background: #4b5563;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
 }
 
+.fichaje-header .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Botón Admin - Verde destacable */
 .fichaje-header #btnPanelAdmin {
-    background: #059669;
+    background: #10b981;
     color: white;
 }
 
 .fichaje-header #btnPanelAdmin:hover {
-    background: #047857;
+    background: #059669;
+    box-shadow: 0 2px 4px 0 rgba(16, 185, 129, 0.3);
+    transform: translateY(-1px);
+}
+
+.fichaje-header #btnPanelAdmin:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px 0 rgba(16, 185, 129, 0.2);
 }
 
 .fichaje-header #btnPanelAdmin[style*="display: none"] {
@@ -207,23 +227,67 @@
     overflow: hidden;
 }
 
-.btn-logout {
-    padding: 0.5rem 1rem;
+/* Botón Entregas - Verde destacable */
+.fichaje-header #btnEntregas {
+    background: #10b981;
+    color: white;
+}
+
+.fichaje-header #btnEntregas:hover {
+    background: #059669;
+    box-shadow: 0 2px 4px 0 rgba(16, 185, 129, 0.3);
+    transform: translateY(-1px);
+}
+
+.fichaje-header #btnEntregas:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px 0 rgba(16, 185, 129, 0.2);
+}
+
+/* Botón Pérdidas - Rojo destacable */
+.fichaje-header #btnPerdidas {
+    background: #ef4444;
+    color: white;
+}
+
+.fichaje-header #btnPerdidas:hover {
     background: #dc2626;
+    box-shadow: 0 2px 4px 0 rgba(239, 68, 68, 0.3);
+    transform: translateY(-1px);
+}
+
+.fichaje-header #btnPerdidas:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px 0 rgba(239, 68, 68, 0.2);
+}
+
+/* Botón Cerrar Sesión - Rojo destacable */
+.btn-logout {
+    padding: 0.625rem 1.25rem;
+    background: #ef4444;
     color: white;
     border: none;
-    border-radius: 0.5rem;
+    border-radius: 0.375rem;
     cursor: pointer;
     font-weight: 500;
     font-size: 0.875rem;
     line-height: 1.5;
     min-width: 120px;
     white-space: nowrap;
-    transition: background 0.3s;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .btn-logout:hover {
-    background: #b91c1c;
+    background: #dc2626;
+    box-shadow: 0 2px 4px 0 rgba(239, 68, 68, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-logout:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px 0 rgba(239, 68, 68, 0.2);
 }
 
 .fichaje-status {

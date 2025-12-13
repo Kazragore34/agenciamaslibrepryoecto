@@ -1225,6 +1225,43 @@ async function cargarSolicitudesPendientesSargento() {
             `;
         });
         
+        // Tickets de dinero pendientes de confirmación
+        ticketsPendientes.slice(0, 2).forEach((ticket, index) => {
+            const fecha = ticket.fechaCreacion?.toDate();
+            const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+            const monto = ticket.montoEntregado || ticket.montoAprox || 0;
+            
+            html += `
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #dbeafe; transition: all 0.2s;" 
+                     onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                     onmouseout="this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem; font-size: 0.875rem;">
+                                💵 Confirmación de Dinero
+                            </div>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                De: ${ticket.vendedorNombre || 'Prospect'}
+                            </div>
+                            <div style="font-size: 0.7rem; color: #9ca3af;">
+                                ${ticket.ticketId || 'N/A'} • $${monto.toLocaleString()}
+                            </div>
+                            <div style="font-size: 0.65rem; color: #9ca3af; margin-top: 0.25rem;">
+                                ${fechaStr}
+                            </div>
+                        </div>
+                        <span style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; white-space: nowrap;">
+                            Pendiente
+                        </span>
+                    </div>
+                    <button onclick="window.location.href='entregas.html'" 
+                            style="width: 100%; background: #2563eb; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; font-weight: 500;">
+                        Confirmar en Entregas
+                    </button>
+                </div>
+            `;
+        });
+        
         // Solicitudes de balas pendientes
         solicitudesBalas.slice(0, 2).forEach((arma, index) => {
             html += `
@@ -1292,7 +1329,7 @@ async function cargarSolicitudesPendientesSargento() {
         
         // Agregar mensaje si hay más solicitudes
         const totalMostradas = entregasPendientes.slice(0, 2).length + depositosPendientes.slice(0, 2).length + 
-                              solicitudesBalas.slice(0, 2).length + solicitudesChalecos.slice(0, 2).length;
+                              ticketsPendientes.slice(0, 2).length + solicitudesBalas.slice(0, 2).length + solicitudesChalecos.slice(0, 2).length;
         if (totalSolicitudes > totalMostradas) {
             html += `<p style="color: #6b7280; font-size: 0.75rem; text-align: center; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem; margin-top: 0.5rem;">
                 Mostrando ${totalMostradas} de ${totalSolicitudes}. <a href="entregas.html" style="color: #3b82f6; text-decoration: underline;">Ver todas</a>
