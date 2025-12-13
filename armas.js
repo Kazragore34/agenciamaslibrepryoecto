@@ -141,8 +141,9 @@ async function solicitarRecargaBalas(armaId, cantidad) {
             esArray: Array.isArray(armaData.solicitudesBalas)
         });
         
+        // Crear la solicitud sin serverTimestamp (lo agregaremos después)
         const solicitud = {
-            fecha: firebase.firestore.FieldValue.serverTimestamp(),
+            fecha: new Date(), // Usar fecha de JavaScript en lugar de serverTimestamp
             cantidad: parseInt(cantidad),
             estado: 'pendiente' // Asegurar que el estado sea exactamente 'pendiente'
         };
@@ -155,14 +156,18 @@ async function solicitarRecargaBalas(armaId, cantidad) {
         console.log('Agregando solicitud de balas:', {
             cantidad: solicitud.cantidad,
             estado: solicitud.estado,
-            fecha: 'serverTimestamp'
+            fecha: solicitud.fecha
         });
         console.log('Total solicitudes después de agregar:', solicitudesBalas.length);
         
-        // Actualizar el array completo
+        // Actualizar el array completo (sin serverTimestamp dentro del array)
         await armaRef.update({
             solicitudesBalas: solicitudesBalas
         });
+        
+        // Ahora actualizar la fecha de la última solicitud usando serverTimestamp
+        // Pero como no podemos usar serverTimestamp en arrays, usamos la fecha de JavaScript
+        // que ya pusimos arriba
         
         console.log('✅ Solicitud de balas guardada correctamente');
         
