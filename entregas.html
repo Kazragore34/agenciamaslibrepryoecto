@@ -273,7 +273,7 @@
                         html += `<div style="display: flex; gap: 0.5rem;">`;
                         if (solicitud.estado === 'pendiente') {
                             html += `<button class="btn-success btn-sm" onclick="confirmarEntregaBalas('${arma.id}', ${solicitudIndex})">Confirmar Entrega</button>`;
-                            html += `<button class="btn-danger btn-sm" onclick="rechazarSolicitudBalas('${arma.id}', ${solicitudIndex})">Rechazar</button>`;
+                            html += `<button class="btn-danger btn-sm" onclick="rechazarSolicitudBalasUI('${arma.id}', ${solicitudIndex})">Rechazar</button>`;
                         } else if (solicitud.estado === 'entregada') {
                             html += `<span class="estado-badge success">Entregado</span>`;
                         } else if (solicitud.estado === 'rechazada') {
@@ -308,7 +308,7 @@
             }
         }
 
-        async function rechazarSolicitudBalas(armaId, solicitudIndex) {
+        async function rechazarSolicitudBalasUI(armaId, solicitudIndex) {
             const motivo = prompt('¿Por qué rechazas esta solicitud? (opcional):');
             if (motivo === null) return; // Usuario canceló
             
