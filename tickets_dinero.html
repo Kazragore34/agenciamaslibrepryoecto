@@ -1019,8 +1019,20 @@
         
         // Cargar lista de dinero negro para DEPOSITO
         function cargarDineroNegro() {
+            console.log('=== cargarDineroNegro INICIADO ===');
             const listaEl = document.getElementById('listaDineroNegro');
-            if (!listaEl) return;
+            if (!listaEl) {
+                console.error('Elemento listaDineroNegro no encontrado');
+                return;
+            }
+            
+            console.log('TIPOS_DINERO_NEGRO disponible?:', typeof TIPOS_DINERO_NEGRO !== 'undefined');
+            if (typeof TIPOS_DINERO_NEGRO === 'undefined') {
+                listaEl.innerHTML = '<p style="color: #ef4444;">Error: TIPOS_DINERO_NEGRO no está definido. Recarga la página.</p>';
+                return;
+            }
+            
+            console.log('TIPOS_DINERO_NEGRO:', TIPOS_DINERO_NEGRO);
             
             // Inicializar objeto temporal
             TIPOS_DINERO_NEGRO.forEach(tipo => {
@@ -1045,6 +1057,7 @@
             
             html += '</tbody></table>';
             listaEl.innerHTML = html;
+            console.log('✅ Lista de dinero negro cargada correctamente');
         }
         
         // Función para agregar dinero negro
