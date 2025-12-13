@@ -82,20 +82,6 @@ service cloud.firestore {
       // Permitir actualización (la validación de rol sargento/admin se hace en el código)
       allow update: if true;
     }
-    
-    // Colecciones antiguas (mantener para compatibilidad)
-    match /fichajes/{fichajeId} {
-      allow read, create, update, delete: if true;
-    }
-    
-    match /semanas/{semanaId} {
-      allow read, create, update, delete: if true;
-    }
-    
-    match /tuneos/{tuneoId} {
-      allow read, create, update: if true;
-      allow delete: if false;
-    }
   }
 }
 
