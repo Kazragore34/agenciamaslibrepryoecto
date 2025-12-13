@@ -727,30 +727,30 @@ async function obtenerDepositosPendientes() {
 }
 
 /**
- * Obtiene los depósitos de dinero negro pendientes de un prospect específico
- * @param {string} prospectId - ID del prospect
- * @returns {Promise<Array>} - Array de depósitos pendientes del prospect
+ * Obtiene todos los depósitos de dinero negro de un usuario (pendientes, aprobados y rechazados)
+ * @param {string} usuarioId - ID del usuario
+ * @returns {Promise<Array>} - Array de depósitos del usuario
  */
-async function obtenerDepositosPendientesProspect(prospectId) {
+async function obtenerDepositosPorUsuario(usuarioId) {
     await ensureDb();
     
     const currentUser = getCurrentUser();
-    if (!currentUser || currentUser.id !== prospectId) {
-        throw new Error('Solo puedes ver tus propios depósitos pendientes');
+    if (!currentUser || currentUser.id !== usuarioId) {
+        throw new Error('Solo puedes ver tus propios depósitos');
     }
     
     try {
-        // Cargar todos los depósitos del usuario y filtrar en el cliente para evitar índices compuestos
+        // Cargar todos los depósitos del usuario
         const snapshot = await db.collection('depositos_dinero_negro')
-            .where('usuarioId', '==', prospectId)
+            .where('usuarioId', '==', usuarioId)
             .get();
         
         const depositos = snapshot.docs
             .map(doc => ({
                 id: doc.id,
+                tipo: 'deposito', // Marcar como depósito
                 ...doc.data()
             }))
-            .filter(deposito => deposito.estado === 'pendiente')
             .sort((a, b) => {
                 const fechaA = a.fechaCreacion?.toDate() || new Date(0);
                 const fechaB = b.fechaCreacion?.toDate() || new Date(0);
@@ -759,7 +759,7 @@ async function obtenerDepositosPendientesProspect(prospectId) {
         
         return depositos;
     } catch (error) {
-        console.error('Error obteniendo depósitos pendientes del prospect:', error);
+        console.error('Error obteniendo depósitos del usuario:', error);
         throw error;
     }
 }

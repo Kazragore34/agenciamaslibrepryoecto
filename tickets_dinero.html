@@ -139,17 +139,6 @@
             </div>
         </div>
 
-        <!-- Sección: Depósitos Pendientes (para prospects) -->
-        <div id="seccionDepositosPendientesProspect" style="margin-top: 2rem; display: none;">
-            <div class="stats-card">
-                <h2>Mis Depósitos Pendientes</h2>
-                <p style="color: #6b7280; margin-bottom: 1rem;">Aquí puedes ver el estado de los depósitos de dinero negro que has registrado. Quedarán pendientes hasta que un sargento los apruebe.</p>
-                <div id="listaDepositosPendientesProspect">
-                    <!-- Se carga dinámicamente -->
-                </div>
-            </div>
-        </div>
-
         <!-- Sección MESAS (para prospect y sargentos) -->
         <div id="seccionMesas" style="margin-top: 2rem; display: none;">
             <div class="stats-card">
@@ -543,13 +532,11 @@
                 document.getElementById('seccionEntregasConfirmadasVendedor').style.display = 'block';
                 cargarListaEntregasPendientes();
                 cargarEntregasConfirmadasVendedor();
-                // Mostrar secciones DEPOSITO, DEPOSITOS PENDIENTES y MESAS
+                // Mostrar secciones DEPOSITO y MESAS
                 document.getElementById('seccionDeposito').style.display = 'block';
-                document.getElementById('seccionDepositosPendientesProspect').style.display = 'block';
                 document.getElementById('seccionMesas').style.display = 'block';
                 cargarSargentosDeposito();
                 cargarDineroNegro();
-                cargarDepositosPendientesProspect();
             }
             cargarTickets();
         }
@@ -857,14 +844,15 @@
             }
         }
 
-        // Cargar tickets
+        // Cargar tickets y depósitos
         async function cargarTickets() {
             try {
-                console.log('Cargando tickets para:', currentUser.id, 'Rol:', currentUser.rol);
-                let tickets = [];
+                console.log('Cargando tickets y depósitos para:', currentUser.id, 'Rol:', currentUser.rol);
+                let items = []; // Array unificado para tickets y depósitos
                 let ticketsCreados = [];
                 let ticketsRecibidos = [];
                 
+                // Cargar tickets
                 if (esSargentoOAdmin()) {
                     // Sargentos ven tanto los que crearon como los que recibieron
                     ticketsCreados = await obtenerTicketsPorDealer(currentUser.id);
@@ -875,30 +863,40 @@
                     const ticketsIds = new Set();
                     ticketsCreados.forEach(t => {
                         ticketsIds.add(t.id);
-                        tickets.push(t);
+                        items.push({ ...t, tipo: 'ticket' }); // Marcar como ticket
                     });
                     ticketsRecibidos.forEach(t => {
                         if (!ticketsIds.has(t.id)) {
-                            tickets.push(t);
+                            items.push({ ...t, tipo: 'ticket' }); // Marcar como ticket
                         }
                     });
-                    
-                    document.getElementById('tituloTickets').textContent = 'Mis Tickets';
                 } else {
-                    tickets = await obtenerTicketsPorVendedor(currentUser.id);
+                    const tickets = await obtenerTicketsPorVendedor(currentUser.id);
                     console.log('Tickets recibidos como vendedor:', tickets.length);
-                    document.getElementById('tituloTickets').textContent = 'Mis Tickets';
+                    tickets.forEach(t => {
+                        items.push({ ...t, tipo: 'ticket' }); // Marcar como ticket
+                    });
                 }
                 
-                console.log('Total tickets a mostrar:', tickets.length);
-                console.log('Estados de tickets:', tickets.map(t => ({ id: t.id, estado: t.estado, ticketId: t.ticketId })));
-                mostrarTickets(tickets);
+                // Cargar depósitos (todos los usuarios pueden ver sus propios depósitos)
+                try {
+                    const depositos = await obtenerDepositosPorUsuario(currentUser.id);
+                    console.log('Depósitos encontrados:', depositos.length);
+                    depositos.forEach(d => {
+                        items.push(d); // Ya tiene tipo: 'deposito'
+                    });
+                } catch (error) {
+                    console.error('Error cargando depósitos (puede ser normal si no hay):', error);
+                }
+                
+                console.log('Total items a mostrar (tickets + depósitos):', items.length);
+                mostrarTickets(items);
             } catch (error) {
                 console.error('Error cargando tickets:', error);
             }
         }
 
-        function mostrarTickets(tickets) {
+        function mostrarTickets(items) {
             const listaEl = document.getElementById('listaTickets');
             
             if (!listaEl) {
@@ -906,18 +904,35 @@
                 return;
             }
             
-            if (tickets.length === 0) {
-                listaEl.innerHTML = '<p style="color: #6b7280;">No hay tickets</p>';
+            if (items.length === 0) {
+                listaEl.innerHTML = '<p style="color: #6b7280;">No hay tickets ni depósitos</p>';
                 return;
             }
             
-            // Separar tickets pendientes, pendientes_dealer y confirmados
+            // Separar tickets y depósitos
+            const tickets = items.filter(item => item.tipo === 'ticket');
+            const depositos = items.filter(item => item.tipo === 'deposito');
+            
+            // Separar por estado
             const ticketsPendientes = tickets.filter(t => t.estado === 'pendiente');
             const ticketsPendientesDealer = tickets.filter(t => t.estado === 'pendiente_dealer');
             const ticketsConfirmados = tickets.filter(t => t.estado === 'confirmado');
+            const ticketsRechazados = tickets.filter(t => t.estado === 'rechazado');
             
-            // Ordenar: primero pendientes, luego pendientes_dealer, luego confirmados
-            const ticketsOrdenados = [...ticketsPendientes, ...ticketsPendientesDealer, ...ticketsConfirmados];
+            const depositosPendientes = depositos.filter(d => d.estado === 'pendiente');
+            const depositosAprobados = depositos.filter(d => d.estado === 'aprobado');
+            const depositosRechazados = depositos.filter(d => d.estado === 'rechazado');
+            
+            // Ordenar: primero pendientes, luego pendientes_dealer/aprobados, luego confirmados, luego rechazados
+            const itemsOrdenados = [
+                ...ticketsPendientes,
+                ...depositosPendientes,
+                ...ticketsPendientesDealer,
+                ...depositosAprobados,
+                ...ticketsConfirmados,
+                ...ticketsRechazados,
+                ...depositosRechazados
+            ];
             
             // Determinar qué columnas mostrar
             const tieneTicketsCreados = tickets.some(t => t.dealerId === currentUser.id);
@@ -925,56 +940,89 @@
             
             let html = '';
             
-            // Mostrar alerta si hay tickets pendientes
-            if (ticketsPendientes.length > 0) {
+            // Mostrar alerta si hay items pendientes
+            const totalPendientes = ticketsPendientes.length + depositosPendientes.length;
+            if (totalPendientes > 0) {
                 html += `<div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; margin-bottom: 1rem; border-radius: 0.375rem;">
-                    <strong>⚠️ Tienes ${ticketsPendientes.length} ticket(s) pendiente(s) de confirmar</strong>
+                    <strong>⚠️ Tienes ${totalPendientes} item(s) pendiente(s) de confirmar</strong>
                 </div>`;
             }
             
             html += '<table class="data-table"><thead><tr>';
+            html += '<th>Tipo</th>';
             if (tieneTicketsCreados && tieneTicketsRecibidos) {
-                html += '<th>Tipo</th><th>Usuario</th><th>Ticket ID</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
+                html += '<th>Usuario</th><th>ID</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
             } else if (tieneTicketsCreados) {
-                html += '<th>Vendedor</th><th>Ticket ID</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
+                html += '<th>Vendedor</th><th>ID</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
             } else {
-                html += '<th>Ticket ID</th><th>Dealer</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
+                html += '<th>ID</th><th>Sargento/Dealer</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
             }
             html += '</tr></thead><tbody>';
             
-            ticketsOrdenados.forEach(ticket => {
-                const fecha = ticket.fechaCreacion?.toDate();
+            itemsOrdenados.forEach(item => {
+                const fecha = item.fechaCreacion?.toDate();
                 const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
-                const estadoClass = ticket.estado === 'confirmado' ? 'success' : 
-                                   ticket.estado === 'pendiente_dealer' ? 'warning' : 'pendiente';
-                const esCreadoPorMi = ticket.dealerId === currentUser.id;
-                const esRecibidoPorMi = ticket.vendedorId === currentUser.id;
-                const esPendiente = ticket.estado === 'pendiente';
+                const esTicket = item.tipo === 'ticket';
+                const esDeposito = item.tipo === 'deposito';
+                
+                // Determinar clase de estado
+                let estadoClass = 'pendiente';
+                if (item.estado === 'confirmado' || item.estado === 'aprobado') {
+                    estadoClass = 'success';
+                } else if (item.estado === 'pendiente_dealer' || item.estado === 'pendiente') {
+                    estadoClass = 'warning';
+                } else if (item.estado === 'rechazado') {
+                    estadoClass = 'error';
+                }
+                
+                const esCreadoPorMi = esTicket && item.dealerId === currentUser.id;
+                const esRecibidoPorMi = esTicket && item.vendedorId === currentUser.id;
+                const esPendiente = item.estado === 'pendiente' || item.estado === 'pendiente_dealer';
                 
                 // Resaltar filas pendientes
                 const rowStyle = esPendiente ? 'background: #fef3c7; font-weight: 500;' : '';
                 
+                // ID a mostrar
+                const itemId = esTicket ? item.ticketId : `DEP-${item.id.substring(0, 8)}`;
+                
+                // Nombre del sargento/dealer
+                const nombreSargentoDealer = esTicket ? item.dealerNombre : (item.sargentoNombre || 'N/A');
+                const nombreProspect = esTicket ? item.vendedorNombre : item.usuarioNombre;
+                
+                // Monto entregado
+                const montoEntregado = esTicket ? item.montoEntregado : item.montoTotal;
+                
                 html += `<tr style="${rowStyle}">
+                    <td>
+                        ${esTicket ? '<span style="color: #2563eb; font-weight: 500;">Ticket</span>' : 
+                          '<span style="color: #8b5cf6; font-weight: 500;">Depósito</span>'}
+                    </td>
                     ${tieneTicketsCreados && tieneTicketsRecibidos ? 
-                        `<td>${esCreadoPorMi ? '<span style="color: #2563eb;">Creado</span>' : '<span style="color: #10b981;">Recibido</span>'}</td>
-                         <td>${esCreadoPorMi ? ticket.vendedorNombre : ticket.dealerNombre}</td>` : 
-                        (esCreadoPorMi ? `<td>${ticket.vendedorNombre}</td>` : `<td>${ticket.dealerNombre}</td>`)
+                        `<td>${esTicket ? (esCreadoPorMi ? nombreProspect : nombreSargentoDealer) : nombreSargentoDealer}</td>` : 
+                        (esTicket && esCreadoPorMi ? `<td>${nombreProspect}</td>` : `<td>${nombreSargentoDealer}</td>`)
                     }
-                    <td><strong>${ticket.ticketId}</strong></td>
-                    ${(tieneTicketsCreados || esCreadoPorMi) ? `<td>${ticket.montoAprox ? '$' + ticket.montoAprox.toLocaleString() : 'N/A'}</td>` : ''}
-                    <td>${ticket.montoEntregado ? '$' + ticket.montoEntregado.toLocaleString() : '-'}</td>
-                    <td><span class="estado-badge ${estadoClass}">${ticket.estado}</span></td>
+                    <td><strong>${itemId}</strong></td>
+                    ${(tieneTicketsCreados || esCreadoPorMi) && esTicket ? 
+                        `<td>${item.montoAprox ? '$' + item.montoAprox.toLocaleString() : 'N/A'}</td>` : 
+                        (esTicket ? '' : '<td>-</td>')
+                    }
+                    <td>${montoEntregado ? '$' + montoEntregado.toLocaleString() : '-'}</td>
+                    <td><span class="estado-badge ${estadoClass}">${item.estado}</span></td>
                     <td>${fechaStr}</td>
                     <td>
-                        ${ticket.estado === 'pendiente' && esRecibidoPorMi ? 
-                            `<button class="btn-success btn-sm" onclick="confirmarTicketModal('${ticket.id}')">Confirmar</button>` : 
+                        ${esTicket && item.estado === 'pendiente' && esRecibidoPorMi ? 
+                            `<button class="btn-success btn-sm" onclick="confirmarTicketModal('${item.id}')">Confirmar</button>` : 
                             ''
                         }
-                        ${esCreadoPorMi && ticket.estado === 'confirmado' && ticket.montoAprox ? 
-                            `<span style="color: ${ticket.montoEntregado >= ticket.montoAprox ? '#10b981' : '#ef4444'};">
-                                ${ticket.montoEntregado >= ticket.montoAprox ? '✓' : '⚠'} 
-                                ${((ticket.montoEntregado / ticket.montoAprox) * 100).toFixed(1)}%
+                        ${esTicket && esCreadoPorMi && item.estado === 'confirmado' && item.montoAprox ? 
+                            `<span style="color: ${item.montoEntregado >= item.montoAprox ? '#10b981' : '#ef4444'};">
+                                ${item.montoEntregado >= item.montoAprox ? '✓' : '⚠'} 
+                                ${((item.montoEntregado / item.montoAprox) * 100).toFixed(1)}%
                             </span>` : 
+                            ''
+                        }
+                        ${esDeposito && item.estado === 'rechazado' && item.motivoRechazo ? 
+                            `<span style="color: #ef4444; font-size: 0.875rem;" title="${item.motivoRechazo}">⚠</span>` : 
                             ''
                         }
                     </td>
@@ -1170,10 +1218,8 @@
                 mensajeEl.className = 'auth-message success';
                 mensajeEl.style.display = 'block';
                 
-                // Recargar la lista de depósitos pendientes
-                if (esProspect()) {
-                    cargarDepositosPendientesProspect();
-                }
+                // Recargar la lista de tickets (que incluye depósitos)
+                cargarTickets();
                 
                 setTimeout(() => {
                     mensajeEl.style.display = 'none';
@@ -1243,6 +1289,9 @@
                 }
                 cargarDineroNegro();
                 
+                // Recargar tickets (que incluye depósitos)
+                cargarTickets();
+                
                 setTimeout(() => {
                     mensajeEl.style.display = 'none';
                 }, 5000);
@@ -1259,63 +1308,6 @@
             }
         }
 
-        // Función para cargar depósitos pendientes del prospect
-        async function cargarDepositosPendientesProspect() {
-            if (!esProspect()) return;
-            
-            try {
-                const depositos = await obtenerDepositosPendientesProspect(currentUser.id);
-                const listaEl = document.getElementById('listaDepositosPendientesProspect');
-                
-                if (!listaEl) {
-                    console.error('Elemento listaDepositosPendientesProspect no encontrado');
-                    return;
-                }
-                
-                if (depositos.length === 0) {
-                    listaEl.innerHTML = '<p style="color: #6b7280;">No tienes depósitos pendientes</p>';
-                    return;
-                }
-                
-                let html = '<div style="display: grid; gap: 1rem;">';
-                
-                depositos.forEach(deposito => {
-                    const fechaCreacion = deposito.fechaCreacion?.toDate();
-                    const fechaCreacionStr = fechaCreacion ? fechaCreacion.toLocaleString('es-PE') : 'N/A';
-                    
-                    html += `<div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background: #fef3c7;">`;
-                    html += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">`;
-                    html += `<div>`;
-                    html += `<h3 style="margin: 0 0 0.5rem 0;">Depósito para ${deposito.sargentoNombre}</h3>`;
-                    html += `<p style="color: #6b7280; margin: 0; font-size: 0.875rem;">Fecha: ${fechaCreacionStr}</p>`;
-                    html += `<p style="color: #6b7280; margin: 0.25rem 0 0 0; font-size: 0.875rem;">Monto Total: <strong>$${deposito.montoTotal.toLocaleString()}</strong></p>`;
-                    html += `</div>`;
-                    html += `<span class="estado-badge pendiente">Pendiente</span>`;
-                    html += `</div>`;
-                    
-                    html += `<div style="margin-top: 1rem;">`;
-                    html += `<h4 style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #374151;">Detalles del Depósito:</h4>`;
-                    html += `<div style="background: white; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid #d1d5db;">`;
-                    html += `<ul style="margin: 0; padding-left: 1.5rem;">`;
-                    deposito.detalles.forEach(detalle => {
-                        html += `<li style="margin-bottom: 0.25rem;">${detalle.tipoNombre}: <strong>$${detalle.monto.toLocaleString()}</strong></li>`;
-                    });
-                    html += `</ul>`;
-                    html += `</div>`;
-                    html += `</div>`;
-                    html += `</div>`;
-                });
-                
-                html += '</div>';
-                listaEl.innerHTML = html;
-            } catch (error) {
-                console.error('Error cargando depósitos pendientes del prospect:', error);
-                const listaEl = document.getElementById('listaDepositosPendientesProspect');
-                if (listaEl) {
-                    listaEl.innerHTML = '<p style="color: #ef4444;">Error cargando depósitos: ' + error.message + '</p>';
-                }
-            }
-        }
 
         // Inicializar
         actualizarNavegacion();
