@@ -73,6 +73,16 @@ service cloud.firestore {
       allow create, update: if true;
     }
     
+    // Colección de depósitos de dinero negro
+    match /depositos_dinero_negro/{depositoId} {
+      // Permitir lectura a todos (la validación de rol sargento/admin se hace en el código)
+      allow read: if true;
+      // Permitir creación (la validación de rol prospect/sargento se hace en el código)
+      allow create: if true;
+      // Permitir actualización (la validación de rol sargento/admin se hace en el código)
+      allow update: if true;
+    }
+    
     // Colecciones antiguas (mantener para compatibilidad)
     match /fichajes/{fichajeId} {
       allow read, create, update, delete: if true;
