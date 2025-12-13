@@ -505,7 +505,9 @@ async function cargarTicketsDepositosResumen() {
                 <div style="border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; background: ${esTicket ? '#dbeafe' : '#fef3c7'}; transition: all 0.2s; cursor: pointer;" 
                      onmouseover="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)'" 
                      onmouseout="this.style.boxShadow='none'"
-                     onclick="window.location.href='tickets_dinero.html${esTicket ? '?id=' + item.id : ''}'">
+                     onclick="${esTicket && esSargentoOAdmin() && (item.estado === 'pendiente' || item.estado === 'pendiente_dealer') ? 
+                        'window.location.href=\'entregas.html\'' : 
+                        `window.location.href='tickets_dinero.html${esTicket ? '?id=' + item.id : ''}'`}">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="flex: 1; min-width: 0;">
                             <div style="font-weight: 600; color: #374151; font-size: 0.75rem; margin-bottom: 0.125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -1121,14 +1123,15 @@ async function cargarSolicitudesPendientesSargento() {
         if (!seccionEl || !listaEl) return;
         
         // Cargar todas las solicitudes pendientes
-        const [entregasPendientes, depositosPendientes, solicitudesBalas, solicitudesChalecos] = await Promise.all([
+        const [entregasPendientes, depositosPendientes, solicitudesBalas, solicitudesChalecos, ticketsPendientes] = await Promise.all([
             obtenerEntregasPorDealer(currentUser.id).then(entregas => entregas.filter(e => e.estado === 'pendiente')),
             obtenerDepositosPendientes().then(depositos => depositos.filter(d => d.sargentoId === currentUser.id)),
             obtenerSolicitudesBalasPendientes(),
-            obtenerSolicitudesChalecosIndependientesPendientes()
+            obtenerSolicitudesChalecosIndependientesPendientes(),
+            obtenerTicketsPorDealer(currentUser.id).then(tickets => tickets.filter(t => t.estado === 'pendiente_dealer' || t.estado === 'pendiente'))
         ]);
         
-        const totalSolicitudes = entregasPendientes.length + depositosPendientes.length + solicitudesBalas.length + solicitudesChalecos.length;
+        const totalSolicitudes = entregasPendientes.length + depositosPendientes.length + solicitudesBalas.length + solicitudesChalecos.length + ticketsPendientes.length;
         
         if (contadorEl) {
             if (totalSolicitudes > 0) {
