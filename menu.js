@@ -639,7 +639,7 @@ async function cargarArmasActivas() {
                 }
             }
             
-            // Mostrar sección de accesos rápidos
+            // Mostrar sección de accesos rápidos para prospects
             if (seccionAccesos) {
                 seccionAccesos.style.display = 'block';
             }
@@ -729,8 +729,9 @@ async function cargarArmasActivas() {
                 }
             }
             
+            // Mostrar sección de accesos rápidos también para sargentos
             if (seccionAccesos) {
-                seccionAccesos.style.display = 'none';
+                seccionAccesos.style.display = 'block';
             }
             
             if (totalSolicitudes === 0) {
@@ -1059,10 +1060,212 @@ async function registrarDepositoTipoRapido(tipoId) {
             mostrarModal('Depósito registrado correctamente. Quedará pendiente hasta que el sargento lo apruebe.', 'success');
             cerrarModalDepositoRapido();
             cargarTicketsDepositosResumen();
+            if (esSargentoOAdmin()) {
+                await cargarSolicitudesPendientesSargento();
+            }
         } catch (error) {
             console.error('Error registrando depósito:', error);
             mostrarModal('Error: ' + error.message, 'error');
         }
     });
+}
+
+/**
+ * Carga las solicitudes pendientes para sargentos (acceso rápido extra)
+ */
+async function cargarSolicitudesPendientesSargento() {
+    const currentUser = getCurrentUser();
+    if (!currentUser || !esSargentoOAdmin()) return;
+    
+    try {
+        const seccionEl = document.getElementById('seccionAccesoRapidoExtra');
+        const listaEl = document.getElementById('solicitudesPendientesSargento');
+        const contadorEl = document.getElementById('contadorSolicitudesPendientes');
+        
+        if (!seccionEl || !listaEl) return;
+        
+        // Mostrar la sección
+        seccionEl.style.display = 'block';
+        
+        // Cargar todas las solicitudes pendientes
+        const [entregasPendientes, depositosPendientes, solicitudesBalas, solicitudesChalecos] = await Promise.all([
+            obtenerEntregasPorDealer(currentUser.id).then(entregas => entregas.filter(e => e.estado === 'pendiente')),
+            obtenerDepositosPendientes().then(depositos => depositos.filter(d => d.sargentoId === currentUser.id)),
+            obtenerSolicitudesBalasPendientes(),
+            obtenerSolicitudesChalecosIndependientesPendientes()
+        ]);
+        
+        const totalSolicitudes = entregasPendientes.length + depositosPendientes.length + solicitudesBalas.length + solicitudesChalecos.length;
+        
+        if (contadorEl) {
+            if (totalSolicitudes > 0) {
+                contadorEl.textContent = totalSolicitudes;
+                contadorEl.style.display = 'inline-block';
+            } else {
+                contadorEl.style.display = 'none';
+            }
+        }
+        
+        if (totalSolicitudes === 0) {
+            listaEl.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 1rem;">No hay solicitudes pendientes</p>';
+            return;
+        }
+        
+        let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+        
+        // Entregas de productos pendientes
+        entregasPendientes.slice(0, 2).forEach((entrega, index) => {
+            const fecha = entrega.fechaCreacion?.toDate();
+            const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+            const productosResumen = entrega.productos.slice(0, 2).map(p => 
+                `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`
+            ).join(', ');
+            
+            html += `
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #fef3c7; transition: all 0.2s;" 
+                     onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                     onmouseout="this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem; font-size: 0.875rem;">
+                                📦 Entrega de Productos
+                            </div>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                A: ${entrega.vendedorNombre || 'Prospect'}
+                            </div>
+                            <div style="font-size: 0.7rem; color: #9ca3af;">
+                                ${productosResumen}${entrega.productos.length > 2 ? '...' : ''}
+                            </div>
+                            <div style="font-size: 0.65rem; color: #9ca3af; margin-top: 0.25rem;">
+                                ${fechaStr}
+                            </div>
+                        </div>
+                        <span style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; white-space: nowrap;">
+                            Pendiente
+                        </span>
+                    </div>
+                    <button onclick="window.location.href='entregas.html'" 
+                            style="width: 100%; background: #2563eb; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; font-weight: 500;">
+                        Ver en Entregas
+                    </button>
+                </div>
+            `;
+        });
+        
+        // Depósitos de dinero negro pendientes
+        depositosPendientes.slice(0, 2).forEach((deposito, index) => {
+            const fecha = deposito.fechaCreacion?.toDate();
+            const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+            const totalMonto = Object.values(deposito.importes || {}).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+            
+            html += `
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #f3e8ff; transition: all 0.2s;" 
+                     onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                     onmouseout="this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem; font-size: 0.875rem;">
+                                💰 Depósito Dinero Negro
+                            </div>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                De: ${deposito.usuarioNombre || 'Usuario'}
+                            </div>
+                            <div style="font-size: 0.7rem; color: #9ca3af;">
+                                Monto: $${totalMonto.toLocaleString()}
+                            </div>
+                            <div style="font-size: 0.65rem; color: #9ca3af; margin-top: 0.25rem;">
+                                ${fechaStr}
+                            </div>
+                        </div>
+                        <span style="background: #8b5cf6; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; white-space: nowrap;">
+                            Pendiente
+                        </span>
+                    </div>
+                    <button onclick="window.location.href='entregas.html'" 
+                            style="width: 100%; background: #2563eb; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; font-weight: 500;">
+                        Ver en Entregas
+                    </button>
+                </div>
+            `;
+        });
+        
+        // Solicitudes de balas pendientes
+        solicitudesBalas.slice(0, 2).forEach((arma, index) => {
+            html += `
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #fef3c7; transition: all 0.2s;" 
+                     onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                     onmouseout="this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem; font-size: 0.875rem;">
+                                🎯 Solicitud de Balas
+                            </div>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                ${arma.tipoArma} - De: ${arma.vendedorNombre || 'Prospect'}
+                            </div>
+                            <div style="font-size: 0.7rem; color: #9ca3af;">
+                                ${arma.solicitudesPendientes.length} solicitud(es)
+                            </div>
+                        </div>
+                        <span style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; white-space: nowrap;">
+                            Pendiente
+                        </span>
+                    </div>
+                    <button onclick="window.location.href='entregas.html'" 
+                            style="width: 100%; background: #2563eb; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; font-weight: 500;">
+                        Ver en Entregas
+                    </button>
+                </div>
+            `;
+        });
+        
+        // Solicitudes de chalecos independientes pendientes
+        solicitudesChalecos.slice(0, 2).forEach((solicitud, index) => {
+            const fecha = solicitud.fechaCreacion?.toDate();
+            const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+            
+            html += `
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #dbeafe; transition: all 0.2s;" 
+                     onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
+                     onmouseout="this.style.boxShadow='none'">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem; font-size: 0.875rem;">
+                                🛡️ Solicitud de Chaleco
+                            </div>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">
+                                De: ${solicitud.usuarioNombre || 'Prospect'}
+                            </div>
+                            <div style="font-size: 0.65rem; color: #9ca3af; margin-top: 0.25rem;">
+                                ${fechaStr}
+                            </div>
+                        </div>
+                        <span style="background: #3b82f6; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; white-space: nowrap;">
+                            Pendiente
+                        </span>
+                    </div>
+                    <button onclick="window.location.href='entregas.html'" 
+                            style="width: 100%; background: #2563eb; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer; font-weight: 500;">
+                        Ver en Entregas
+                    </button>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        
+        // Agregar mensaje si hay más solicitudes
+        const totalMostradas = entregasPendientes.slice(0, 2).length + depositosPendientes.slice(0, 2).length + 
+                              solicitudesBalas.slice(0, 2).length + solicitudesChalecos.slice(0, 2).length;
+        if (totalSolicitudes > totalMostradas) {
+            html += `<p style="color: #6b7280; font-size: 0.75rem; text-align: center; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem; margin-top: 0.5rem;">
+                Mostrando ${totalMostradas} de ${totalSolicitudes}. <a href="entregas.html" style="color: #3b82f6; text-decoration: underline;">Ver todas</a>
+            </p>`;
+        }
+        
+        listaEl.innerHTML = html;
+    } catch (error) {
+        console.error('Error cargando solicitudes pendientes:', error);
+    }
 }
 
