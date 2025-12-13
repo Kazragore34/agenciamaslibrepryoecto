@@ -241,21 +241,25 @@
                 
                 const armasOrdenadas = [...armasActivas, ...armasPerdidas];
                 
-                // Mostrar/ocultar botón de solicitar chaleco
+                // Mostrar/ocultar botón de solicitar chaleco independiente
                 const seccionChaleco = document.getElementById('seccionSolicitarChaleco');
-                if (seccionChaleco && !esSarg) {
-                    // Verificar si hay alguna arma activa sin chaleco
-                    const tieneArmaSinChaleco = armasActivas.some(a => !a.chaleco);
-                    // Verificar si ya hay una solicitud pendiente de chaleco
-                    const tieneSolicitudPendiente = armasActivas.some(arma => {
-                        const solicitudesChalecos = arma.solicitudesChalecos || [];
-                        return solicitudesChalecos.some(s => s && s.estado === 'pendiente');
-                    });
-                    
-                    if (tieneArmaSinChaleco && !tieneSolicitudPendiente) {
-                        seccionChaleco.style.display = 'block';
-                    } else {
-                        seccionChaleco.style.display = 'none';
+                if (seccionChaleco && !esSargentoOAdmin()) {
+                    // Verificar si ya hay una solicitud pendiente de chaleco independiente
+                    try {
+                        await ensureDb();
+                        const snapshot = await db.collection('solicitudes_chalecos')
+                            .where('usuarioId', '==', currentUser.id)
+                            .where('estado', '==', 'pendiente')
+                            .get();
+                        
+                        if (snapshot.empty) {
+                            seccionChaleco.style.display = 'block';
+                        } else {
+                            seccionChaleco.style.display = 'none';
+                        }
+                    } catch (error) {
+                        console.error('Error verificando solicitudes de chaleco:', error);
+                        seccionChaleco.style.display = 'block'; // Mostrar por defecto si hay error
                     }
                 }
                 
@@ -531,56 +535,40 @@
 
         async function solicitarChalecoGlobal() {
             if (!esProspect()) {
-                alert('Solo los prospects pueden solicitar chalecos');
+                if (typeof mostrarModal !== 'undefined') {
+                    mostrarModal('Solo los prospects pueden solicitar chalecos', 'warning');
+                } else {
+                    alert('Solo los prospects pueden solicitar chalecos');
+                }
                 return;
             }
             
             try {
                 await ensureDb();
-                // Buscar todas las armas activas del usuario sin chaleco
-                const armas = await obtenerArmasPorVendedor(currentUser.id);
-                const armasActivasSinChaleco = armas.filter(a => a.estado === 'activa' && !a.chaleco);
                 
-                if (armasActivasSinChaleco.length === 0) {
-                    alert('No tienes armas activas sin chaleco para solicitar');
-                    return;
-                }
-                
-                // Verificar si ya hay una solicitud pendiente
-                const tieneSolicitudPendiente = armasActivasSinChaleco.some(arma => {
-                    const solicitudesChalecos = arma.solicitudesChalecos || [];
-                    return solicitudesChalecos.some(s => s && s.estado === 'pendiente');
-                });
-                
-                if (tieneSolicitudPendiente) {
-                    alert('Ya tienes una solicitud de chaleco pendiente');
-                    return;
-                }
-                
-                // Si hay solo una arma, solicitar directamente
-                if (armasActivasSinChaleco.length === 1) {
-                    if (!confirm('¿Deseas solicitar un chaleco?')) return;
-                    await solicitarChaleco(armasActivasSinChaleco[0].id);
-                    alert('Solicitud de chaleco enviada correctamente');
-                    cargarArmas();
+                // Solicitar chaleco independiente (no enlazado a arma)
+                if (typeof mostrarConfirmacion !== 'undefined') {
+                    mostrarConfirmacion('¿Deseas solicitar un chaleco? (Este chaleco es independiente y no está enlazado a ningún arma)', async () => {
+                        try {
+                            await solicitarChalecoIndependiente();
+                            mostrarModal('Solicitud de chaleco enviada correctamente', 'success');
+                            cargarArmas();
+                        } catch (error) {
+                            mostrarModal('Error: ' + error.message, 'error');
+                        }
+                    });
                 } else {
-                    // Si hay varias, mostrar selector
-                    const opciones = armasActivasSinChaleco.map((a, i) => `${i + 1}. ${a.tipoArma}`).join('\n');
-                    const seleccion = prompt(`Tienes ${armasActivasSinChaleco.length} armas sin chaleco:\n${opciones}\n\nIngresa el número del arma (1-${armasActivasSinChaleco.length}):`);
-                    const indice = parseInt(seleccion) - 1;
-                    
-                    if (isNaN(indice) || indice < 0 || indice >= armasActivasSinChaleco.length) {
-                        alert('Selección inválida');
-                        return;
-                    }
-                    
-                    if (!confirm('¿Deseas solicitar un chaleco para esta arma?')) return;
-                    await solicitarChaleco(armasActivasSinChaleco[indice].id);
+                    if (!confirm('¿Deseas solicitar un chaleco? (Este chaleco es independiente y no está enlazado a ningún arma)')) return;
+                    await solicitarChalecoIndependiente();
                     alert('Solicitud de chaleco enviada correctamente');
                     cargarArmas();
                 }
             } catch (error) {
-                alert('Error: ' + error.message);
+                if (typeof mostrarModal !== 'undefined') {
+                    mostrarModal('Error: ' + error.message, 'error');
+                } else {
+                    alert('Error: ' + error.message);
+                }
             }
         }
 

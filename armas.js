@@ -705,7 +705,169 @@ async function obtenerSolicitudesBalasPendientes() {
 }
 
 /**
- * Obtiene todas las armas activas con solicitudes de chalecos pendientes
+ * Solicita chaleco independiente (vendedor) - NO enlazado a un arma
+ * @returns {Promise<void>}
+ */
+async function solicitarChalecoIndependiente() {
+    await ensureDb();
+    
+    if (!esProspect()) {
+        throw new Error('Solo los prospects pueden solicitar chalecos');
+    }
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+    }
+    
+    try {
+        // Verificar si ya hay una solicitud pendiente de chaleco independiente
+        const snapshot = await db.collection('solicitudes_chalecos')
+            .where('usuarioId', '==', currentUser.id)
+            .where('estado', '==', 'pendiente')
+            .get();
+        
+        if (!snapshot.empty) {
+            throw new Error('Ya tienes una solicitud de chaleco pendiente');
+        }
+        
+        // Crear la solicitud de chaleco independiente
+        const solicitudData = {
+            usuarioId: currentUser.id,
+            usuarioNombre: `${currentUser.nombre} ${currentUser.apellido}`,
+            estado: 'pendiente',
+            tipo: 'chaleco_independiente',
+            fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+            fechaAprobacion: null,
+            fechaRechazo: null,
+            sargentoAprobo: null,
+            sargentoNombreAprobo: null,
+            sargentoRechazo: null,
+            sargentoNombreRechazo: null,
+            motivoRechazo: null
+        };
+        
+        await db.collection('solicitudes_chalecos').add(solicitudData);
+        
+        console.log('✅ Solicitud de chaleco independiente guardada correctamente');
+    } catch (error) {
+        console.error('Error solicitando chaleco independiente:', error);
+        throw error;
+    }
+}
+
+/**
+ * Obtiene todas las solicitudes de chalecos independientes pendientes
+ * @returns {Promise<Array>} - Array de solicitudes de chalecos pendientes
+ */
+async function obtenerSolicitudesChalecosIndependientesPendientes() {
+    await ensureDb();
+    
+    try {
+        const snapshot = await db.collection('solicitudes_chalecos')
+            .where('estado', '==', 'pendiente')
+            .get();
+        
+        const solicitudes = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+        
+        return solicitudes;
+    } catch (error) {
+        console.error('Error obteniendo solicitudes de chalecos independientes:', error);
+        throw error;
+    }
+}
+
+/**
+ * Aprueba una solicitud de chaleco independiente
+ * @param {string} solicitudId - ID de la solicitud
+ * @returns {Promise<void>}
+ */
+async function aprobarChalecoIndependiente(solicitudId) {
+    await ensureDb();
+    
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden aprobar chalecos');
+    }
+    
+    const currentUser = getCurrentUser();
+    
+    try {
+        const solicitudRef = db.collection('solicitudes_chalecos').doc(solicitudId);
+        const solicitudDoc = await solicitudRef.get();
+        
+        if (!solicitudDoc.exists) {
+            throw new Error('Solicitud no encontrada');
+        }
+        
+        const solicitudData = solicitudDoc.data();
+        
+        if (solicitudData.estado !== 'pendiente') {
+            throw new Error('Esta solicitud ya fue procesada');
+        }
+        
+        await solicitudRef.update({
+            estado: 'aprobado',
+            sargentoAprobo: currentUser.id,
+            sargentoNombreAprobo: `${currentUser.nombre} ${currentUser.apellido}`,
+            fechaAprobacion: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        console.log('✅ Solicitud de chaleco independiente aprobada');
+    } catch (error) {
+        console.error('Error aprobando chaleco independiente:', error);
+        throw error;
+    }
+}
+
+/**
+ * Rechaza una solicitud de chaleco independiente
+ * @param {string} solicitudId - ID de la solicitud
+ * @param {string} motivo - Motivo del rechazo
+ * @returns {Promise<void>}
+ */
+async function rechazarChalecoIndependiente(solicitudId, motivo = '') {
+    await ensureDb();
+    
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden rechazar chalecos');
+    }
+    
+    const currentUser = getCurrentUser();
+    
+    try {
+        const solicitudRef = db.collection('solicitudes_chalecos').doc(solicitudId);
+        const solicitudDoc = await solicitudRef.get();
+        
+        if (!solicitudDoc.exists) {
+            throw new Error('Solicitud no encontrada');
+        }
+        
+        const solicitudData = solicitudDoc.data();
+        
+        if (solicitudData.estado !== 'pendiente') {
+            throw new Error('Esta solicitud ya fue procesada');
+        }
+        
+        await solicitudRef.update({
+            estado: 'rechazado',
+            sargentoRechazo: currentUser.id,
+            sargentoNombreRechazo: `${currentUser.nombre} ${currentUser.apellido}`,
+            motivoRechazo: motivo || '',
+            fechaRechazo: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        console.log('✅ Solicitud de chaleco independiente rechazada');
+    } catch (error) {
+        console.error('Error rechazando chaleco independiente:', error);
+        throw error;
+    }
+}
+
+/**
+ * Obtiene todas las armas activas con solicitudes de chalecos pendientes (legacy - para compatibilidad)
  * @returns {Promise<Array>} - Array de armas con solicitudes de chalecos pendientes
  */
 async function obtenerSolicitudesChalecosPendientes() {

@@ -240,6 +240,7 @@
                 console.log('Cargando solicitudes de balas y chalecos pendientes...');
                 const armasConSolicitudesBalas = await obtenerSolicitudesBalasPendientes();
                 const armasConSolicitudesChalecos = await obtenerSolicitudesChalecosPendientes();
+                const solicitudesChalecosIndependientes = await obtenerSolicitudesChalecosIndependientesPendientes();
                 console.log('Armas con solicitudes de balas:', armasConSolicitudesBalas.length);
                 console.log('Armas con solicitudes de chalecos:', armasConSolicitudesChalecos.length);
                 const listaEl = document.getElementById('listaSolicitudesBalas');
