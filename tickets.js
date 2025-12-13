@@ -561,8 +561,13 @@ async function crearDepositoDineroNegro(importes) {
         
         console.log('detallesDeposito:', detallesDeposito);
         
+        if (detallesDeposito.length === 0) {
+            throw new Error('No se encontraron tipos válidos para los importes proporcionados');
+        }
+        
         // Calcular monto total
         const montoTotal = detallesDeposito.reduce((sum, detalle) => sum + detalle.monto, 0);
+        console.log('montoTotal calculado:', montoTotal);
         
         const depositoData = {
             usuarioId: currentUser.id,
@@ -581,7 +586,12 @@ async function crearDepositoDineroNegro(importes) {
             fechaRechazo: null
         };
         
+        console.log('depositoData a guardar:', depositoData);
+        console.log('Guardando en colección depositos_dinero_negro...');
+        
         const docRef = await db.collection('depositos_dinero_negro').add(depositoData);
+        console.log('✅ Depósito guardado con ID:', docRef.id);
+        
         return docRef.id;
     } catch (error) {
         console.error('Error creando depósito de dinero negro:', error);
