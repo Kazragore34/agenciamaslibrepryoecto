@@ -287,8 +287,7 @@ async function confirmarTicketDineroDealer(ticketId) {
         
         // Actualizar metas del prospect (vendedor)
         if (ticketData.montoEntregado && ticketData.montoEntregado > 0) {
-            await actualizarMeta(ticketData.vendedorId, 'diaria', ticketData.montoEntregado);
-            await actualizarMeta(ticketData.vendedorId, 'semanal', ticketData.montoEntregado);
+            await actualizarMeta(ticketData.vendedorId, ticketData.montoEntregado);
         }
         
     } catch (error) {
@@ -817,8 +816,10 @@ async function aprobarDepositoDineroNegro(depositoId) {
             sargentoNombreAprobo: `${currentUser.nombre} ${currentUser.apellido}`
         });
         
-        // Actualizar metas del usuario
-        await actualizarMeta(depositoData.usuarioId, depositoData.montoTotal);
+        // Actualizar metas del usuario (diaria y semanal)
+        if (depositoData.montoTotal && depositoData.montoTotal > 0) {
+            await actualizarMeta(depositoData.usuarioId, depositoData.montoTotal);
+        }
     } catch (error) {
         console.error('Error aprobando depósito:', error);
         throw error;

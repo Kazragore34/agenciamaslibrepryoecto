@@ -360,10 +360,18 @@
                 const fechaPerdida = arma.fechaPerdida?.toDate();
                 const fechaPerdidaStr = fechaPerdida ? fechaPerdida.toLocaleString('es-PE') : 'N/A';
                 
-                // Obtener historial de balas entregadas
+                // Obtener historial completo de balas
                 const solicitudesBalas = arma.solicitudesBalas || [];
-                const solicitudesEntregadas = solicitudesBalas.filter(s => s.estado === 'entregada');
                 const solicitudesPendientes = solicitudesBalas.filter(s => s.estado === 'pendiente');
+                const solicitudesEntregadas = solicitudesBalas.filter(s => s.estado === 'entregada');
+                const solicitudesRechazadas = solicitudesBalas.filter(s => s.estado === 'rechazada');
+                
+                // Ordenar todas las solicitudes por fecha (más recientes primero)
+                const todasSolicitudes = [...solicitudesBalas].sort((a, b) => {
+                    const fechaA = a.fecha?.toDate() || new Date(0);
+                    const fechaB = b.fecha?.toDate() || new Date(0);
+                    return fechaB - fechaA;
+                });
                 
                 let html = `
                     <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 2rem;">
@@ -386,47 +394,61 @@
                                 ` : ''}
                             </div>
                             
-                            ${solicitudesPendientes.length > 0 ? `
-                                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #fef3c7; border-radius: 0.375rem; border-left: 4px solid #f59e0b;">
-                                    <h4 style="margin: 0 0 0.5rem 0;">Solicitudes Pendientes (${solicitudesPendientes.length})</h4>
-                                    ${solicitudesPendientes.map(solicitud => {
-                                        const fechaSolicitud = solicitud.fecha?.toDate();
-                                        const fechaSolicitudStr = fechaSolicitud ? fechaSolicitud.toLocaleString('es-PE') : 'N/A';
-                                        return `
-                                            <div style="background: white; padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 0.5rem;">
-                                                <p style="margin: 0;"><strong>Cantidad:</strong> ${solicitud.cantidad} balas</p>
-                                                <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Solicitado:</strong> ${fechaSolicitudStr}</p>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            ` : ''}
-                            
-                            ${solicitudesEntregadas.length > 0 ? `
-                                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
-                                    <h4 style="margin: 0 0 1rem 0;">Historial de Balas Entregadas</h4>
+                            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                                <h4 style="margin: 0 0 1rem 0;">Historial Completo de Solicitudes de Balas</h4>
+                                ${todasSolicitudes.length > 0 ? `
                                     <div style="display: grid; gap: 0.75rem;">
-                                        ${solicitudesEntregadas.map(solicitud => {
+                                        ${todasSolicitudes.map(solicitud => {
                                             const fechaSolicitud = solicitud.fecha?.toDate();
                                             const fechaSolicitudStr = fechaSolicitud ? fechaSolicitud.toLocaleString('es-PE') : 'N/A';
                                             const fechaConfirmacion = solicitud.fechaConfirmacion?.toDate();
                                             const fechaConfirmacionStr = fechaConfirmacion ? fechaConfirmacion.toLocaleString('es-PE') : 'N/A';
+                                            const fechaRechazo = solicitud.fechaRechazo?.toDate();
+                                            const fechaRechazoStr = fechaRechazo ? fechaRechazo.toLocaleString('es-PE') : 'N/A';
+                                            
+                                            let bgColor = '#f9fafb';
+                                            let borderColor = '#e5e7eb';
+                                            let estadoTexto = 'Pendiente';
+                                            let estadoColor = '#f59e0b';
+                                            
+                                            if (solicitud.estado === 'entregada') {
+                                                bgColor = '#f0fdf4';
+                                                borderColor = '#10b981';
+                                                estadoTexto = 'Entregada';
+                                                estadoColor = '#10b981';
+                                            } else if (solicitud.estado === 'rechazada') {
+                                                bgColor = '#fef2f2';
+                                                borderColor = '#ef4444';
+                                                estadoTexto = 'Rechazada';
+                                                estadoColor = '#ef4444';
+                                            }
+                                            
                                             return `
-                                                <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.375rem; border-left: 4px solid #10b981;">
-                                                    <p style="margin: 0;"><strong>Cantidad:</strong> ${solicitud.cantidad} balas</p>
+                                                <div style="background: ${bgColor}; padding: 1rem; border-radius: 0.375rem; border-left: 4px solid ${borderColor};">
+                                                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                                        <p style="margin: 0;"><strong>Cantidad:</strong> ${solicitud.cantidad} balas</p>
+                                                        <span style="background: ${estadoColor}; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;">${estadoTexto}</span>
+                                                    </div>
                                                     <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Solicitado:</strong> ${fechaSolicitudStr}</p>
-                                                    <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Confirmado por:</strong> ${solicitud.sargentoNombre || 'N/A'}</p>
-                                                    <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Fecha de confirmación:</strong> ${fechaConfirmacionStr}</p>
+                                                    ${solicitud.estado === 'entregada' ? `
+                                                        <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Confirmado por:</strong> ${solicitud.sargentoNombre || 'N/A'}</p>
+                                                        <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Fecha de confirmación:</strong> ${fechaConfirmacionStr}</p>
+                                                    ` : ''}
+                                                    ${solicitud.estado === 'rechazada' ? `
+                                                        <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Rechazado por:</strong> ${solicitud.sargentoNombre || 'N/A'}</p>
+                                                        <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Fecha de rechazo:</strong> ${fechaRechazoStr}</p>
+                                                        ${solicitud.motivoRechazo ? `
+                                                            <p style="margin: 0.25rem 0 0 0; color: #ef4444; font-size: 0.875rem;"><strong>Motivo:</strong> ${solicitud.motivoRechazo}</p>
+                                                        ` : ''}
+                                                    ` : ''}
                                                 </div>
                                             `;
                                         }).join('')}
                                     </div>
-                                </div>
-                            ` : `
-                                <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
-                                    <p style="color: #6b7280;">No hay historial de balas entregadas</p>
-                                </div>
-                            `}
+                                ` : `
+                                    <p style="color: #6b7280;">No hay solicitudes de balas registradas</p>
+                                `}
+                            </div>
                         </div>
                     </div>
                 `;

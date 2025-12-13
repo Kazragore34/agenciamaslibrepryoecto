@@ -47,22 +47,37 @@ async function calcularMetaDiaria(userId, fecha = null) {
     const fechaUsar = fecha || getFechaActualPeru();
     
     try {
-        // Obtener todos los tickets confirmados del usuario para esta fecha
-        const ticketsRef = db.collection('tickets_dinero');
-        const snapshot = await ticketsRef
-            .where('vendedorId', '==', userId)
-            .where('estado', '==', 'confirmado')
-            .get();
-        
         let dineroRecibido = 0;
         const fechaInicio = new Date(fechaUsar + 'T00:00:00-05:00');
         const fechaFin = new Date(fechaUsar + 'T23:59:59-05:00');
         
-        snapshot.forEach(doc => {
+        // Obtener todos los tickets confirmados del usuario para esta fecha
+        const ticketsRef = db.collection('tickets_dinero');
+        const ticketsSnapshot = await ticketsRef
+            .where('vendedorId', '==', userId)
+            .where('estado', '==', 'confirmado')
+            .get();
+        
+        ticketsSnapshot.forEach(doc => {
             const ticket = doc.data();
             const fechaConfirmacion = ticket.fechaConfirmacion?.toDate();
             if (fechaConfirmacion && fechaConfirmacion >= fechaInicio && fechaConfirmacion <= fechaFin) {
                 dineroRecibido += ticket.montoEntregado || 0;
+            }
+        });
+        
+        // Obtener todos los depósitos aprobados del usuario para esta fecha
+        const depositosRef = db.collection('depositos_dinero_negro');
+        const depositosSnapshot = await depositosRef
+            .where('usuarioId', '==', userId)
+            .where('estado', '==', 'aprobado')
+            .get();
+        
+        depositosSnapshot.forEach(doc => {
+            const deposito = doc.data();
+            const fechaAprobacion = deposito.fechaAprobacion?.toDate();
+            if (fechaAprobacion && fechaAprobacion >= fechaInicio && fechaAprobacion <= fechaFin) {
+                dineroRecibido += deposito.montoTotal || 0;
             }
         });
         
@@ -94,13 +109,6 @@ async function calcularMetaSemanal(userId, semana = null) {
     const semanaUsar = semana || getSemanaActual();
     
     try {
-        // Obtener todos los tickets confirmados del usuario para esta semana
-        const ticketsRef = db.collection('tickets_dinero');
-        const snapshot = await ticketsRef
-            .where('vendedorId', '==', userId)
-            .where('estado', '==', 'confirmado')
-            .get();
-        
         let dineroRecibido = 0;
         const [año, numSemana] = semanaUsar.split('-');
         const fechaInicio = getFechaInicioSemana(parseInt(año), parseInt(numSemana));
@@ -108,11 +116,33 @@ async function calcularMetaSemanal(userId, semana = null) {
         fechaFin.setDate(fechaFin.getDate() + 6);
         fechaFin.setHours(23, 59, 59, 999);
         
-        snapshot.forEach(doc => {
+        // Obtener todos los tickets confirmados del usuario para esta semana
+        const ticketsRef = db.collection('tickets_dinero');
+        const ticketsSnapshot = await ticketsRef
+            .where('vendedorId', '==', userId)
+            .where('estado', '==', 'confirmado')
+            .get();
+        
+        ticketsSnapshot.forEach(doc => {
             const ticket = doc.data();
             const fechaConfirmacion = ticket.fechaConfirmacion?.toDate();
             if (fechaConfirmacion && fechaConfirmacion >= fechaInicio && fechaConfirmacion <= fechaFin) {
                 dineroRecibido += ticket.montoEntregado || 0;
+            }
+        });
+        
+        // Obtener todos los depósitos aprobados del usuario para esta semana
+        const depositosRef = db.collection('depositos_dinero_negro');
+        const depositosSnapshot = await depositosRef
+            .where('usuarioId', '==', userId)
+            .where('estado', '==', 'aprobado')
+            .get();
+        
+        depositosSnapshot.forEach(doc => {
+            const deposito = doc.data();
+            const fechaAprobacion = deposito.fechaAprobacion?.toDate();
+            if (fechaAprobacion && fechaAprobacion >= fechaInicio && fechaAprobacion <= fechaFin) {
+                dineroRecibido += deposito.montoTotal || 0;
             }
         });
         
