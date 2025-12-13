@@ -250,7 +250,7 @@
                     return;
                 }
                 
-                const totalArmas = armasConSolicitudesBalas.length + armasConSolicitudesChalecos.length;
+                const totalArmas = armasConSolicitudesBalas.length + armasConSolicitudesChalecos.length + solicitudesChalecosIndependientes.length;
                 
                 if (totalArmas === 0) {
                     console.log('No hay solicitudes pendientes');
@@ -420,6 +420,32 @@
             try {
                 await rechazarSolicitudChaleco(armaId, solicitudIndex, motivo || '');
                 alert('Solicitud rechazada correctamente');
+                cargarSolicitudesBalasPendientes();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function confirmarChalecoIndependiente(solicitudId) {
+            if (!confirm('¿Confirmas que entregaste este chaleco al prospect?')) return;
+            try {
+                await aprobarChalecoIndependiente(solicitudId);
+                alert('Chaleco confirmado como entregado correctamente');
+                cargarSolicitudesBalasPendientes();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function rechazarChalecoIndependienteUI(solicitudId) {
+            const motivo = prompt('¿Por qué rechazas esta solicitud de chaleco? (opcional):');
+            if (motivo === null) return; // Usuario canceló
+            
+            if (!confirm('¿Estás seguro de rechazar esta solicitud de chaleco?')) return;
+            
+            try {
+                await rechazarChalecoIndependiente(solicitudId, motivo || '');
+                alert('Solicitud de chaleco rechazada correctamente');
                 cargarSolicitudesBalasPendientes();
             } catch (error) {
                 alert('Error: ' + error.message);
