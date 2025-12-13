@@ -1,7 +1,7 @@
 // Funciones para gestión de tickets de dinero
 
 /**
- * Genera un ID único para un ticket (TICKET001, TICKET002, etc.)
+ * Genera un ID único para un ticket (ENT-000, ENT-001, etc.)
  * @returns {Promise<string>} - ID del ticket
  */
 async function generarTicketId() {
@@ -19,15 +19,53 @@ async function generarTicketId() {
         if (!snapshot.empty) {
             const ultimoTicket = snapshot.docs[0].data();
             const ultimoId = ultimoTicket.ticketId || '';
-            const match = ultimoId.match(/TICKET(\d+)/);
+            const match = ultimoId.match(/ENT-(\d+)/);
+            if (match) {
+                siguienteNumero = parseInt(match[1]) + 1;
+            } else {
+                // Compatibilidad con formato antiguo TICKET
+                const matchAntiguo = ultimoId.match(/TICKET(\d+)/);
+                if (matchAntiguo) {
+                    siguienteNumero = parseInt(matchAntiguo[1]) + 1;
+                }
+            }
+        }
+        
+        return `ENT-${String(siguienteNumero).padStart(3, '0')}`;
+    } catch (error) {
+        console.error('Error generando ticket ID:', error);
+        throw error;
+    }
+}
+
+/**
+ * Genera un ID único para un depósito (DEP-000, DEP-001, etc.)
+ * @returns {Promise<string>} - ID del depósito
+ */
+async function generarDepositoId() {
+    await ensureDb();
+    
+    try {
+        // Obtener el último depósito para generar el siguiente número
+        const snapshot = await db.collection('depositos_dinero_negro')
+            .orderBy('fechaCreacion', 'desc')
+            .limit(1)
+            .get();
+        
+        let siguienteNumero = 1;
+        
+        if (!snapshot.empty) {
+            const ultimoDeposito = snapshot.docs[0].data();
+            const ultimoId = ultimoDeposito.depositoId || '';
+            const match = ultimoId.match(/DEP-(\d+)/);
             if (match) {
                 siguienteNumero = parseInt(match[1]) + 1;
             }
         }
         
-        return `TICKET${String(siguienteNumero).padStart(3, '0')}`;
+        return `DEP-${String(siguienteNumero).padStart(3, '0')}`;
     } catch (error) {
-        console.error('Error generando ticket ID:', error);
+        console.error('Error generando depósito ID:', error);
         throw error;
     }
 }
@@ -668,7 +706,11 @@ async function crearDepositoDineroNegro(importes) {
         const montoTotal = detallesDeposito.reduce((sum, detalle) => sum + detalle.monto, 0);
         console.log('montoTotal calculado:', montoTotal);
         
+        // Generar código de depósito
+        const depositoId = await generarDepositoId();
+        
         const depositoData = {
+            depositoId: depositoId,
             usuarioId: currentUser.id,
             usuarioNombre: `${currentUser.nombre} ${currentUser.apellido}`,
             usuarioRol: currentUser.rol,
@@ -689,7 +731,7 @@ async function crearDepositoDineroNegro(importes) {
         console.log('Guardando en colección depositos_dinero_negro...');
         
         const docRef = await db.collection('depositos_dinero_negro').add(depositoData);
-        console.log('✅ Depósito guardado con ID:', docRef.id);
+        console.log('✅ Depósito guardado con ID:', docRef.id, 'Código:', depositoId);
         
         return docRef.id;
     } catch (error) {

@@ -948,14 +948,14 @@
                 </div>`;
             }
             
-            html += '<table class="data-table"><thead><tr>';
-            html += '<th>Tipo</th>';
+            html += '<div style="overflow-x: auto;"><table class="data-table" style="width: 100%; min-width: 800px;"><thead><tr>';
+            html += '<th style="white-space: nowrap;">Tipo</th>';
             if (tieneTicketsCreados && tieneTicketsRecibidos) {
-                html += '<th>Usuario</th><th>ID</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
+                html += '<th style="white-space: nowrap;">Usuario</th><th style="white-space: nowrap;">ID</th><th style="white-space: nowrap;">Monto Aprox</th><th style="white-space: nowrap;">Monto Entregado</th><th style="white-space: nowrap;">Estado</th><th style="white-space: nowrap;">Fecha</th><th style="white-space: nowrap;">Acciones</th>';
             } else if (tieneTicketsCreados) {
-                html += '<th>Vendedor</th><th>ID</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
+                html += '<th style="white-space: nowrap;">Vendedor</th><th style="white-space: nowrap;">ID</th><th style="white-space: nowrap;">Monto Aprox</th><th style="white-space: nowrap;">Monto Entregado</th><th style="white-space: nowrap;">Estado</th><th style="white-space: nowrap;">Fecha</th><th style="white-space: nowrap;">Acciones</th>';
             } else {
-                html += '<th>ID</th><th>Sargento/Dealer</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acciones</th>';
+                html += '<th style="white-space: nowrap;">ID</th><th style="white-space: nowrap;">Sargento/Dealer</th><th style="white-space: nowrap;">Monto Entregado</th><th style="white-space: nowrap;">Estado</th><th style="white-space: nowrap;">Fecha</th><th style="white-space: nowrap;">Acciones</th>';
             }
             html += '</tr></thead><tbody>';
             
@@ -983,7 +983,7 @@
                 const rowStyle = esPendiente ? 'background: #fef3c7; font-weight: 500;' : '';
                 
                 // ID a mostrar
-                const itemId = esTicket ? item.ticketId : `DEP-${item.id.substring(0, 8)}`;
+                const itemId = esTicket ? item.ticketId : (item.depositoId || `DEP-${item.id.substring(0, 8)}`);
                 
                 // Nombre del sargento/dealer
                 const nombreSargentoDealer = esTicket ? item.dealerNombre : (item.sargentoNombre || 'N/A');

@@ -318,18 +318,11 @@
                 
                 console.log('solicitarRecargaBalas completado exitosamente');
                 mostrarMensaje('Solicitud de balas enviada correctamente', 'success');
-                alert('✅ Solicitud de balas enviada correctamente. Revisa la consola para más detalles.');
+                alert('✅ Solicitud de balas enviada correctamente');
                 
                 // Esperar un momento para que se guarde en Firestore
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 cargarArmas();
-                
-                // Notificar al usuario que puede verificar en Entregas
-                setTimeout(() => {
-                    if (confirm('Solicitud enviada. ¿Quieres ir a la página de Entregas para verla?')) {
-                        window.location.href = 'entregas.html';
-                    }
-                }, 1500);
             } catch (error) {
                 console.error('❌ ERROR solicitando balas:', error);
                 console.error('Stack trace:', error.stack);
