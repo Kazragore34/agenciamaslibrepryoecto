@@ -1125,9 +1125,11 @@ async function cargarSolicitudesPendientesSargento() {
         const listaEl = document.getElementById('solicitudesPendientesSargento');
         const contadorEl = document.getElementById('contadorSolicitudesPendientes');
         
-        if (!seccionEl || !listaEl) return;
+        if (!seccionEl || !listaEl) {
+            console.error('❌ Elementos no encontrados:', { seccionEl: !!seccionEl, listaEl: !!listaEl });
+            return;
+        }
         
-        // Cargar todas las solicitudes pendientes
         console.log('🔍 Cargando solicitudes pendientes para sargento:', currentUser.id);
         
         const [entregasPendientes, depositosPendientes, solicitudesBalas, solicitudesChalecos, ticketsPendientes] = await Promise.all([
