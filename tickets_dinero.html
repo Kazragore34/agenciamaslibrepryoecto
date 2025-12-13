@@ -1091,8 +1091,13 @@
         async function registrarDeposito() {
             const mensajeEl = document.getElementById('mensajeDeposito');
             
+            console.log('=== REGISTRAR DEPÓSITO INICIADO ===');
+            console.log('dineroNegroTemp:', dineroNegroTemp);
+            
             // Verificar que haya al menos un importe mayor a 0
             const tieneImportes = Object.values(dineroNegroTemp).some(importe => importe > 0);
+            console.log('tieneImportes:', tieneImportes);
+            
             if (!tieneImportes) {
                 mensajeEl.textContent = 'Debes agregar al menos un importe para registrar el depósito';
                 mensajeEl.className = 'auth-message error';
@@ -1104,30 +1109,47 @@
             }
             
             try {
+                console.log('Verificando que productos.js esté cargado...');
+                if (typeof TIPOS_DINERO_NEGRO === 'undefined') {
+                    throw new Error('TIPOS_DINERO_NEGRO no está definido. Asegúrate de que productos.js esté cargado.');
+                }
+                console.log('TIPOS_DINERO_NEGRO:', TIPOS_DINERO_NEGRO);
+                
                 mensajeEl.textContent = 'Registrando depósito...';
                 mensajeEl.className = 'auth-message info';
                 mensajeEl.style.display = 'block';
                 
-                await crearDepositoDineroNegro(dineroNegroTemp);
+                console.log('Llamando a crearDepositoDineroNegro...');
+                const depositoId = await crearDepositoDineroNegro(dineroNegroTemp);
+                console.log('Depósito creado con ID:', depositoId);
                 
                 mensajeEl.textContent = 'Depósito registrado correctamente. Quedará pendiente hasta que un sargento lo apruebe.';
                 mensajeEl.className = 'auth-message success';
                 mensajeEl.style.display = 'block';
                 
                 // Limpiar los importes
-                TIPOS_DINERO_NEGRO.forEach(tipo => {
-                    dineroNegroTemp[tipo.id] = 0;
-                });
+                if (typeof TIPOS_DINERO_NEGRO !== 'undefined') {
+                    TIPOS_DINERO_NEGRO.forEach(tipo => {
+                        dineroNegroTemp[tipo.id] = 0;
+                    });
+                } else {
+                    // Fallback: limpiar todas las claves
+                    Object.keys(dineroNegroTemp).forEach(key => {
+                        dineroNegroTemp[key] = 0;
+                    });
+                }
                 cargarDineroNegro();
                 
                 setTimeout(() => {
                     mensajeEl.style.display = 'none';
                 }, 5000);
             } catch (error) {
-                console.error('Error registrando depósito:', error);
+                console.error('❌ Error registrando depósito:', error);
+                console.error('Stack trace:', error.stack);
                 mensajeEl.textContent = 'Error: ' + error.message;
                 mensajeEl.className = 'auth-message error';
                 mensajeEl.style.display = 'block';
+                alert('Error al registrar depósito: ' + error.message + '\n\nRevisa la consola para más detalles.');
                 setTimeout(() => {
                     mensajeEl.style.display = 'none';
                 }, 5000);

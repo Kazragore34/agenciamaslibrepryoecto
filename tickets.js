@@ -533,20 +533,33 @@ async function crearDepositoDineroNegro(importes) {
     }
     
     try {
+        console.log('=== crearDepositoDineroNegro ===');
+        console.log('importes recibidos:', importes);
+        console.log('TIPOS_DINERO_NEGRO disponible?:', typeof TIPOS_DINERO_NEGRO !== 'undefined');
+        
+        if (typeof TIPOS_DINERO_NEGRO === 'undefined') {
+            throw new Error('TIPOS_DINERO_NEGRO no está definido. Asegúrate de que productos.js esté cargado antes de tickets.js');
+        }
+        
         // Convertir importes a array de objetos con tipo y monto
         const detallesDeposito = [];
         Object.keys(importes).forEach(tipoId => {
             if (importes[tipoId] > 0) {
                 const tipo = TIPOS_DINERO_NEGRO.find(t => t.id === tipoId);
+                console.log(`Buscando tipo ${tipoId}:`, tipo);
                 if (tipo) {
                     detallesDeposito.push({
                         tipoId: tipoId,
                         tipoNombre: tipo.nombre,
                         monto: parseFloat(importes[tipoId])
                     });
+                } else {
+                    console.warn(`Tipo ${tipoId} no encontrado en TIPOS_DINERO_NEGRO`);
                 }
             }
         });
+        
+        console.log('detallesDeposito:', detallesDeposito);
         
         // Calcular monto total
         const montoTotal = detallesDeposito.reduce((sum, detalle) => sum + detalle.monto, 0);
