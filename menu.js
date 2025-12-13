@@ -1388,7 +1388,24 @@ async function cargarSolicitudesPendientesSargento() {
         
         console.log('✅ Función cargarSolicitudesPendientesSargento completada');
     } catch (error) {
-        console.error('Error cargando solicitudes pendientes:', error);
+        console.error('❌ Error cargando solicitudes pendientes:', error);
+        console.error('Stack trace:', error.stack);
+        
+        // Asegurar que el grid y la columna estén visibles incluso si hay error
+        const gridError = document.getElementById('gridPrincipal');
+        if (gridError) {
+            gridError.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+        }
+        const columnaError = document.getElementById('columnaEntregasRapidas');
+        if (columnaError) {
+            columnaError.style.display = 'flex';
+        }
+        
+        // Mostrar mensaje de error al usuario
+        const listaEl = document.getElementById('solicitudesPendientesSargento');
+        if (listaEl) {
+            listaEl.innerHTML = `<p style="color: #ef4444; text-align: center; padding: 1rem;">Error al cargar solicitudes. Por favor, recarga la página.</p>`;
+        }
     }
 }
 
