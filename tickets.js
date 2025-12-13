@@ -800,6 +800,16 @@ async function aprobarDepositoDineroNegro(depositoId) {
             throw new Error('Este depósito ya fue procesado');
         }
         
+        // Verificar que el sargento que aprueba NO sea el mismo que hizo el depósito
+        if (depositoData.usuarioId === currentUser.id) {
+            throw new Error('No puedes aprobar tu propio depósito. Solo el sargento destinatario puede aprobarlo.');
+        }
+        
+        // Verificar que el sargento que aprueba SÍ sea el destinatario del depósito
+        if (depositoData.sargentoId !== currentUser.id) {
+            throw new Error('Solo el sargento destinatario puede aprobar este depósito.');
+        }
+        
         await depositoRef.update({
             estado: 'aprobado',
             fechaAprobacion: firebase.firestore.FieldValue.serverTimestamp(),

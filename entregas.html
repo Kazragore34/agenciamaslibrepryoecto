@@ -613,11 +613,16 @@
                     const fechaCreacion = deposito.fechaCreacion?.toDate();
                     const fechaCreacionStr = fechaCreacion ? fechaCreacion.toLocaleString('es-PE') : 'N/A';
                     
+                    // Verificar si el sargento actual puede aprobar este depósito
+                    // Solo puede aprobar si es el destinatario (sargentoId) y NO es quien lo hizo (usuarioId)
+                    const puedeAprobar = deposito.sargentoId === currentUser.id && deposito.usuarioId !== currentUser.id;
+                    
                     html += `<div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background: #fef3c7;">`;
                     html += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">`;
                     html += `<div>`;
                     html += `<h3 style="margin: 0 0 0.5rem 0;">Depósito de ${deposito.usuarioNombre}</h3>`;
                     html += `<p style="color: #6b7280; margin: 0; font-size: 0.875rem;">Rol: <strong>${deposito.usuarioRol}</strong></p>`;
+                    html += `<p style="color: #6b7280; margin: 0.25rem 0 0 0; font-size: 0.875rem;">Para sargento: <strong>${deposito.sargentoNombre || 'N/A'}</strong></p>`;
                     html += `<p style="color: #6b7280; margin: 0.25rem 0 0 0; font-size: 0.875rem;">Fecha: ${fechaCreacionStr}</p>`;
                     html += `<p style="color: #6b7280; margin: 0.25rem 0 0 0; font-size: 0.875rem;">Monto Total: <strong>$${deposito.montoTotal.toLocaleString()}</strong></p>`;
                     html += `</div>`;
@@ -636,8 +641,16 @@
                     html += `</div>`;
                     
                     html += `<div style="margin-top: 1rem; display: flex; gap: 0.5rem;">`;
-                    html += `<button class="btn-success btn-sm" onclick="aprobarDeposito('${deposito.id}')">Aprobar</button>`;
-                    html += `<button class="btn-danger btn-sm" onclick="rechazarDeposito('${deposito.id}')">Rechazar</button>`;
+                    if (puedeAprobar) {
+                        html += `<button class="btn-success btn-sm" onclick="aprobarDeposito('${deposito.id}')">Aprobar</button>`;
+                        html += `<button class="btn-danger btn-sm" onclick="rechazarDeposito('${deposito.id}')">Rechazar</button>`;
+                    } else {
+                        if (deposito.usuarioId === currentUser.id) {
+                            html += `<span style="color: #6b7280; font-size: 0.875rem;">No puedes aprobar tu propio depósito. Esperando aprobación de ${deposito.sargentoNombre || 'el sargento destinatario'}.</span>`;
+                        } else {
+                            html += `<span style="color: #6b7280; font-size: 0.875rem;">Este depósito es para otro sargento. Solo ${deposito.sargentoNombre || 'el sargento destinatario'} puede aprobarlo.</span>`;
+                        }
+                    }
                     html += `</div>`;
                     html += `</div>`;
                 });
