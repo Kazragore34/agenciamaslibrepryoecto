@@ -99,6 +99,13 @@ async function solicitarRecargaBalas(armaId, cantidad) {
             throw new Error('No puedes solicitar balas para un arma perdida');
         }
         
+        // Verificar estado actual de las solicitudes
+        console.log('Estado actual del arma:', {
+            id: armaId,
+            solicitudesBalasActuales: armaData.solicitudesBalas,
+            cantidadSolicitudesActuales: (armaData.solicitudesBalas || []).length
+        });
+        
         const solicitud = {
             fecha: firebase.firestore.FieldValue.serverTimestamp(),
             cantidad: parseInt(cantidad),
@@ -108,14 +115,25 @@ async function solicitarRecargaBalas(armaId, cantidad) {
         const solicitudesBalas = armaData.solicitudesBalas || [];
         solicitudesBalas.push(solicitud);
         
-        console.log('Agregando solicitud de balas:', solicitud);
+        console.log('Agregando solicitud de balas:', JSON.stringify(solicitud, null, 2));
+        console.log('Array completo de solicitudes antes de guardar:', JSON.stringify(solicitudesBalas, null, 2));
         console.log('Total solicitudes después de agregar:', solicitudesBalas.length);
         
+        // Usar arrayUnion para asegurar que se agregue correctamente
+        // Pero primero necesitamos obtener el documento completo y actualizarlo
         await armaRef.update({
-            solicitudesBalas
+            solicitudesBalas: firebase.firestore.FieldValue.arrayUnion(solicitud)
         });
         
-        console.log('Solicitud de balas guardada correctamente');
+        console.log('Solicitud de balas guardada correctamente usando arrayUnion');
+        
+        // Verificar que se guardó correctamente
+        const armaDocVerificacion = await armaRef.get();
+        const armaDataVerificacion = armaDocVerificacion.data();
+        console.log('Verificación después de guardar:', {
+            solicitudesBalasGuardadas: armaDataVerificacion.solicitudesBalas,
+            cantidadSolicitudesGuardadas: (armaDataVerificacion.solicitudesBalas || []).length
+        });
     } catch (error) {
         console.error('Error solicitando recarga de balas:', error);
         throw error;
