@@ -600,9 +600,26 @@
                             ${entrega.itemsAdicionales && entrega.itemsAdicionales.length > 0 ? `
                                 <div style="margin-bottom: 1rem;">
                                     <strong>Items Adicionales:</strong>
-                                    <ul style="margin: 0.5rem 0 0 1.5rem;">
-                                        ${entrega.itemsAdicionales.map(i => `<li>${i.tipo}: ${i.cantidad}</li>`).join('')}
-                                    </ul>
+                                    <div style="margin: 0.5rem 0 0 0; padding: 0.75rem; background: #f3f4f6; border-radius: 0.375rem;">
+                                        ${(() => {
+                                            // Agrupar items adicionales por tipo
+                                            const itemsAgrupados = {};
+                                            entrega.itemsAdicionales.forEach(item => {
+                                                if (itemsAgrupados[item.tipo]) {
+                                                    itemsAgrupados[item.tipo] += item.cantidad;
+                                                } else {
+                                                    itemsAgrupados[item.tipo] = item.cantidad;
+                                                }
+                                            });
+                                            // Convertir a array y formatear
+                                            return Object.entries(itemsAgrupados)
+                                                .map(([tipo, cantidad]) => {
+                                                    const nombreTipo = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+                                                    return `<span style="display: inline-block; margin-right: 1rem; margin-bottom: 0.5rem; padding: 0.25rem 0.75rem; background: white; border-radius: 0.25rem; border: 1px solid #d1d5db;"><strong>${nombreTipo}:</strong> ${cantidad}</span>`;
+                                                })
+                                                .join('');
+                                        })()}
+                                    </div>
                                 </div>
                             ` : ''}
                             
@@ -615,11 +632,23 @@
                                         ${ticketsRelacionados.map(ticket => {
                                             const fechaTicket = ticket.fechaCreacion?.toDate();
                                             const fechaTicketStr = fechaTicket ? fechaTicket.toLocaleString('es-PE') : 'N/A';
-                                            const estadoClass = ticket.estado === 'confirmado' ? 'success' : ticket.estado === 'rechazado' ? 'error' : 'pendiente';
+                                            const estadoClass = ticket.estado === 'confirmado_dealer' || ticket.estado === 'confirmado' ? 'success' : ticket.estado === 'rechazado' ? 'error' : 'pendiente';
+                                            const montoEntregado = ticket.montoEntregado ? ticket.montoEntregado.toLocaleString() : 'N/A';
+                                            const montoAprox = entrega.precioAprox ? entrega.precioAprox.toLocaleString() : 'N/A';
                                             return `
                                                 <div style="background: #f9fafb; padding: 0.75rem; border-radius: 0.375rem; margin-bottom: 0.5rem;">
-                                                    <p style="margin: 0;"><strong>${ticket.ticketId}</strong> - <span class="estado-badge ${estadoClass}">${ticket.estado}</span></p>
-                                                    <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;">Monto: $${ticket.montoEntregado ? ticket.montoEntregado.toLocaleString() : 'N/A'} - ${fechaTicketStr}</p>
+                                                    <p style="margin: 0;"><strong>${ticket.ticketId || 'N/A'}</strong> - <span class="estado-badge ${estadoClass}">${ticket.estado === 'confirmado_dealer' ? 'Confirmado' : ticket.estado === 'pendiente_dealer' ? 'Pendiente' : ticket.estado}</span></p>
+                                                    <div style="margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                                                        <p style="margin: 0.25rem 0; color: #10b981;"><strong>Monto Entregado:</strong> $${montoEntregado}</p>
+                                                        <p style="margin: 0.25rem 0; color: #6b7280;"><strong>Monto Aprox (Debió entregar):</strong> $${montoAprox}</p>
+                                                        ${montoAprox !== 'N/A' && montoEntregado !== 'N/A' ? `
+                                                            <p style="margin: 0.25rem 0; color: ${parseFloat(ticket.montoEntregado) >= parseFloat(entrega.precioAprox) ? '#10b981' : '#ef4444'};">
+                                                                <strong>Diferencia:</strong> $${(parseFloat(ticket.montoEntregado) - parseFloat(entrega.precioAprox)).toLocaleString()}
+                                                                ${parseFloat(ticket.montoEntregado) >= parseFloat(entrega.precioAprox) ? '✓' : '⚠'}
+                                                            </p>
+                                                        ` : ''}
+                                                        <p style="margin: 0.25rem 0 0 0; color: #9ca3af; font-size: 0.75rem;">${fechaTicketStr}</p>
+                                                    </div>
                                                 </div>
                                             `;
                                         }).join('')}
