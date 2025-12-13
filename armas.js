@@ -263,6 +263,57 @@ async function entregarBalas(armaId, solicitudIndex) {
 }
 
 /**
+ * Rechaza una solicitud de balas (dealer)
+ * @param {string} armaId - ID de la entrega de arma
+ * @param {number} solicitudIndex - Índice de la solicitud en el array
+ * @param {string} motivo - Motivo del rechazo (opcional)
+ * @returns {Promise<void>}
+ */
+async function rechazarSolicitudBalas(armaId, solicitudIndex, motivo = '') {
+    await ensureDb();
+    
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden rechazar solicitudes de balas');
+    }
+    
+    const currentUser = getCurrentUser();
+    
+    try {
+        const armaRef = db.collection('entregas_armas').doc(armaId);
+        const armaDoc = await armaRef.get();
+        
+        if (!armaDoc.exists) {
+            throw new Error('Arma no encontrada');
+        }
+        
+        const armaData = armaDoc.data();
+        const solicitudesBalas = armaData.solicitudesBalas || [];
+        
+        if (solicitudIndex < 0 || solicitudIndex >= solicitudesBalas.length) {
+            throw new Error('Índice de solicitud inválido');
+        }
+        
+        if (solicitudesBalas[solicitudIndex].estado !== 'pendiente') {
+            throw new Error('Esta solicitud ya fue procesada');
+        }
+        
+        // Actualizar la solicitud con información del sargento que rechazó
+        solicitudesBalas[solicitudIndex].estado = 'rechazada';
+        solicitudesBalas[solicitudIndex].sargentoRechazo = currentUser.id;
+        solicitudesBalas[solicitudIndex].sargentoNombreRechazo = `${currentUser.nombre} ${currentUser.apellido}`;
+        solicitudesBalas[solicitudIndex].motivoRechazo = motivo || 'Sin motivo especificado';
+        solicitudesBalas[solicitudIndex].fechaRechazo = new Date();
+        
+        await armaRef.update({
+            solicitudesBalas
+        });
+    } catch (error) {
+        console.error('Error rechazando solicitud de balas:', error);
+        throw error;
+    }
+}
+
+/**
  * Marca un arma como perdida (dealer)
  * @param {string} armaId - ID de la entrega de arma
  * @param {string} motivo - Motivo de la pérdida

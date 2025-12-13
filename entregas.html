@@ -267,8 +267,19 @@
                         html += `<p style="margin: 0; font-weight: 500;">Cantidad: <strong>${solicitud.cantidad}</strong> balas</p>`;
                         html += `<p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;">Solicitado: ${fechaSolicitudStr}</p>`;
                         html += `${solicitud.sargentoNombre ? `<p style="margin: 0.25rem 0 0 0; color: #059669; font-size: 0.875rem;"><strong>Entregado por:</strong> ${solicitud.sargentoNombre}</p>` : ''}`;
+                        html += `${solicitud.sargentoNombreRechazo ? `<p style="margin: 0.25rem 0 0 0; color: #ef4444; font-size: 0.875rem;"><strong>Rechazado por:</strong> ${solicitud.sargentoNombreRechazo}</p>` : ''}`;
+                        html += `${solicitud.motivoRechazo ? `<p style="margin: 0.25rem 0 0 0; color: #ef4444; font-size: 0.875rem;"><strong>Motivo:</strong> ${solicitud.motivoRechazo}</p>` : ''}`;
                         html += `</div>`;
-                        html += `${solicitud.estado === 'pendiente' ? `<button class="btn-success btn-sm" onclick="confirmarEntregaBalas('${arma.id}', ${solicitudIndex})">Confirmar Entrega</button>` : `<span class="estado-badge success">Entregado</span>`}`;
+                        html += `<div style="display: flex; gap: 0.5rem;">`;
+                        if (solicitud.estado === 'pendiente') {
+                            html += `<button class="btn-success btn-sm" onclick="confirmarEntregaBalas('${arma.id}', ${solicitudIndex})">Confirmar Entrega</button>`;
+                            html += `<button class="btn-danger btn-sm" onclick="rechazarSolicitudBalas('${arma.id}', ${solicitudIndex})">Rechazar</button>`;
+                        } else if (solicitud.estado === 'entregada') {
+                            html += `<span class="estado-badge success">Entregado</span>`;
+                        } else if (solicitud.estado === 'rechazada') {
+                            html += `<span class="estado-badge error">Rechazado</span>`;
+                        }
+                        html += `</div>`;
                         html += `</div>`;
                     });
                     
@@ -291,6 +302,21 @@
             try {
                 await entregarBalas(armaId, solicitudIndex);
                 alert('Balas confirmadas como entregadas correctamente');
+                cargarSolicitudesBalasPendientes();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function rechazarSolicitudBalas(armaId, solicitudIndex) {
+            const motivo = prompt('¿Por qué rechazas esta solicitud? (opcional):');
+            if (motivo === null) return; // Usuario canceló
+            
+            if (!confirm('¿Estás seguro de rechazar esta solicitud de balas?')) return;
+            
+            try {
+                await rechazarSolicitudBalas(armaId, solicitudIndex, motivo || '');
+                alert('Solicitud rechazada correctamente');
                 cargarSolicitudesBalasPendientes();
             } catch (error) {
                 alert('Error: ' + error.message);
@@ -540,18 +566,115 @@
             }
         }
 
+        // Cargar depósitos pendientes
+        async function cargarDepositosPendientes() {
+            if (!esSargentoOAdmin()) return;
+            
+            try {
+                const depositos = await obtenerDepositosPendientes();
+                const listaEl = document.getElementById('listaDepositosPendientes');
+                
+                if (!listaEl) {
+                    console.error('Elemento listaDepositosPendientes no encontrado');
+                    return;
+                }
+                
+                if (depositos.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay depósitos pendientes</p>';
+                    return;
+                }
+                
+                let html = '<div style="display: grid; gap: 1rem;">';
+                
+                depositos.forEach(deposito => {
+                    const fechaCreacion = deposito.fechaCreacion?.toDate();
+                    const fechaCreacionStr = fechaCreacion ? fechaCreacion.toLocaleString('es-PE') : 'N/A';
+                    
+                    html += `<div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background: #fef3c7;">`;
+                    html += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">`;
+                    html += `<div>`;
+                    html += `<h3 style="margin: 0 0 0.5rem 0;">Depósito de ${deposito.usuarioNombre}</h3>`;
+                    html += `<p style="color: #6b7280; margin: 0; font-size: 0.875rem;">Rol: <strong>${deposito.usuarioRol}</strong></p>`;
+                    html += `<p style="color: #6b7280; margin: 0.25rem 0 0 0; font-size: 0.875rem;">Fecha: ${fechaCreacionStr}</p>`;
+                    html += `<p style="color: #6b7280; margin: 0.25rem 0 0 0; font-size: 0.875rem;">Monto Total: <strong>$${deposito.montoTotal.toLocaleString()}</strong></p>`;
+                    html += `</div>`;
+                    html += `<span class="estado-badge pendiente">Pendiente</span>`;
+                    html += `</div>`;
+                    
+                    html += `<div style="margin-top: 1rem;">`;
+                    html += `<h4 style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #374151;">Detalles del Depósito:</h4>`;
+                    html += `<div style="background: white; padding: 0.75rem; border-radius: 0.375rem; border: 1px solid #d1d5db;">`;
+                    html += `<ul style="margin: 0; padding-left: 1.5rem;">`;
+                    deposito.detalles.forEach(detalle => {
+                        html += `<li style="margin-bottom: 0.25rem;">${detalle.tipoNombre}: <strong>$${detalle.monto.toLocaleString()}</strong></li>`;
+                    });
+                    html += `</ul>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                    
+                    html += `<div style="margin-top: 1rem; display: flex; gap: 0.5rem;">`;
+                    html += `<button class="btn-success btn-sm" onclick="aprobarDeposito('${deposito.id}')">Aprobar</button>`;
+                    html += `<button class="btn-danger btn-sm" onclick="rechazarDeposito('${deposito.id}')">Rechazar</button>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                });
+                
+                html += '</div>';
+                listaEl.innerHTML = html;
+            } catch (error) {
+                console.error('Error cargando depósitos pendientes:', error);
+                document.getElementById('listaDepositosPendientes').innerHTML = 
+                    '<p style="color: #ef4444;">Error cargando depósitos: ' + error.message + '</p>';
+            }
+        }
+
+        async function aprobarDeposito(depositoId) {
+            if (!confirm('¿Estás seguro de aprobar este depósito? El monto se agregará a las metas del usuario.')) return;
+            
+            try {
+                await aprobarDepositoDineroNegro(depositoId);
+                alert('Depósito aprobado correctamente');
+                cargarDepositosPendientes();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function rechazarDeposito(depositoId) {
+            const motivo = prompt('¿Por qué rechazas este depósito? (opcional):');
+            if (motivo === null) return; // Usuario canceló
+            
+            if (!confirm('¿Estás seguro de rechazar este depósito?')) return;
+            
+            try {
+                await rechazarDepositoDineroNegro(depositoId, motivo || '');
+                alert('Depósito rechazado correctamente');
+                cargarDepositosPendientes();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
         // Inicializar - Solo sargentos y admins pueden ver esto
         if (esSargentoOAdmin()) {
             cargarTicketsPendientesDealer();
             // Cargar solicitudes de balas inmediatamente
             setTimeout(() => {
                 cargarSolicitudesBalasPendientes();
+                cargarDepositosPendientes();
             }, 1000);
             // Recargar cada 3 segundos para asegurar que se vean las nuevas solicitudes
             setInterval(() => {
                 cargarSolicitudesBalasPendientes();
+                cargarDepositosPendientes();
             }, 3000);
             // No cargar historial automáticamente, solo cuando se expanda el acordeón
+        } else {
+            document.getElementById('mensajeNoSargento').style.display = 'block';
+            document.getElementById('seccionTicketsPendientes').style.display = 'none';
+            document.getElementById('seccionSolicitudesBalas').style.display = 'none';
+            document.getElementById('seccionDepositosPendientes').style.display = 'none';
+            document.getElementById('seccionHistorial').style.display = 'none';
         }
     </script>
 </body>

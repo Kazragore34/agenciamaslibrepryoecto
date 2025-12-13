@@ -513,3 +513,178 @@ async function obtenerDineroEntregadoSemana(vendedorId) {
     }
 }
 
+/**
+ * Crea un depósito de dinero negro
+ * @param {Object} importes - Objeto con los importes por tipo de dinero negro { tipoId: importe }
+ * @returns {Promise<string>} - ID del depósito creado
+ */
+async function crearDepositoDineroNegro(importes) {
+    await ensureDb();
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+    }
+    
+    // Verificar que haya al menos un importe mayor a 0
+    const tieneImportes = Object.values(importes).some(importe => importe > 0);
+    if (!tieneImportes) {
+        throw new Error('Debes agregar al menos un importe para registrar el depósito');
+    }
+    
+    try {
+        // Convertir importes a array de objetos con tipo y monto
+        const detallesDeposito = [];
+        Object.keys(importes).forEach(tipoId => {
+            if (importes[tipoId] > 0) {
+                const tipo = TIPOS_DINERO_NEGRO.find(t => t.id === tipoId);
+                if (tipo) {
+                    detallesDeposito.push({
+                        tipoId: tipoId,
+                        tipoNombre: tipo.nombre,
+                        monto: parseFloat(importes[tipoId])
+                    });
+                }
+            }
+        });
+        
+        // Calcular monto total
+        const montoTotal = detallesDeposito.reduce((sum, detalle) => sum + detalle.monto, 0);
+        
+        const depositoData = {
+            usuarioId: currentUser.id,
+            usuarioNombre: `${currentUser.nombre} ${currentUser.apellido}`,
+            usuarioRol: currentUser.rol,
+            detalles: detallesDeposito,
+            montoTotal,
+            estado: 'pendiente',
+            fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+            fechaAprobacion: null,
+            sargentoAprobo: null,
+            sargentoNombreAprobo: null,
+            motivoRechazo: null,
+            sargentoRechazo: null,
+            sargentoNombreRechazo: null,
+            fechaRechazo: null
+        };
+        
+        const docRef = await db.collection('depositos_dinero_negro').add(depositoData);
+        return docRef.id;
+    } catch (error) {
+        console.error('Error creando depósito de dinero negro:', error);
+        throw error;
+    }
+}
+
+/**
+ * Obtiene todos los depósitos de dinero negro pendientes
+ * @returns {Promise<Array>} - Array de depósitos pendientes
+ */
+async function obtenerDepositosPendientes() {
+    await ensureDb();
+    
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden ver depósitos pendientes');
+    }
+    
+    try {
+        const snapshot = await db.collection('depositos_dinero_negro')
+            .where('estado', '==', 'pendiente')
+            .orderBy('fechaCreacion', 'desc')
+            .get();
+        
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        console.error('Error obteniendo depósitos pendientes:', error);
+        throw error;
+    }
+}
+
+/**
+ * Aprueba un depósito de dinero negro
+ * @param {string} depositoId - ID del depósito
+ * @returns {Promise<void>}
+ */
+async function aprobarDepositoDineroNegro(depositoId) {
+    await ensureDb();
+    
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden aprobar depósitos');
+    }
+    
+    const currentUser = getCurrentUser();
+    
+    try {
+        const depositoRef = db.collection('depositos_dinero_negro').doc(depositoId);
+        const depositoDoc = await depositoRef.get();
+        
+        if (!depositoDoc.exists) {
+            throw new Error('Depósito no encontrado');
+        }
+        
+        const depositoData = depositoDoc.data();
+        
+        if (depositoData.estado !== 'pendiente') {
+            throw new Error('Este depósito ya fue procesado');
+        }
+        
+        await depositoRef.update({
+            estado: 'aprobado',
+            fechaAprobacion: firebase.firestore.FieldValue.serverTimestamp(),
+            sargentoAprobo: currentUser.id,
+            sargentoNombreAprobo: `${currentUser.nombre} ${currentUser.apellido}`
+        });
+        
+        // Actualizar metas del usuario
+        await actualizarMeta(depositoData.usuarioId, depositoData.montoTotal);
+    } catch (error) {
+        console.error('Error aprobando depósito:', error);
+        throw error;
+    }
+}
+
+/**
+ * Rechaza un depósito de dinero negro
+ * @param {string} depositoId - ID del depósito
+ * @param {string} motivo - Motivo del rechazo
+ * @returns {Promise<void>}
+ */
+async function rechazarDepositoDineroNegro(depositoId, motivo = '') {
+    await ensureDb();
+    
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden rechazar depósitos');
+    }
+    
+    const currentUser = getCurrentUser();
+    
+    try {
+        const depositoRef = db.collection('depositos_dinero_negro').doc(depositoId);
+        const depositoDoc = await depositoRef.get();
+        
+        if (!depositoDoc.exists) {
+            throw new Error('Depósito no encontrado');
+        }
+        
+        const depositoData = depositoDoc.data();
+        
+        if (depositoData.estado !== 'pendiente') {
+            throw new Error('Este depósito ya fue procesado');
+        }
+        
+        await depositoRef.update({
+            estado: 'rechazado',
+            fechaRechazo: firebase.firestore.FieldValue.serverTimestamp(),
+            sargentoRechazo: currentUser.id,
+            sargentoNombreRechazo: `${currentUser.nombre} ${currentUser.apellido}`,
+            motivoRechazo: motivo || 'Sin motivo especificado'
+        });
+    } catch (error) {
+        console.error('Error rechazando depósito:', error);
+        throw error;
+    }
+}
+
