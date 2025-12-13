@@ -854,6 +854,16 @@ async function rechazarDepositoDineroNegro(depositoId, motivo = '') {
             throw new Error('Este depósito ya fue procesado');
         }
         
+        // Verificar que el sargento que rechaza NO sea el mismo que hizo el depósito
+        if (depositoData.usuarioId === currentUser.id) {
+            throw new Error('No puedes rechazar tu propio depósito. Solo el sargento destinatario puede rechazarlo.');
+        }
+        
+        // Verificar que el sargento que rechaza SÍ sea el destinatario del depósito
+        if (depositoData.sargentoId !== currentUser.id) {
+            throw new Error('Solo el sargento destinatario puede rechazar este depósito.');
+        }
+        
         await depositoRef.update({
             estado: 'rechazado',
             fechaRechazo: firebase.firestore.FieldValue.serverTimestamp(),
