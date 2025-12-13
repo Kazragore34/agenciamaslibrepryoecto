@@ -1085,14 +1085,23 @@ async function cargarSolicitudesPendientesSargento() {
     if (!currentUser || !esSargentoOAdmin()) return;
     
     try {
+        // Cambiar grid a 4 columnas para sargentos
+        const gridEl = document.getElementById('gridPrincipal');
+        if (gridEl) {
+            gridEl.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+        }
+        
+        // Mostrar la columna de entregas rápidas
+        const columnaEl = document.getElementById('columnaEntregasRapidas');
+        if (columnaEl) {
+            columnaEl.style.display = 'flex';
+        }
+        
         const seccionEl = document.getElementById('seccionAccesoRapidoExtra');
         const listaEl = document.getElementById('solicitudesPendientesSargento');
         const contadorEl = document.getElementById('contadorSolicitudesPendientes');
         
         if (!seccionEl || !listaEl) return;
-        
-        // Mostrar la sección
-        seccionEl.style.display = 'block';
         
         // Cargar todas las solicitudes pendientes
         const [entregasPendientes, depositosPendientes, solicitudesBalas, solicitudesChalecos] = await Promise.all([
