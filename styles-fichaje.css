@@ -1,4 +1,4 @@
-/* Estilos para el sistema de fichaje y calculador */
+/* Estilos para el sistema de control (header y componentes comunes) */
 
 /* Auth Container */
 .auth-container {
@@ -108,7 +108,7 @@
     border: 1px solid #93c5fd;
 }
 
-/* Fichaje Page */
+/* Container principal */
 .fichaje-container {
     max-width: 1200px;
     margin: 0 auto;

@@ -27,9 +27,7 @@ Si quieres borrar todo de una vez:
    - `tickets_dinero`
    - `entregas_armas`
    - `metas`
-   - `fichajes` (si existe, colección antigua)
-   - `semanas` (si existe, colección antigua)
-   - `tuneos` (si existe, colección antigua)
+   - `depositos_dinero_negro`
 
 ## Método 2: Usar Firebase CLI (Avanzado)
 
@@ -66,18 +64,14 @@ firebase firestore:delete --all-collections
 
 **Para empezar limpio con el nuevo sistema:**
 
-1. Borra solo las colecciones antiguas que ya no uses:
-   - `fichajes`
-   - `semanas`
-   - `tuneos`
+1. **Mantén la colección `users`** si quieres conservar los usuarios registrados (solo necesitarás actualizar sus roles a `sargento` o `prospect`)
 
-2. **Mantén la colección `users`** si quieres conservar los usuarios registrados (solo necesitarás actualizar sus roles a `dealer` o `vendedor`)
-
-3. Las nuevas colecciones se crearán automáticamente cuando uses el sistema:
+2. Las colecciones se crearán automáticamente cuando uses el sistema:
    - `entregas_productos`
    - `tickets_dinero`
    - `entregas_armas`
    - `metas`
+   - `depositos_dinero_negro`
 
 ## Actualizar Roles de Usuarios Existentes
 
@@ -87,9 +81,10 @@ Si mantienes la colección `users`, necesitarás actualizar los roles:
 2. Para cada usuario:
    - Haz clic en el documento del usuario
    - Edita el campo `rol`
-   - Cambia de `empleado`, `encargado`, o `jefe` a:
-     - `dealer` (para administradores)
-     - `vendedor` (para usuarios normales)
+   - Cambia según corresponda a:
+     - `admin` (para administradores)
+     - `sargento` (para sargentos)
+     - `prospect` (para prospects/usuarios normales)
    - Guarda los cambios
 
 ## Verificar que Todo Está Limpio
