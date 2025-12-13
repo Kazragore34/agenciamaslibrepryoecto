@@ -165,10 +165,6 @@ async function solicitarRecargaBalas(armaId, cantidad) {
             solicitudesBalas: solicitudesBalas
         });
         
-        // Ahora actualizar la fecha de la última solicitud usando serverTimestamp
-        // Pero como no podemos usar serverTimestamp en arrays, usamos la fecha de JavaScript
-        // que ya pusimos arriba
-        
         console.log('✅ Solicitud de balas guardada correctamente');
         
         // Verificar que se guardó correctamente leyendo de nuevo
@@ -309,6 +305,174 @@ async function rechazarSolicitudBalas(armaId, solicitudIndex, motivo = '') {
         });
     } catch (error) {
         console.error('Error rechazando solicitud de balas:', error);
+        throw error;
+    }
+}
+
+/**
+ * Solicita chaleco (vendedor)
+ * @param {string} armaId - ID de la entrega de arma
+ * @returns {Promise<void>}
+ */
+async function solicitarChaleco(armaId) {
+    await ensureDb();
+    
+    if (!esProspect()) {
+        throw new Error('Solo los prospects pueden solicitar chalecos');
+    }
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+    }
+    
+    try {
+        const armaRef = db.collection('entregas_armas').doc(armaId);
+        const armaDoc = await armaRef.get();
+        
+        if (!armaDoc.exists) {
+            throw new Error('Arma no encontrada');
+        }
+        
+        const armaData = armaDoc.data();
+        
+        if (armaData.vendedorId !== currentUser.id) {
+            throw new Error('Esta arma no es tuya');
+        }
+        
+        if (armaData.estado !== 'activa') {
+            throw new Error('No puedes solicitar chaleco para un arma perdida');
+        }
+        
+        // Inicializar solicitudesChalecos si no existe
+        const solicitudesChalecos = Array.isArray(armaData.solicitudesChalecos) 
+            ? [...armaData.solicitudesChalecos] 
+            : [];
+        
+        // Verificar si ya hay una solicitud pendiente
+        const tienePendiente = solicitudesChalecos.some(s => s.estado === 'pendiente');
+        if (tienePendiente) {
+            throw new Error('Ya tienes una solicitud de chaleco pendiente');
+        }
+        
+        // Crear la solicitud
+        const solicitud = {
+            fecha: new Date(),
+            estado: 'pendiente',
+            tipo: 'chaleco'
+        };
+        
+        solicitudesChalecos.push(solicitud);
+        
+        await armaRef.update({
+            solicitudesChalecos: solicitudesChalecos
+        });
+        
+        console.log('✅ Solicitud de chaleco guardada correctamente');
+    } catch (error) {
+        console.error('Error solicitando chaleco:', error);
+        throw error;
+    }
+}
+
+/**
+ * Marca una solicitud de chaleco como entregada (dealer)
+ * @param {string} armaId - ID de la entrega de arma
+ * @param {number} solicitudIndex - Índice de la solicitud en el array
+ * @returns {Promise<void>}
+ */
+async function entregarChaleco(armaId, solicitudIndex) {
+    await ensureDb();
+    
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden entregar chalecos');
+    }
+    
+    const currentUser = getCurrentUser();
+    
+    try {
+        const armaRef = db.collection('entregas_armas').doc(armaId);
+        const armaDoc = await armaRef.get();
+        
+        if (!armaDoc.exists) {
+            throw new Error('Arma no encontrada');
+        }
+        
+        const armaData = armaDoc.data();
+        const solicitudesChalecos = armaData.solicitudesChalecos || [];
+        
+        if (solicitudIndex < 0 || solicitudIndex >= solicitudesChalecos.length) {
+            throw new Error('Índice de solicitud inválido');
+        }
+        
+        if (solicitudesChalecos[solicitudIndex].estado === 'entregada') {
+            throw new Error('Esta solicitud ya fue entregada');
+        }
+        
+        // Actualizar la solicitud
+        solicitudesChalecos[solicitudIndex].estado = 'entregada';
+        solicitudesChalecos[solicitudIndex].sargentoConfirmo = currentUser.id;
+        solicitudesChalecos[solicitudIndex].sargentoNombre = `${currentUser.nombre} ${currentUser.apellido}`;
+        solicitudesChalecos[solicitudIndex].fechaConfirmacion = new Date();
+        
+        // Actualizar el arma para incluir chaleco
+        await armaRef.update({
+            chaleco: true,
+            solicitudesChalecos: solicitudesChalecos
+        });
+    } catch (error) {
+        console.error('Error entregando chaleco:', error);
+        throw error;
+    }
+}
+
+/**
+ * Rechaza una solicitud de chaleco (dealer)
+ * @param {string} armaId - ID de la entrega de arma
+ * @param {number} solicitudIndex - Índice de la solicitud en el array
+ * @param {string} motivo - Motivo del rechazo (opcional)
+ * @returns {Promise<void>}
+ */
+async function rechazarSolicitudChaleco(armaId, solicitudIndex, motivo = '') {
+    await ensureDb();
+    
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden rechazar solicitudes de chalecos');
+    }
+    
+    const currentUser = getCurrentUser();
+    
+    try {
+        const armaRef = db.collection('entregas_armas').doc(armaId);
+        const armaDoc = await armaRef.get();
+        
+        if (!armaDoc.exists) {
+            throw new Error('Arma no encontrada');
+        }
+        
+        const armaData = armaDoc.data();
+        const solicitudesChalecos = armaData.solicitudesChalecos || [];
+        
+        if (solicitudIndex < 0 || solicitudIndex >= solicitudesChalecos.length) {
+            throw new Error('Índice de solicitud inválido');
+        }
+        
+        if (solicitudesChalecos[solicitudIndex].estado !== 'pendiente') {
+            throw new Error('Esta solicitud ya fue procesada');
+        }
+        
+        // Actualizar la solicitud con información del sargento que rechazó
+        solicitudesChalecos[solicitudIndex].estado = 'rechazada';
+        solicitudesChalecos[solicitudIndex].sargentoRechazo = currentUser.id;
+        solicitudesChalecos[solicitudIndex].sargentoNombreRechazo = `${currentUser.nombre} ${currentUser.apellido}`;
+        solicitudesChalecos[solicitudIndex].motivoRechazo = motivo || 'Sin motivo especificado';
+        solicitudesChalecos[solicitudIndex].fechaRechazo = new Date();
+        
+        await armaRef.update({
+            solicitudesChalecos: solicitudesChalecos
+        });
+    } catch (error) {
+        console.error('Error rechazando solicitud de chaleco:', error);
         throw error;
     }
 }

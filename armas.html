@@ -57,11 +57,12 @@
                         <input type="number" id="cantidadBalas" min="0" value="0" required>
                     </div>
 
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center;">
-                            <input type="checkbox" id="chaleco" style="margin-right: 0.5rem;">
-                            <span>Incluir Chaleco</span>
+                    <div class="form-group" style="padding: 1rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 0.5rem;">
+                        <label style="display: flex; align-items: center; cursor: pointer; font-weight: 500; font-size: 1rem;">
+                            <input type="checkbox" id="chaleco" style="width: 20px; height: 20px; margin-right: 0.75rem; cursor: pointer; accent-color: #2563eb;">
+                            <span style="color: #1f2937;">Incluir Chaleco</span>
                         </label>
+                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0.5rem 0 0 2.75rem;">Marca esta casilla si el prospect debe recibir un chaleco junto con el arma.</p>
                     </div>
 
                     <button type="submit" class="btn-primary">Crear Entrega de Arma</button>
@@ -268,9 +269,14 @@
                         Ver Detalles
                     </button>
                     ${arma.estado === 'activa' && !esSarg ? `
-                        <button class="btn-primary btn-sm" onclick="solicitarBalasModal('${arma.id}')">
+                        <button class="btn-primary btn-sm" onclick="solicitarBalasModal('${arma.id}')" style="margin-right: 0.5rem;">
                             Solicitar Balas
                         </button>
+                        ${!arma.chaleco ? `
+                            <button class="btn-primary btn-sm" onclick="solicitarChalecoModal('${arma.id}')">
+                                Solicitar Chaleco
+                            </button>
+                        ` : ''}
                     ` : ''}
                     ${arma.estado === 'perdida' ? `
                         <span style="color: #ef4444; font-size: 0.875rem;">${obtenerNombreMotivo(arma.motivoPerdida)}</span>
@@ -360,14 +366,15 @@
                 const fechaPerdida = arma.fechaPerdida?.toDate();
                 const fechaPerdidaStr = fechaPerdida ? fechaPerdida.toLocaleString('es-PE') : 'N/A';
                 
-                // Obtener historial completo de balas
+                // Obtener historial completo de balas y chalecos
                 const solicitudesBalas = arma.solicitudesBalas || [];
-                const solicitudesPendientes = solicitudesBalas.filter(s => s.estado === 'pendiente');
-                const solicitudesEntregadas = solicitudesBalas.filter(s => s.estado === 'entregada');
-                const solicitudesRechazadas = solicitudesBalas.filter(s => s.estado === 'rechazada');
+                const solicitudesChalecos = arma.solicitudesChalecos || [];
                 
-                // Ordenar todas las solicitudes por fecha (más recientes primero)
-                const todasSolicitudes = [...solicitudesBalas].sort((a, b) => {
+                // Combinar todas las solicitudes con su tipo
+                const todasSolicitudes = [
+                    ...solicitudesBalas.map(s => ({ ...s, tipo: 'balas' })),
+                    ...solicitudesChalecos.map(s => ({ ...s, tipo: 'chaleco' }))
+                ].sort((a, b) => {
                     const fechaA = a.fecha?.toDate() || new Date(0);
                     const fechaB = b.fecha?.toDate() || new Date(0);
                     return fechaB - fechaA;
@@ -395,7 +402,7 @@
                             </div>
                             
                             <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
-                                <h4 style="margin: 0 0 1rem 0;">Historial Completo de Solicitudes de Balas</h4>
+                                <h4 style="margin: 0 0 1rem 0;">Historial Completo de Solicitudes (Balas y Chalecos)</h4>
                                 ${todasSolicitudes.length > 0 ? `
                                     <div style="display: grid; gap: 0.75rem;">
                                         ${todasSolicitudes.map(solicitud => {
@@ -423,10 +430,12 @@
                                                 estadoColor = '#ef4444';
                                             }
                                             
+                                            const tipoTexto = solicitud.tipo === 'chaleco' ? 'Chaleco' : `${solicitud.cantidad || 0} balas`;
+                                            
                                             return `
                                                 <div style="background: ${bgColor}; padding: 1rem; border-radius: 0.375rem; border-left: 4px solid ${borderColor};">
                                                     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                                                        <p style="margin: 0;"><strong>Cantidad:</strong> ${solicitud.cantidad} balas</p>
+                                                        <p style="margin: 0;"><strong>Tipo:</strong> ${tipoTexto}</p>
                                                         <span style="background: ${estadoColor}; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.875rem; font-weight: 500;">${estadoTexto}</span>
                                                     </div>
                                                     <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Solicitado:</strong> ${fechaSolicitudStr}</p>
@@ -435,7 +444,7 @@
                                                         <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Fecha de confirmación:</strong> ${fechaConfirmacionStr}</p>
                                                     ` : ''}
                                                     ${solicitud.estado === 'rechazada' ? `
-                                                        <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Rechazado por:</strong> ${solicitud.sargentoNombre || 'N/A'}</p>
+                                                        <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Rechazado por:</strong> ${solicitud.sargentoNombreRechazo || 'N/A'}</p>
                                                         <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;"><strong>Fecha de rechazo:</strong> ${fechaRechazoStr}</p>
                                                         ${solicitud.motivoRechazo ? `
                                                             <p style="margin: 0.25rem 0 0 0; color: #ef4444; font-size: 0.875rem;"><strong>Motivo:</strong> ${solicitud.motivoRechazo}</p>
@@ -446,7 +455,7 @@
                                         }).join('')}
                                     </div>
                                 ` : `
-                                    <p style="color: #6b7280;">No hay solicitudes de balas registradas</p>
+                                    <p style="color: #6b7280;">No hay solicitudes registradas</p>
                                 `}
                             </div>
                         </div>

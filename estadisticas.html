@@ -29,51 +29,29 @@
 
         <div class="stats-grid">
             <div class="stats-card">
-                <h3>Top Prospects</h3>
-                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Por dinero total entregado</p>
-                <div id="topVendedoresTable"></div>
+                <h3>TOP</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Todos los roles - Dinero negro total (productos + entrega de dinero)</p>
+                <div id="topGeneralTable"></div>
             </div>
 
             <div class="stats-card">
-                <h3>Top Sargentos</h3>
-                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Por entregas realizadas</p>
-                <div id="topDealersTable"></div>
-            </div>
-        </div>
-
-        <div class="stats-grid" style="margin-top: 2rem;">
-            <div class="stats-card">
-                <h3>Top Vendedor (Productos)</h3>
-                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Por cantidad de productos vendidos</p>
-                <div id="topVendedorProductosTable"></div>
-            </div>
-
-            <div class="stats-card">
-                <h3>Top Entrega de Dinero Negro</h3>
-                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Robos + Venta de productos (tickets + depósitos)</p>
-                <div id="topEntregaDineroNegroTable"></div>
+                <h3>TOP ROBOS</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Top de dinero negro por robos (solo depósitos)</p>
+                <div id="topRobosTable"></div>
             </div>
         </div>
 
         <div class="stats-grid" style="margin-top: 2rem;">
             <div class="stats-card">
-                <h3>Top Solo Dinero Negro</h3>
-                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Solo depósitos de dinero negro</p>
-                <div id="topSoloDineroNegroTable"></div>
+                <h3>TOP VENTAS</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Top de dinero por productos vendidos (solo tickets)</p>
+                <div id="topVentasTable"></div>
             </div>
 
             <div class="stats-card">
                 <h3>Productos Más Entregados</h3>
-                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Cantidad total entregada</p>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Lista de productos más vendidos</p>
                 <div id="productosMasTable"></div>
-            </div>
-        </div>
-
-        <div class="stats-grid" style="margin-top: 2rem;">
-            <div class="stats-card">
-                <h3>Estado de Entregas</h3>
-                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Resumen de entregas</p>
-                <div id="estadoEntregasTable"></div>
             </div>
         </div>
 
@@ -87,7 +65,7 @@
 
         <div class="stats-card" style="margin-top: 2rem;">
             <h3>Dinero Entregado por Semana</h3>
-            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Dinero total entregado por semana</p>
+            <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.9rem;">Dinero total entregado por semana (tickets + depósitos)</p>
             <div style="position: relative; height: 400px;">
                 <canvas id="dineroSemanasChart"></canvas>
             </div>
@@ -143,111 +121,306 @@
             try {
                 await ensureDb();
                 
-                // Cargar top vendedores
-                const topVendedores = await obtenerTopVendedores();
-                mostrarTopVendedores(topVendedores);
+                // Cargar TOP (todos los roles - dinero negro total)
+                const topGeneral = await obtenerTopGeneral();
+                mostrarTopGeneral(topGeneral);
 
-                // Cargar top dealers
-                const topDealers = await obtenerTopDealers();
-                mostrarTopDealers(topDealers);
+                // Cargar TOP ROBOS (solo depósitos)
+                const topRobos = await obtenerTopRobos();
+                mostrarTopRobos(topRobos);
 
-                // Cargar top vendedor productos
-                const topVendedorProductos = await obtenerTopVendedorProductos();
-                mostrarTopVendedorProductos(topVendedorProductos);
-
-                // Cargar top entrega dinero negro
-                const topEntregaDineroNegro = await obtenerTopEntregaDineroNegro();
-                mostrarTopEntregaDineroNegro(topEntregaDineroNegro);
-
-                // Cargar top solo dinero negro
-                const topSoloDineroNegro = await obtenerTopSoloDineroNegro();
-                mostrarTopSoloDineroNegro(topSoloDineroNegro);
+                // Cargar TOP VENTAS (solo tickets)
+                const topVentas = await obtenerTopVentas();
+                mostrarTopVentas(topVentas);
 
                 // Cargar productos más entregados
                 const productosMas = await obtenerProductosMasEntregados();
                 mostrarProductosMas(productosMas);
 
-                // Cargar estado de entregas
-                const estadoEntregas = await obtenerEstadoEntregas();
-                mostrarEstadoEntregas(estadoEntregas);
-
                 // Cargar gráficas
                 await cargarGraficasDinero();
-                await cargarGraficasEntregas();
             } catch (error) {
                 console.error('Error cargando estadísticas:', error);
             }
         }
 
-        async function obtenerTopVendedores() {
+        // TOP: Todos los roles - Dinero negro total (productos + entrega de dinero)
+        async function obtenerTopGeneral() {
+            try {
+                const usuariosMap = {};
+                
+                // Obtener todos los usuarios para tener sus roles
+                const usuariosSnapshot = await db.collection('users').get();
+                const usuariosData = {};
+                usuariosSnapshot.forEach(doc => {
+                    usuariosData[doc.id] = doc.data();
+                });
+                
+                // Obtener tickets confirmados
+                const ticketsSnapshot = await db.collection('tickets_dinero')
+                    .where('estado', '==', 'confirmado')
+                    .get();
+                
+                ticketsSnapshot.forEach(doc => {
+                    const ticket = doc.data();
+                    const usuarioId = ticket.vendedorId;
+                    const monto = ticket.montoEntregado || 0;
+                    const usuarioData = usuariosData[usuarioId];
+                    
+                    if (!usuariosMap[usuarioId]) {
+                        usuariosMap[usuarioId] = {
+                            usuarioId,
+                            usuarioNombre: ticket.vendedorNombre,
+                            rol: usuarioData?.rol || 'N/A',
+                            total: 0,
+                            tickets: 0,
+                            depositos: 0
+                        };
+                    }
+                    usuariosMap[usuarioId].total += monto;
+                    usuariosMap[usuarioId].tickets += 1;
+                });
+                
+                // Obtener depósitos aprobados
+                const depositosSnapshot = await db.collection('depositos_dinero_negro')
+                    .where('estado', '==', 'aprobado')
+                    .get();
+                
+                depositosSnapshot.forEach(doc => {
+                    const deposito = doc.data();
+                    const usuarioId = deposito.usuarioId;
+                    const monto = deposito.montoTotal || 0;
+                    const usuarioData = usuariosData[usuarioId];
+                    
+                    if (!usuariosMap[usuarioId]) {
+                        usuariosMap[usuarioId] = {
+                            usuarioId,
+                            usuarioNombre: deposito.usuarioNombre,
+                            rol: usuarioData?.rol || 'N/A',
+                            total: 0,
+                            tickets: 0,
+                            depositos: 0
+                        };
+                    }
+                    usuariosMap[usuarioId].total += monto;
+                    usuariosMap[usuarioId].depositos += 1;
+                });
+                
+                const usuarios = Object.values(usuariosMap);
+                usuarios.sort((a, b) => b.total - a.total);
+                
+                return usuarios.slice(0, 10);
+            } catch (error) {
+                console.error('Error obteniendo top general:', error);
+                return [];
+            }
+        }
+
+        function mostrarTopGeneral(datos) {
+            const container = document.getElementById('topGeneralTable');
+            
+            if (datos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay datos</p>';
+                return;
+            }
+
+            let html = `
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Usuario</th>
+                            <th>Rol</th>
+                            <th>Total</th>
+                            <th>Tickets</th>
+                            <th>Depósitos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            datos.forEach((item, index) => {
+                const rankClass = index === 0 ? 'oro' : index === 1 ? 'plata' : index === 2 ? 'bronce' : '';
+                html += `
+                    <tr>
+                        <td>
+                            <span class="rank-badge ${rankClass}">${index + 1}</span>
+                        </td>
+                        <td>${item.usuarioNombre}</td>
+                        <td>${item.rol}</td>
+                        <td><strong>$${item.total.toLocaleString()}</strong></td>
+                        <td>${item.tickets}</td>
+                        <td>${item.depositos}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // TOP ROBOS: Solo depósitos (dinero negro por robos)
+        async function obtenerTopRobos() {
+            try {
+                const snapshot = await db.collection('depositos_dinero_negro')
+                    .where('estado', '==', 'aprobado')
+                    .get();
+                
+                const usuariosMap = {};
+                
+                snapshot.forEach(doc => {
+                    const deposito = doc.data();
+                    const usuarioId = deposito.usuarioId;
+                    const usuarioNombre = deposito.usuarioNombre;
+                    const monto = deposito.montoTotal || 0;
+                    
+                    if (!usuariosMap[usuarioId]) {
+                        usuariosMap[usuarioId] = {
+                            usuarioId,
+                            usuarioNombre,
+                            total: 0,
+                            depositos: 0
+                        };
+                    }
+                    usuariosMap[usuarioId].total += monto;
+                    usuariosMap[usuarioId].depositos += 1;
+                });
+                
+                const usuarios = Object.values(usuariosMap);
+                usuarios.sort((a, b) => b.total - a.total);
+                
+                return usuarios.slice(0, 10);
+            } catch (error) {
+                console.error('Error obteniendo top robos:', error);
+                return [];
+            }
+        }
+
+        function mostrarTopRobos(datos) {
+            const container = document.getElementById('topRobosTable');
+            
+            if (datos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay datos</p>';
+                return;
+            }
+
+            let html = `
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Usuario</th>
+                            <th>Total</th>
+                            <th>Depósitos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            datos.forEach((item, index) => {
+                const rankClass = index === 0 ? 'oro' : index === 1 ? 'plata' : index === 2 ? 'bronce' : '';
+                html += `
+                    <tr>
+                        <td>
+                            <span class="rank-badge ${rankClass}">${index + 1}</span>
+                        </td>
+                        <td>${item.usuarioNombre}</td>
+                        <td><strong>$${item.total.toLocaleString()}</strong></td>
+                        <td>${item.depositos}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // TOP VENTAS: Solo tickets (productos vendidos)
+        async function obtenerTopVentas() {
             try {
                 const snapshot = await db.collection('tickets_dinero')
                     .where('estado', '==', 'confirmado')
                     .get();
                 
-                const vendedoresMap = {};
+                const usuariosMap = {};
                 
                 snapshot.forEach(doc => {
                     const ticket = doc.data();
-                    const vendedorId = ticket.vendedorId;
+                    const usuarioId = ticket.vendedorId;
+                    const usuarioNombre = ticket.vendedorNombre;
                     const monto = ticket.montoEntregado || 0;
                     
-                    if (!vendedoresMap[vendedorId]) {
-                        vendedoresMap[vendedorId] = {
-                            vendedorId,
-                            vendedorNombre: ticket.vendedorNombre,
+                    if (!usuariosMap[usuarioId]) {
+                        usuariosMap[usuarioId] = {
+                            usuarioId,
+                            usuarioNombre,
                             total: 0,
                             tickets: 0
                         };
                     }
-                    vendedoresMap[vendedorId].total += monto;
-                    vendedoresMap[vendedorId].tickets += 1;
+                    usuariosMap[usuarioId].total += monto;
+                    usuariosMap[usuarioId].tickets += 1;
                 });
                 
-                const vendedores = Object.values(vendedoresMap);
-                vendedores.sort((a, b) => b.total - a.total);
+                const usuarios = Object.values(usuariosMap);
+                usuarios.sort((a, b) => b.total - a.total);
                 
-                return vendedores.slice(0, 10);
+                return usuarios.slice(0, 10);
             } catch (error) {
-                console.error('Error obteniendo top vendedores:', error);
+                console.error('Error obteniendo top ventas:', error);
                 return [];
             }
         }
 
-        async function obtenerTopDealers() {
-            try {
-                const snapshot = await db.collection('entregas_productos')
-                    .where('estado', '==', 'confirmado')
-                    .get();
-                
-                const dealersMap = {};
-                
-                snapshot.forEach(doc => {
-                    const entrega = doc.data();
-                    const dealerId = entrega.dealerId;
-                    
-                    if (!dealersMap[dealerId]) {
-                        dealersMap[dealerId] = {
-                            dealerId,
-                            dealerNombre: entrega.dealerNombre,
-                            entregas: 0,
-                            productosTotal: 0
-                        };
-                    }
-                    dealersMap[dealerId].entregas += 1;
-                    entrega.productos.forEach(p => {
-                        dealersMap[dealerId].productosTotal += p.cantidad || 0;
-                    });
-                });
-                
-                const dealers = Object.values(dealersMap);
-                dealers.sort((a, b) => b.entregas - a.entregas);
-                
-                return dealers.slice(0, 10);
-            } catch (error) {
-                console.error('Error obteniendo top dealers:', error);
-                return [];
+        function mostrarTopVentas(datos) {
+            const container = document.getElementById('topVentasTable');
+            
+            if (datos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 2rem;">No hay datos</p>';
+                return;
             }
+
+            let html = `
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Usuario</th>
+                            <th>Total</th>
+                            <th>Tickets</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            datos.forEach((item, index) => {
+                const rankClass = index === 0 ? 'oro' : index === 1 ? 'plata' : index === 2 ? 'bronce' : '';
+                html += `
+                    <tr>
+                        <td>
+                            <span class="rank-badge ${rankClass}">${index + 1}</span>
+                        </td>
+                        <td>${item.usuarioNombre}</td>
+                        <td><strong>$${item.total.toLocaleString()}</strong></td>
+                        <td>${item.tickets}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = html;
         }
 
         async function obtenerProductosMasEntregados() {
@@ -335,10 +508,6 @@
 
         async function obtenerDineroPorDias() {
             try {
-                const snapshot = await db.collection('tickets_dinero')
-                    .where('estado', '==', 'confirmado')
-                    .get();
-                
                 const diasMap = {};
                 const hoy = new Date();
                 
@@ -350,13 +519,34 @@
                     diasMap[fechaStr] = 0;
                 }
                 
-                snapshot.forEach(doc => {
+                // Obtener tickets confirmados
+                const ticketsSnapshot = await db.collection('tickets_dinero')
+                    .where('estado', '==', 'confirmado')
+                    .get();
+                
+                ticketsSnapshot.forEach(doc => {
                     const ticket = doc.data();
                     const fechaConfirmacion = ticket.fechaConfirmacion?.toDate();
                     if (fechaConfirmacion) {
                         const fechaStr = fechaConfirmacion.toISOString().split('T')[0];
                         if (diasMap.hasOwnProperty(fechaStr)) {
                             diasMap[fechaStr] += ticket.montoEntregado || 0;
+                        }
+                    }
+                });
+                
+                // Obtener depósitos aprobados
+                const depositosSnapshot = await db.collection('depositos_dinero_negro')
+                    .where('estado', '==', 'aprobado')
+                    .get();
+                
+                depositosSnapshot.forEach(doc => {
+                    const deposito = doc.data();
+                    const fechaAprobacion = deposito.fechaAprobacion?.toDate();
+                    if (fechaAprobacion) {
+                        const fechaStr = fechaAprobacion.toISOString().split('T')[0];
+                        if (diasMap.hasOwnProperty(fechaStr)) {
+                            diasMap[fechaStr] += deposito.montoTotal || 0;
                         }
                     }
                 });
@@ -373,13 +563,14 @@
 
         async function obtenerDineroPorSemanas() {
             try {
-                const snapshot = await db.collection('tickets_dinero')
+                const semanasMap = {};
+                
+                // Obtener tickets confirmados
+                const ticketsSnapshot = await db.collection('tickets_dinero')
                     .where('estado', '==', 'confirmado')
                     .get();
                 
-                const semanasMap = {};
-                
-                snapshot.forEach(doc => {
+                ticketsSnapshot.forEach(doc => {
                     const ticket = doc.data();
                     const fechaConfirmacion = ticket.fechaConfirmacion?.toDate();
                     if (fechaConfirmacion) {
@@ -388,6 +579,23 @@
                             semanasMap[semana] = 0;
                         }
                         semanasMap[semana] += ticket.montoEntregado || 0;
+                    }
+                });
+                
+                // Obtener depósitos aprobados
+                const depositosSnapshot = await db.collection('depositos_dinero_negro')
+                    .where('estado', '==', 'aprobado')
+                    .get();
+                
+                depositosSnapshot.forEach(doc => {
+                    const deposito = doc.data();
+                    const fechaAprobacion = deposito.fechaAprobacion?.toDate();
+                    if (fechaAprobacion) {
+                        const semana = getSemanaActual(fechaAprobacion);
+                        if (!semanasMap[semana]) {
+                            semanasMap[semana] = 0;
+                        }
+                        semanasMap[semana] += deposito.montoTotal || 0;
                     }
                 });
                 
