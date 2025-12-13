@@ -1367,11 +1367,20 @@ async function cargarSolicitudesPendientesSargento() {
         console.log('✅ Renderizando HTML en listaEl');
         listaEl.innerHTML = html;
         
-        // Asegurar que la sección esté visible
+        // Asegurar que la sección y columna estén visibles
         if (seccionEl) {
             seccionEl.style.display = 'block';
             console.log('✅ Sección de entregas rápidas visible');
         }
+        
+        // Asegurar que la columna esté visible
+        const columnaEl = document.getElementById('columnaEntregasRapidas');
+        if (columnaEl) {
+            columnaEl.style.display = 'flex';
+            console.log('✅ Columna de entregas rápidas visible');
+        }
+        
+        console.log('✅ Función cargarSolicitudesPendientesSargento completada');
     } catch (error) {
         console.error('Error cargando solicitudes pendientes:', error);
     }
