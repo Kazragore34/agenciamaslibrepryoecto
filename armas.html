@@ -281,9 +281,18 @@
             try {
                 mostrarMensaje('Solicitando balas...', 'info');
                 await solicitarRecargaBalas(armaId, parseInt(cantidad));
-                mostrarMensaje('Solicitud de balas enviada', 'success');
+                mostrarMensaje('Solicitud de balas enviada correctamente', 'success');
+                // Esperar un momento para que se guarde en Firestore
+                await new Promise(resolve => setTimeout(resolve, 500));
                 cargarArmas();
+                // Notificar al usuario que puede verificar en Entregas
+                setTimeout(() => {
+                    if (confirm('Solicitud enviada. ¿Quieres ir a la página de Entregas para verla?')) {
+                        window.location.href = 'entregas.html';
+                    }
+                }, 1000);
             } catch (error) {
+                console.error('Error solicitando balas:', error);
                 mostrarMensaje(error.message, 'error');
             }
         }

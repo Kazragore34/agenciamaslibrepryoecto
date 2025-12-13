@@ -381,15 +381,36 @@ async function obtenerSolicitudesBalasPendientes() {
             const armaData = doc.data();
             const todasLasSolicitudes = armaData.solicitudesBalas || [];
             
-            // Debug: ver todas las solicitudes
+            // Debug: ver todas las solicitudes con más detalle
             console.log(`Arma ${doc.id}: Total solicitudes: ${todasLasSolicitudes.length}`);
+            console.log(`Arma ${doc.id}: Tipo de solicitudesBalas:`, typeof todasLasSolicitudes);
+            console.log(`Arma ${doc.id}: Es array?:`, Array.isArray(todasLasSolicitudes));
+            console.log(`Arma ${doc.id}: Contenido completo:`, JSON.stringify(todasLasSolicitudes, null, 2));
+            
             todasLasSolicitudes.forEach((s, idx) => {
-                console.log(`  Solicitud ${idx}: estado=${s.estado}, cantidad=${s.cantidad}`);
+                console.log(`  Solicitud ${idx}:`, {
+                    estado: s?.estado,
+                    cantidad: s?.cantidad,
+                    fecha: s?.fecha,
+                    tipoEstado: typeof s?.estado,
+                    esPendiente: s?.estado === 'pendiente',
+                    objetoCompleto: s
+                });
             });
             
             // Filtrar solo las pendientes (verificar que el estado sea exactamente 'pendiente')
             const solicitudesPendientes = todasLasSolicitudes.filter(
-                s => s && s.estado === 'pendiente'
+                s => {
+                    if (!s) {
+                        console.log(`  Solicitud es null/undefined`);
+                        return false;
+                    }
+                    const esPendiente = s.estado === 'pendiente';
+                    if (!esPendiente) {
+                        console.log(`  Solicitud NO pendiente: estado="${s.estado}" (tipo: ${typeof s.estado})`);
+                    }
+                    return esPendiente;
+                }
             );
             
             console.log(`Arma ${doc.id}: Solicitudes pendientes: ${solicitudesPendientes.length}`);

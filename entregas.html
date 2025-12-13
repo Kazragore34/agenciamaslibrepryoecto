@@ -543,12 +543,14 @@
         // Inicializar - Solo sargentos y admins pueden ver esto
         if (esSargentoOAdmin()) {
             cargarTicketsPendientesDealer();
-            // Cargar solicitudes de balas inmediatamente y también periódicamente
-            cargarSolicitudesBalasPendientes();
-            // Recargar cada 5 segundos para asegurar que se vean las nuevas solicitudes
+            // Cargar solicitudes de balas inmediatamente
+            setTimeout(() => {
+                cargarSolicitudesBalasPendientes();
+            }, 1000);
+            // Recargar cada 3 segundos para asegurar que se vean las nuevas solicitudes
             setInterval(() => {
                 cargarSolicitudesBalasPendientes();
-            }, 5000);
+            }, 3000);
             // No cargar historial automáticamente, solo cuando se expanda el acordeón
         }
     </script>
