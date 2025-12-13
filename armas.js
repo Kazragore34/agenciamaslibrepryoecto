@@ -349,9 +349,20 @@ async function obtenerSolicitudesBalasPendientes() {
         
         snapshot.forEach(doc => {
             const armaData = doc.data();
-            const solicitudesPendientes = (armaData.solicitudesBalas || []).filter(
-                s => s.estado === 'pendiente'
+            const todasLasSolicitudes = armaData.solicitudesBalas || [];
+            
+            // Debug: ver todas las solicitudes
+            console.log(`Arma ${doc.id}: Total solicitudes: ${todasLasSolicitudes.length}`);
+            todasLasSolicitudes.forEach((s, idx) => {
+                console.log(`  Solicitud ${idx}: estado=${s.estado}, cantidad=${s.cantidad}`);
+            });
+            
+            // Filtrar solo las pendientes (verificar que el estado sea exactamente 'pendiente')
+            const solicitudesPendientes = todasLasSolicitudes.filter(
+                s => s && s.estado === 'pendiente'
             );
+            
+            console.log(`Arma ${doc.id}: Solicitudes pendientes: ${solicitudesPendientes.length}`);
             
             if (solicitudesPendientes.length > 0) {
                 armasConSolicitudes.push({
@@ -362,6 +373,7 @@ async function obtenerSolicitudesBalasPendientes() {
             }
         });
         
+        console.log(`Total armas con solicitudes pendientes: ${armasConSolicitudes.length}`);
         return armasConSolicitudes;
     } catch (error) {
         console.error('Error obteniendo solicitudes de balas pendientes:', error);

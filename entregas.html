@@ -214,10 +214,18 @@
             if (!esSargentoOAdmin()) return;
             
             try {
+                console.log('Cargando solicitudes de balas pendientes...');
                 const armasConSolicitudes = await obtenerSolicitudesBalasPendientes();
+                console.log('Armas con solicitudes encontradas:', armasConSolicitudes.length);
                 const listaEl = document.getElementById('listaSolicitudesBalas');
                 
+                if (!listaEl) {
+                    console.error('Elemento listaSolicitudesBalas no encontrado');
+                    return;
+                }
+                
                 if (armasConSolicitudes.length === 0) {
+                    console.log('No hay solicitudes de balas pendientes');
                     listaEl.innerHTML = '<p style="color: #6b7280;">No hay solicitudes de balas pendientes</p>';
                     return;
                 }
@@ -535,10 +543,12 @@
         // Inicializar - Solo sargentos y admins pueden ver esto
         if (esSargentoOAdmin()) {
             cargarTicketsPendientesDealer();
-            // Cargar solicitudes de balas inmediatamente
-            setTimeout(() => {
+            // Cargar solicitudes de balas inmediatamente y también periódicamente
+            cargarSolicitudesBalasPendientes();
+            // Recargar cada 5 segundos para asegurar que se vean las nuevas solicitudes
+            setInterval(() => {
                 cargarSolicitudesBalasPendientes();
-            }, 500);
+            }, 5000);
             // No cargar historial automáticamente, solo cuando se expanda el acordeón
         }
     </script>
