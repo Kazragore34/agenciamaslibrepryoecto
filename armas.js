@@ -704,3 +704,41 @@ async function obtenerSolicitudesBalasPendientes() {
     }
 }
 
+/**
+ * Obtiene todas las armas activas con solicitudes de chalecos pendientes
+ * @returns {Promise<Array>} - Array de armas con solicitudes de chalecos pendientes
+ */
+async function obtenerSolicitudesChalecosPendientes() {
+    await ensureDb();
+    
+    try {
+        const snapshot = await db.collection('entregas_armas')
+            .where('estado', '==', 'activa')
+            .get();
+        
+        const armasConSolicitudes = [];
+        
+        snapshot.forEach(doc => {
+            const armaData = doc.data();
+            const todasLasSolicitudes = armaData.solicitudesChalecos || [];
+            
+            const solicitudesPendientes = todasLasSolicitudes.filter(
+                s => s && s.estado === 'pendiente'
+            );
+            
+            if (solicitudesPendientes.length > 0) {
+                armasConSolicitudes.push({
+                    id: doc.id,
+                    ...armaData,
+                    solicitudesChalecosPendientes: solicitudesPendientes
+                });
+            }
+        });
+        
+        return armasConSolicitudes;
+    } catch (error) {
+        console.error('Error obteniendo solicitudes de chalecos pendientes:', error);
+        throw error;
+    }
+}
+

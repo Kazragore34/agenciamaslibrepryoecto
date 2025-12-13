@@ -269,14 +269,16 @@
                         Ver Detalles
                     </button>
                     ${arma.estado === 'activa' && !esSarg ? `
-                        <button class="btn-primary btn-sm" onclick="solicitarBalasModal('${arma.id}')" style="margin-right: 0.5rem;">
-                            Solicitar Balas
-                        </button>
-                        ${!arma.chaleco ? `
-                            <button class="btn-primary btn-sm" onclick="solicitarChalecoModal('${arma.id}')">
-                                Solicitar Chaleco
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn-primary btn-sm" onclick="solicitarBalasModal('${arma.id}')">
+                                Solicitar Balas
                             </button>
-                        ` : ''}
+                            ${!arma.chaleco ? `
+                                <button class="btn-primary btn-sm" onclick="solicitarChalecoModal('${arma.id}')" style="background: #3b82f6;">
+                                    Solicitar Chaleco
+                                </button>
+                            ` : ''}
+                        </div>
                     ` : ''}
                     ${arma.estado === 'perdida' ? `
                         <span style="color: #ef4444; font-size: 0.875rem;">${obtenerNombreMotivo(arma.motivoPerdida)}</span>
