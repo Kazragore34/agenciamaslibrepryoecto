@@ -118,6 +118,7 @@
         // Actualizar navegación según rol
         function actualizarNavegacion() {
             const btnPanelAdmin = document.getElementById('btnPanelAdmin');
+            const btnEntregas = document.getElementById('btnEntregas');
             const btnPerdidas = document.getElementById('btnPerdidas');
             
             if (esAdmin()) {
@@ -127,8 +128,10 @@
             }
             
             if (esSargentoOAdmin()) {
+                if (btnEntregas) btnEntregas.style.display = 'inline-block';
                 if (btnPerdidas) btnPerdidas.style.display = 'inline-block';
             } else {
+                if (btnEntregas) btnEntregas.style.display = 'none';
                 if (btnPerdidas) btnPerdidas.style.display = 'none';
             }
         }
@@ -255,8 +258,9 @@
                         html += `<div>`;
                         html += `<p style="margin: 0; font-weight: 500;">Cantidad: <strong>${solicitud.cantidad}</strong> balas</p>`;
                         html += `<p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;">Solicitado: ${fechaSolicitudStr}</p>`;
+                        html += `${solicitud.sargentoNombre ? `<p style="margin: 0.25rem 0 0 0; color: #059669; font-size: 0.875rem;"><strong>Entregado por:</strong> ${solicitud.sargentoNombre}</p>` : ''}`;
                         html += `</div>`;
-                        html += `<button class="btn-success btn-sm" onclick="confirmarEntregaBalas('${arma.id}', ${solicitudIndex})">Confirmar Entrega</button>`;
+                        html += `${solicitud.estado === 'pendiente' ? `<button class="btn-success btn-sm" onclick="confirmarEntregaBalas('${arma.id}', ${solicitudIndex})">Confirmar Entrega</button>` : `<span class="estado-badge success">Entregado</span>`}`;
                         html += `</div>`;
                     });
                     
@@ -313,26 +317,31 @@
                     return fechaB - fechaA;
                 });
                 
-                let html = '<table class="data-table"><thead><tr><th>Prospect</th><th>Productos</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                let html = '<table class="data-table"><thead><tr><th>Sargento</th><th>Prospect</th><th>Productos</th><th>Monto Aprox</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
                 
                 entregas.forEach(entrega => {
                     const fecha = entrega.fechaCreacion?.toDate();
                     const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
                     const estadoClass = entrega.estado === 'confirmado' ? 'success' : entrega.estado === 'rechazado' ? 'error' : 'pendiente';
+                    const esMiEntrega = entrega.dealerId === currentUser.id;
                     
                     // Buscar tickets relacionados
                     const tieneTicket = entrega.ticketsRelacionados && entrega.ticketsRelacionados.length > 0;
                     
                     html += `<tr>
+                        <td><strong>${entrega.dealerNombre}</strong></td>
                         <td><strong>${entrega.vendedorNombre}</strong></td>
                         <td>${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')}</td>
+                        <td>${entrega.precioAprox ? '$' + entrega.precioAprox.toLocaleString() : 'N/A'}</td>
                         <td><span class="estado-badge ${estadoClass}">${entrega.estado}</span></td>
                         <td>${fechaStr}</td>
                         <td>
-                            ${entrega.estado === 'confirmado' && !tieneTicket ? 
+                            ${entrega.estado === 'confirmado' && !tieneTicket && esMiEntrega ? 
                                 `<button class="btn-primary btn-sm" onclick="verDetallesEntrega('${entrega.id}')">Ver Detalles</button>` : 
                                 entrega.estado === 'confirmado' && tieneTicket ? 
                                 `<span style="color: #10b981; font-size: 0.875rem;">Ticket creado</span>` : 
+                                entrega.estado === 'confirmado' && !esMiEntrega ?
+                                `<span style="color: #6b7280; font-size: 0.875rem;">Solo el sargento que entregó puede ver detalles</span>` :
                                 ''
                             }
                         </td>
@@ -526,7 +535,10 @@
         // Inicializar - Solo sargentos y admins pueden ver esto
         if (esSargentoOAdmin()) {
             cargarTicketsPendientesDealer();
-            cargarSolicitudesBalasPendientes();
+            // Cargar solicitudes de balas inmediatamente
+            setTimeout(() => {
+                cargarSolicitudesBalasPendientes();
+            }, 500);
             // No cargar historial automáticamente, solo cuando se expanda el acordeón
         }
     </script>

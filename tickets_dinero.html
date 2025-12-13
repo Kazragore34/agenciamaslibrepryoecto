@@ -458,16 +458,26 @@
         }
 
         async function crearTicketDesdeEntrega(entregaId, dealerId) {
-            const monto = prompt('Ingresa el monto que entregaste por esta venta:');
-            if (!monto || isNaN(monto) || parseFloat(monto) <= 0) {
-                alert('Monto inválido');
-                return;
-            }
-            
+            // Obtener la entrega para obtener el monto aprox
             try {
+                await ensureDb();
+                const entregaDoc = await db.collection('entregas_productos').doc(entregaId).get();
+                if (!entregaDoc.exists) {
+                    alert('Entrega no encontrada');
+                    return;
+                }
+                const entrega = entregaDoc.data();
+                const montoAprox = entrega.precioAprox || null;
+                
+                const monto = prompt('Ingresa el monto que entregaste por esta venta:');
+                if (!monto || isNaN(monto) || parseFloat(monto) <= 0) {
+                    alert('Monto inválido');
+                    return;
+                }
+                
                 mostrarMensaje('Creando ticket...', 'info');
                 // Los prospects pueden crear tickets para sí mismos
-                const ticketId = await crearTicketDineroVendedor(dealerId, currentUser.id, parseFloat(monto), [entregaId]);
+                const ticketId = await crearTicketDineroVendedorConAprox(dealerId, currentUser.id, parseFloat(monto), montoAprox, [entregaId]);
                 mostrarMensaje('Ticket creado y confirmado correctamente', 'success');
                 cargarEntregasConfirmadasVendedor();
                 cargarTickets();

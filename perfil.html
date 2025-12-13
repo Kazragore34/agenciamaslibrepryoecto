@@ -96,12 +96,16 @@
             const btnEntregas = document.getElementById('btnEntregas');
             const btnPerdidas = document.getElementById('btnPerdidas');
             
-            if (esDealer()) {
+            if (esAdmin()) {
                 if (btnPanelAdmin) btnPanelAdmin.style.display = 'inline-block';
+            } else {
+                if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
+            }
+            
+            if (esSargentoOAdmin()) {
                 if (btnEntregas) btnEntregas.style.display = 'inline-block';
                 if (btnPerdidas) btnPerdidas.style.display = 'inline-block';
             } else {
-                if (btnPanelAdmin) btnPanelAdmin.style.display = 'none';
                 if (btnEntregas) btnEntregas.style.display = 'none';
                 if (btnPerdidas) btnPerdidas.style.display = 'none';
             }

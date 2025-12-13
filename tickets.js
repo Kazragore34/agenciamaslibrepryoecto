@@ -97,6 +97,53 @@ async function crearTicketDinero(sargentoId, prospectId, montoAprox = null, entr
  * @param {Array} entregasRelacionadas - IDs de entregas relacionadas
  * @returns {Promise<string>} - ID del ticket creado
  */
+async function crearTicketDineroVendedorConAprox(sargentoId, prospectId, montoEntregado, montoAprox = null, entregasRelacionadas = []) {
+    await ensureDb();
+    
+    if (!esProspect()) {
+        throw new Error('Solo los prospects pueden crear tickets de dinero');
+    }
+    
+    const currentUser = getCurrentUser();
+    if (currentUser.id !== prospectId) {
+        throw new Error('No puedes crear tickets en nombre de otro prospect');
+    }
+    
+    try {
+        // Obtener datos del sargento
+        const sargentoDoc = await db.collection('users').doc(sargentoId).get();
+        if (!sargentoDoc.exists) {
+            throw new Error('Sargento no encontrado');
+        }
+        const sargentoData = sargentoDoc.data();
+        
+        const ticketId = await generarTicketId();
+        
+        const ticketData = {
+            ticketId,
+            dealerId: sargentoId, // Mantener nombre de campo para compatibilidad
+            dealerNombre: `${sargentoData.nombre} ${sargentoData.apellido}`,
+            vendedorId: prospectId, // Mantener nombre de campo para compatibilidad
+            vendedorNombre: `${currentUser.nombre} ${currentUser.apellido}`,
+            montoAprox: montoAprox,
+            montoEntregado,
+            estado: 'pendiente_dealer', // El dealer debe confirmar
+            fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+            fechaConfirmacionVendedor: firebase.firestore.FieldValue.serverTimestamp(),
+            entregasRelacionadas: entregasRelacionadas || []
+        };
+        
+        const docRef = await db.collection('tickets_dinero').add(ticketData);
+        
+        // NO actualizar metas todavía, esperar confirmación del dealer
+        
+        return docRef.id;
+    } catch (error) {
+        console.error('Error creando ticket de dinero desde vendedor:', error);
+        throw error;
+    }
+}
+
 async function crearTicketDineroVendedor(sargentoId, prospectId, montoEntregado, entregasRelacionadas = []) {
     await ensureDb();
     
