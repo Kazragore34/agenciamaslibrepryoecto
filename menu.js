@@ -676,27 +676,30 @@ async function inicializarMenu() {
     if (btnSolicitarChaleco && esProspect()) {
         btnSolicitarChaleco.addEventListener('click', async () => {
             try {
-                const armas = await obtenerArmasPorVendedor(currentUser.id);
-                const armasActivasSinChaleco = armas.filter(a => a.estado === 'activa' && !a.chaleco);
+                await ensureDb();
                 
-                if (armasActivasSinChaleco.length === 0) {
-                    mostrarModal('No tienes armas activas sin chaleco', 'warning');
+                // Verificar si ya hay una solicitud pendiente de chaleco independiente
+                const snapshot = await db.collection('solicitudes_chalecos')
+                    .where('usuarioId', '==', currentUser.id)
+                    .where('estado', '==', 'pendiente')
+                    .get();
+                
+                if (!snapshot.empty) {
+                    mostrarModal('Ya tienes una solicitud de chaleco pendiente', 'warning');
                     return;
                 }
                 
-                if (armasActivasSinChaleco.length === 1) {
-                    solicitarChalecoRapido(armasActivasSinChaleco[0].id);
-                } else {
-                    const opciones = armasActivasSinChaleco.map((a, i) => `${i + 1}. ${a.tipoArma}`).join('\n');
-                    mostrarPrompt(`Tienes ${armasActivasSinChaleco.length} armas sin chaleco:\n${opciones}\n\nIngresa el número del arma (1-${armasActivasSinChaleco.length}):`, '1', 'number', (seleccion) => {
-                        const indice = parseInt(seleccion) - 1;
-                        if (isNaN(indice) || indice < 0 || indice >= armasActivasSinChaleco.length) {
-                            mostrarModal('Selección inválida', 'error');
-                            return;
-                        }
-                        solicitarChalecoRapido(armasActivasSinChaleco[indice].id);
-                    });
-                }
+                // Solicitar chaleco independiente (no enlazado a arma)
+                mostrarConfirmacion('¿Deseas solicitar un chaleco? (Este chaleco es independiente y no está enlazado a ningún arma)', async () => {
+                    try {
+                        await solicitarChalecoIndependiente();
+                        mostrarModal('Solicitud de chaleco enviada correctamente', 'success');
+                        cargarArmasActivas();
+                        cargarTicketsDepositosResumen();
+                    } catch (error) {
+                        mostrarModal('Error: ' + error.message, 'error');
+                    }
+                });
             } catch (error) {
                 mostrarModal('Error: ' + error.message, 'error');
             }

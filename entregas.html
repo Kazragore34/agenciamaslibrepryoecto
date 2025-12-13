@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="styles-fichaje.css">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="modal.js"></script>
 </head>
 <body>
     <div class="stats-container" style="padding-top: 6rem;">
@@ -359,6 +360,39 @@
                         });
                         
                         html += `</div>`;
+                        html += `</div>`;
+                        html += `</div>`;
+                    });
+                    
+                    html += '</div>';
+                }
+                
+                // Sección de Solicitudes de Chalecos Independientes
+                if (solicitudesChalecosIndependientes.length > 0) {
+                    html += '<div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 1rem; margin-bottom: 1rem; border-radius: 0.375rem;">';
+                    html += `<strong>ℹ️ Tienes ${solicitudesChalecosIndependientes.length} solicitud(es) de chaleco(s) independiente(s) pendiente(s)</strong>`;
+                    html += '</div>';
+                    
+                    html += '<div style="display: grid; gap: 1rem;">';
+                    
+                    solicitudesChalecosIndependientes.forEach(solicitud => {
+                        const fechaCreacion = solicitud.fechaCreacion?.toDate();
+                        const fechaCreacionStr = fechaCreacion ? fechaCreacion.toLocaleString('es-PE') : 'N/A';
+                        
+                        html += `<div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background: #dbeafe;">`;
+                        html += `<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">`;
+                        html += `<div>`;
+                        html += `<h3 style="margin: 0 0 0.5rem 0;">Chaleco Independiente</h3>`;
+                        html += `<p style="color: #6b7280; margin: 0; font-size: 0.875rem;">Prospect: <strong>${solicitud.usuarioNombre}</strong></p>`;
+                        html += `<p style="color: #6b7280; margin: 0.25rem 0 0 0; font-size: 0.875rem;">Solicitado: ${fechaCreacionStr}</p>`;
+                        html += `<p style="color: #6b7280; margin: 0.25rem 0 0 0; font-size: 0.875rem;">Tipo: <strong>Chaleco independiente (no enlazado a arma)</strong></p>`;
+                        html += `</div>`;
+                        html += `<span class="estado-badge pendiente">Pendiente</span>`;
+                        html += `</div>`;
+                        
+                        html += `<div style="display: flex; gap: 0.5rem; margin-top: 1rem;">`;
+                        html += `<button class="btn-success btn-sm" onclick="confirmarChalecoIndependiente('${solicitud.id}')">Confirmar Entrega</button>`;
+                        html += `<button class="btn-danger btn-sm" onclick="rechazarChalecoIndependienteUI('${solicitud.id}')">Rechazar</button>`;
                         html += `</div>`;
                         html += `</div>`;
                     });
