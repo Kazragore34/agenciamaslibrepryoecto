@@ -101,16 +101,21 @@ async function solicitarRecargaBalas(armaId, cantidad) {
         
         const solicitud = {
             fecha: firebase.firestore.FieldValue.serverTimestamp(),
-            cantidad,
-            estado: 'pendiente'
+            cantidad: parseInt(cantidad),
+            estado: 'pendiente' // Asegurar que el estado sea exactamente 'pendiente'
         };
         
         const solicitudesBalas = armaData.solicitudesBalas || [];
         solicitudesBalas.push(solicitud);
         
+        console.log('Agregando solicitud de balas:', solicitud);
+        console.log('Total solicitudes después de agregar:', solicitudesBalas.length);
+        
         await armaRef.update({
             solicitudesBalas
         });
+        
+        console.log('Solicitud de balas guardada correctamente');
     } catch (error) {
         console.error('Error solicitando recarga de balas:', error);
         throw error;
