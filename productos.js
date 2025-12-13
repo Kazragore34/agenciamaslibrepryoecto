@@ -27,6 +27,19 @@ const MOTIVOS_PERDIDA = [
 const META_DIARIA = 100000; // 100k
 const META_SEMANAL = 1000000; // 1M
 
+// Configuración de semillas: 1 semilla = 10 brotes
+const BROTES_POR_SEMILLA = 10;
+
+// Tipos de dinero negro para DEPOSITO
+const TIPOS_DINERO_NEGRO = [
+    { id: 'robo_casa', nombre: 'Dinero por robo de casa' },
+    { id: 'ammus', nombre: 'Dinero por ammus' },
+    { id: 'chop_chop', nombre: 'Dinero por chop chop' },
+    { id: 'autos_importacion', nombre: 'Dinero por autos de importación' },
+    { id: 'hongos', nombre: 'Dinero por hongos' },
+    { id: 'amapolas', nombre: 'Dinero por amapolas' }
+];
+
 /**
  * Obtiene el precio mínimo de un producto
  * @param {string} tipoProducto - Tipo de producto
@@ -49,7 +62,12 @@ function calcularPrecioAprox(productos) {
     productos.forEach(producto => {
         const precioMin = obtenerPrecioMinimo(producto.tipo);
         if (precioMin !== null) {
-            total += precioMin * producto.cantidad;
+            // Si es una semilla, el precio es por brote, y 1 semilla = 10 brotes
+            if (producto.tipo.startsWith('semilla_')) {
+                total += precioMin * producto.cantidad * BROTES_POR_SEMILLA;
+            } else {
+                total += precioMin * producto.cantidad;
+            }
         }
     });
     return total;
