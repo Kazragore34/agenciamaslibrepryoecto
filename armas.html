@@ -75,6 +75,15 @@
             <div class="stats-card">
                 <h3 id="tituloArmas">Historial de Armas</h3>
                 <p style="color: #6b7280; margin-bottom: 1rem;" id="descripcionArmas">Todas las armas que has recibido (activas y perdidas). Haz click en "Solicitar Balas" para solicitar más balas en armas activas.</p>
+                
+                <!-- Botón para solicitar chaleco (independiente del arma) -->
+                <div id="seccionSolicitarChaleco" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #dbeafe; border-radius: 0.5rem; border-left: 4px solid #3b82f6;">
+                    <p style="margin: 0 0 0.5rem 0; font-weight: 500;">¿Necesitas un chaleco?</p>
+                    <button class="btn-primary" onclick="solicitarChalecoGlobal()" style="background: #3b82f6;">
+                        Solicitar Chaleco
+                    </button>
+                </div>
+                
                 <div id="listaArmas">
                     <!-- Se carga dinámicamente -->
                 </div>
@@ -232,6 +241,24 @@
                 
                 const armasOrdenadas = [...armasActivas, ...armasPerdidas];
                 
+                // Mostrar/ocultar botón de solicitar chaleco
+                const seccionChaleco = document.getElementById('seccionSolicitarChaleco');
+                if (seccionChaleco && !esSarg) {
+                    // Verificar si hay alguna arma activa sin chaleco
+                    const tieneArmaSinChaleco = armasActivas.some(a => !a.chaleco);
+                    // Verificar si ya hay una solicitud pendiente de chaleco
+                    const tieneSolicitudPendiente = armasActivas.some(arma => {
+                        const solicitudesChalecos = arma.solicitudesChalecos || [];
+                        return solicitudesChalecos.some(s => s && s.estado === 'pendiente');
+                    });
+                    
+                    if (tieneArmaSinChaleco && !tieneSolicitudPendiente) {
+                        seccionChaleco.style.display = 'block';
+                    } else {
+                        seccionChaleco.style.display = 'none';
+                    }
+                }
+                
                 mostrarArmas(armasOrdenadas);
             } catch (error) {
                 console.error('Error cargando armas:', error);
@@ -269,16 +296,9 @@
                         Ver Detalles
                     </button>
                     ${arma.estado === 'activa' && !esSarg ? `
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <button class="btn-primary btn-sm" onclick="solicitarBalasModal('${arma.id}')">
-                                Solicitar Balas
-                            </button>
-                            ${!arma.chaleco ? `
-                                <button class="btn-primary btn-sm" onclick="solicitarChalecoModal('${arma.id}')" style="background: #3b82f6;">
-                                    Solicitar Chaleco
-                                </button>
-                            ` : ''}
-                        </div>
+                        <button class="btn-primary btn-sm" onclick="solicitarBalasModal('${arma.id}')">
+                            Solicitar Balas
+                        </button>
                     ` : ''}
                     ${arma.estado === 'perdida' ? `
                         <span style="color: #ef4444; font-size: 0.875rem;">${obtenerNombreMotivo(arma.motivoPerdida)}</span>
@@ -507,6 +527,61 @@
             setTimeout(() => {
                 mensajeEl.style.display = 'none';
             }, 3000);
+        }
+
+        async function solicitarChalecoGlobal() {
+            if (!esProspect()) {
+                alert('Solo los prospects pueden solicitar chalecos');
+                return;
+            }
+            
+            try {
+                await ensureDb();
+                // Buscar todas las armas activas del usuario sin chaleco
+                const armas = await obtenerArmasPorVendedor(currentUser.id);
+                const armasActivasSinChaleco = armas.filter(a => a.estado === 'activa' && !a.chaleco);
+                
+                if (armasActivasSinChaleco.length === 0) {
+                    alert('No tienes armas activas sin chaleco para solicitar');
+                    return;
+                }
+                
+                // Verificar si ya hay una solicitud pendiente
+                const tieneSolicitudPendiente = armasActivasSinChaleco.some(arma => {
+                    const solicitudesChalecos = arma.solicitudesChalecos || [];
+                    return solicitudesChalecos.some(s => s && s.estado === 'pendiente');
+                });
+                
+                if (tieneSolicitudPendiente) {
+                    alert('Ya tienes una solicitud de chaleco pendiente');
+                    return;
+                }
+                
+                // Si hay solo una arma, solicitar directamente
+                if (armasActivasSinChaleco.length === 1) {
+                    if (!confirm('¿Deseas solicitar un chaleco?')) return;
+                    await solicitarChaleco(armasActivasSinChaleco[0].id);
+                    alert('Solicitud de chaleco enviada correctamente');
+                    cargarArmas();
+                } else {
+                    // Si hay varias, mostrar selector
+                    const opciones = armasActivasSinChaleco.map((a, i) => `${i + 1}. ${a.tipoArma}`).join('\n');
+                    const seleccion = prompt(`Tienes ${armasActivasSinChaleco.length} armas sin chaleco:\n${opciones}\n\nIngresa el número del arma (1-${armasActivasSinChaleco.length}):`);
+                    const indice = parseInt(seleccion) - 1;
+                    
+                    if (isNaN(indice) || indice < 0 || indice >= armasActivasSinChaleco.length) {
+                        alert('Selección inválida');
+                        return;
+                    }
+                    
+                    if (!confirm('¿Deseas solicitar un chaleco para esta arma?')) return;
+                    await solicitarChaleco(armasActivasSinChaleco[indice].id);
+                    alert('Solicitud de chaleco enviada correctamente');
+                    cargarArmas();
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
         }
 
         // Inicializar
