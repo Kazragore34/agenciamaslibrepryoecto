@@ -82,6 +82,16 @@ service cloud.firestore {
       // Permitir actualización (la validación de rol sargento/admin se hace en el código)
       allow update: if true;
     }
+    
+    // Colección de solicitudes de chalecos independientes
+    match /solicitudes_chalecos/{solicitudId} {
+      // Permitir lectura a todos (la validación de rol sargento/admin se hace en el código)
+      allow read: if true;
+      // Permitir creación (la validación de rol prospect se hace en el código)
+      allow create: if true;
+      // Permitir actualización (la validación de rol sargento/admin se hace en el código)
+      allow update: if true;
+    }
   }
 }
 
