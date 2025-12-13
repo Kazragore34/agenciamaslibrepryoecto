@@ -618,7 +618,11 @@ async function crearDepositoDineroNegroConSargento(importes, sargentoId) {
         const montoTotal = detallesDeposito.reduce((sum, detalle) => sum + detalle.monto, 0);
         console.log('montoTotal calculado:', montoTotal);
         
+        // Generar código de depósito
+        const depositoId = await generarDepositoId();
+        
         const depositoData = {
+            depositoId: depositoId,
             usuarioId: currentUser.id,
             usuarioNombre: `${currentUser.nombre} ${currentUser.apellido}`,
             usuarioRol: currentUser.rol,
@@ -641,7 +645,7 @@ async function crearDepositoDineroNegroConSargento(importes, sargentoId) {
         console.log('Guardando en colección depositos_dinero_negro...');
         
         const docRef = await db.collection('depositos_dinero_negro').add(depositoData);
-        console.log('✅ Depósito guardado con ID:', docRef.id);
+        console.log('✅ Depósito guardado con ID:', docRef.id, 'Código:', depositoId);
         
         return docRef.id;
     } catch (error) {
