@@ -128,9 +128,9 @@
         let todosVendedores = [];
         let armasActivasPorVendedor = {};
 
-        // Cargar vendedores
+        // Cargar prospects (antes vendedores)
         async function cargarVendedores() {
-            if (!esDealer()) return;
+            if (!esSargentoOAdmin()) return;
             
             try {
                 await ensureDb();
@@ -138,15 +138,27 @@
                     .orderBy('nombre')
                     .get();
                 
+                const currentUser = getCurrentUser();
+                // Filtrar solo prospects (excluir sargentos, admins y el usuario actual)
                 todosVendedores = snapshot.docs
                     .map(doc => ({
                         id: doc.id,
                         ...doc.data()
                     }))
-                    .filter(user => user.id !== currentUser.id);
+                    .filter(user => 
+                        user.id !== currentUser.id && 
+                        user.rol === 'prospect' // Solo mostrar prospects
+                    );
                 
                 const select = document.getElementById('vendedorSelectPerdida');
-                select.innerHTML = '<option value="">Seleccionar vendedor...</option>';
+                if (!select) return;
+                
+                select.innerHTML = '<option value="">Seleccionar prospect...</option>';
+                
+                if (todosVendedores.length === 0) {
+                    select.innerHTML = '<option value="">No hay prospects disponibles</option>';
+                    return;
+                }
                 
                 todosVendedores.forEach(v => {
                     const option = document.createElement('option');
@@ -154,8 +166,14 @@
                     option.textContent = `${v.nombre} ${v.apellido} (${v.username})`;
                     select.appendChild(option);
                 });
+                
+                console.log('Prospects cargados para pérdidas:', todosVendedores.length);
             } catch (error) {
-                console.error('Error cargando usuarios:', error);
+                console.error('Error cargando prospects:', error);
+                const select = document.getElementById('vendedorSelectPerdida');
+                if (select) {
+                    select.innerHTML = '<option value="">Error cargando prospects</option>';
+                }
             }
         }
 
@@ -194,7 +212,7 @@
 
         // Cargar armas perdidas
         async function cargarArmasPerdidas() {
-            if (!esDealer()) return;
+            if (!esSargentoOAdmin()) return;
             
             try {
                 const armas = await obtenerArmasPorDealer(currentUser.id);

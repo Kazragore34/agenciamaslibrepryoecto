@@ -1069,15 +1069,21 @@
         async function cargarSargentosDeposito() {
             try {
                 await ensureDb();
+                // Cargar todos los usuarios y filtrar en el cliente para evitar necesidad de índices
                 const snapshot = await db.collection('users')
-                    .where('rol', 'in', ['sargento', 'admin'])
                     .orderBy('nombre')
                     .get();
                 
-                const sargentos = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                const currentUser = getCurrentUser();
+                const sargentos = snapshot.docs
+                    .map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                    .filter(user => 
+                        (user.rol === 'sargento' || user.rol === 'admin') && 
+                        user.id !== currentUser.id // Excluir al usuario actual
+                    );
                 
                 const select = document.getElementById('sargentoSelectDeposito');
                 if (!select) return;
@@ -1095,6 +1101,8 @@
                     option.textContent = `${s.nombre} ${s.apellido} (${s.username})`;
                     select.appendChild(option);
                 });
+                
+                console.log('Sargentos cargados:', sargentos.length);
             } catch (error) {
                 console.error('Error cargando sargentos:', error);
                 const select = document.getElementById('sargentoSelectDeposito');
