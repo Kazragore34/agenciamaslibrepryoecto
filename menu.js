@@ -854,7 +854,7 @@ async function inicializarMenu() {
     const gridEl = document.getElementById('gridPrincipal');
     if (gridEl) {
         if (esSargentoOAdmin()) {
-            gridEl.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+            gridEl.style.gridTemplateColumns = '1fr 1fr 1fr 1.3fr';
             const columnaEl = document.getElementById('columnaEntregasRapidas');
             if (columnaEl) {
                 columnaEl.style.display = 'flex';
@@ -1111,10 +1111,10 @@ async function cargarSolicitudesPendientesSargento() {
         return;
     }
     
-    // Asegurar que el grid esté en 4 columnas ANTES de cargar datos
+    // Asegurar que el grid esté en 4 columnas ANTES de cargar datos (columna de entregas más ancha)
     const gridEl = document.getElementById('gridPrincipal');
     if (gridEl) {
-        gridEl.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+        gridEl.style.gridTemplateColumns = '1fr 1fr 1fr 1.3fr';
     }
     
     // Mostrar la columna de entregas rápidas ANTES de cargar datos
@@ -1394,7 +1394,7 @@ async function cargarSolicitudesPendientesSargento() {
         // Asegurar que el grid y la columna estén visibles incluso si hay error
         const gridError = document.getElementById('gridPrincipal');
         if (gridError) {
-            gridError.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+            gridError.style.gridTemplateColumns = '1fr 1fr 1fr 1.3fr';
         }
         const columnaError = document.getElementById('columnaEntregasRapidas');
         if (columnaError) {
