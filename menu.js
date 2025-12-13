@@ -1132,6 +1132,7 @@ async function cargarSolicitudesPendientesSargento() {
         
         console.log('🔍 Cargando solicitudes pendientes para sargento:', currentUser.id);
         
+        // Cargar todas las solicitudes pendientes
         const [entregasPendientes, depositosPendientes, solicitudesBalas, solicitudesChalecos, ticketsPendientes] = await Promise.all([
             obtenerEntregasPorDealer(currentUser.id).then(entregas => {
                 const filtradas = entregas.filter(e => e.estado === 'pendiente');
@@ -1375,11 +1376,11 @@ async function cargarSolicitudesPendientesSargento() {
             console.log('✅ Sección de entregas rápidas visible');
         }
         
-        // Asegurar que la columna esté visible
-        const columnaEl = document.getElementById('columnaEntregasRapidas');
-        if (columnaEl) {
-            columnaEl.style.display = 'flex';
-            console.log('✅ Columna de entregas rápidas visible');
+        // Asegurar que la columna esté visible al final
+        const columnaFinal = document.getElementById('columnaEntregasRapidas');
+        if (columnaFinal) {
+            columnaFinal.style.display = 'flex';
+            console.log('✅ Columna de entregas rápidas visible al final');
         }
         
         console.log('✅ Función cargarSolicitudesPendientesSargento completada');
