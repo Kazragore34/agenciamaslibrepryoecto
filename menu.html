@@ -69,7 +69,7 @@
 
     <!-- Si está autenticado, mostrar el menú principal -->
     <div id="menuSection" style="display: none;">
-        <div class="stats-container" style="padding-top: 6rem;">
+        <div class="stats-container" style="padding-top: clamp(5rem, 12vh, 7rem);">
             <div class="fichaje-header">
                 <h1>Menú Principal</h1>
                 <div>
@@ -132,8 +132,24 @@
                     </div>
                 </div>
 
-                <!-- Columna Derecha: Armas y Accesos Rápidos -->
+                <!-- Columna Derecha: Accesos Rápidos, Armas y Tickets -->
                 <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <!-- Accesos Rápidos -->
+                    <div id="seccionAccesosRapidos" class="stats-card" style="flex: 1; display: none;">
+                        <h3 style="margin: 0 0 1rem 0;">Accesos Rápidos</h3>
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <button id="btnSolicitarBalasRapido" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.875rem;">
+                                🎯 Solicitar Balas
+                            </button>
+                            <button id="btnSolicitarChalecoRapido" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.875rem; background: #3b82f6;">
+                                🛡️ Solicitar Chaleco
+                            </button>
+                            <button id="btnDepositoRapido" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.875rem; background: #8b5cf6;">
+                                💰 Registrar Depósito
+                            </button>
+                        </div>
+                    </div>
+                    
                     <!-- Armas Activas -->
                     <div class="stats-card" style="flex: 1;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -153,22 +169,6 @@
                             <div id="ticketsDepositosResumen" style="max-height: 200px; overflow-y: auto;">
                                 <!-- Se carga dinámicamente -->
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Accesos Rápidos -->
-                    <div id="seccionAccesosRapidos" class="stats-card" style="flex: 1; display: none;">
-                        <h3 style="margin: 0 0 1rem 0;">Accesos Rápidos</h3>
-                        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                            <button id="btnSolicitarBalasRapido" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.875rem;">
-                                🎯 Solicitar Balas
-                            </button>
-                            <button id="btnSolicitarChalecoRapido" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.875rem; background: #3b82f6;">
-                                🛡️ Solicitar Chaleco
-                            </button>
-                            <button id="btnDepositoRapido" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.875rem; background: #8b5cf6;">
-                                💰 Registrar Depósito
-                            </button>
                         </div>
                     </div>
                 </div>

@@ -77,8 +77,16 @@ async function cargarEntregasPendientes() {
             return;
         }
         
+        // Limitar a máximo 3 entregas (las más recientes)
+        const entregasMostrar = entregas.slice(0, 3);
+        
         let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
-        entregas.forEach((entrega, index) => {
+        if (entregas.length > 3) {
+            html += `<p style="color: #6b7280; font-size: 0.75rem; text-align: center; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem; margin-bottom: 0.5rem;">
+                Mostrando 3 de ${entregas.length}. <a href="tickets_dinero.html" style="color: #3b82f6; text-decoration: underline;">Ver todas</a>
+            </p>`;
+        }
+        entregasMostrar.forEach((entrega, index) => {
             const fecha = entrega.fechaCreacion?.toDate();
             const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'Fecha no disponible';
             const productosResumen = entrega.productos.slice(0, 2).map(p => 
@@ -226,8 +234,16 @@ async function cargarEntregasConfirmadas() {
             return;
         }
         
+        // Limitar a máximo 3 entregas (las más recientes)
+        const entregasConfirmadasMostrar = entregasConfirmadas.slice(0, 3);
+        
         let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
-        entregasConfirmadas.forEach((entrega, index) => {
+        if (entregasConfirmadas.length > 3) {
+            html += `<p style="color: #6b7280; font-size: 0.75rem; text-align: center; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem; margin-bottom: 0.5rem;">
+                Mostrando 3 de ${entregasConfirmadas.length}. <a href="tickets_dinero.html" style="color: #3b82f6; text-decoration: underline;">Ver todas</a>
+            </p>`;
+        }
+        entregasConfirmadasMostrar.forEach((entrega, index) => {
             const fecha = entrega.fechaCreacion?.toDate();
             const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'Fecha no disponible';
             const productosResumen = entrega.productos.slice(0, 2).map(p => 
@@ -311,6 +327,29 @@ async function cargarEntregasConfirmadas() {
 async function crearTicketDesdeEntregaRapido(entregaId, dealerId) {
     try {
         await ensureDb();
+        const currentUser = getCurrentUser();
+        
+        // VERIFICAR SI YA EXISTE UN TICKET PARA ESTA ENTREGA (BUG DE SEGURIDAD)
+        const tickets = await obtenerTicketsPorVendedor(currentUser.id);
+        const ticketExistente = tickets.find(ticket => {
+            if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas)) {
+                return ticket.entregasRelacionadas.includes(entregaId) && 
+                       (ticket.estado === 'pendiente_dealer' || ticket.estado === 'confirmado_dealer');
+            }
+            return false;
+        });
+        
+        if (ticketExistente) {
+            if (ticketExistente.estado === 'confirmado_dealer') {
+                mostrarModal('Esta entrega ya tiene un ticket confirmado. No se puede crear otro.', 'warning');
+            } else {
+                mostrarModal('Esta entrega ya tiene un ticket pendiente. Espera a que el sargento lo confirme o rechace.', 'warning');
+            }
+            // Recargar para actualizar el estado
+            cargarEntregasConfirmadas();
+            return;
+        }
+        
         const entregaDoc = await db.collection('entregas_productos').doc(entregaId).get();
         if (!entregaDoc.exists) {
             mostrarModal('Entrega no encontrada', 'error');
@@ -326,7 +365,23 @@ async function crearTicketDesdeEntregaRapido(entregaId, dealerId) {
             }
             
             try {
-                const ticketId = await crearTicketDineroVendedorConAprox(dealerId, getCurrentUser().id, parseFloat(monto), montoAprox, [entregaId]);
+                // Verificar nuevamente antes de crear (doble verificación)
+                const ticketsRecheck = await obtenerTicketsPorVendedor(currentUser.id);
+                const ticketExistenteRecheck = ticketsRecheck.find(ticket => {
+                    if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas)) {
+                        return ticket.entregasRelacionadas.includes(entregaId) && 
+                               (ticket.estado === 'pendiente_dealer' || ticket.estado === 'confirmado_dealer');
+                    }
+                    return false;
+                });
+                
+                if (ticketExistenteRecheck) {
+                    mostrarModal('Esta entrega ya tiene un ticket. La página se actualizará.', 'warning');
+                    cargarEntregasConfirmadas();
+                    return;
+                }
+                
+                const ticketId = await crearTicketDineroVendedorConAprox(dealerId, currentUser.id, parseFloat(monto), montoAprox, [entregaId]);
                 mostrarModal('Ticket creado correctamente', 'success');
                 cargarEntregasConfirmadas();
                 cargarTicketsDepositosResumen();
@@ -594,8 +649,16 @@ async function cargarArmasActivas() {
                 return;
             }
             
+            // Limitar a máximo 2 armas (las 2 más recientes)
+            const armasMostrar = armasActivas.slice(0, 2);
+            
             let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
-            armasActivas.forEach((arma, index) => {
+            if (armasActivas.length > 2) {
+                html += `<p style="color: #6b7280; font-size: 0.75rem; text-align: center; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem; margin-bottom: 0.5rem;">
+                    Mostrando 2 de ${armasActivas.length}. <a href="armas.html" style="color: #3b82f6; text-decoration: underline;">Ver todas</a>
+                </p>`;
+            }
+            armasMostrar.forEach((arma, index) => {
                 const solicitudesPendientes = (arma.solicitudesBalas || []).filter(s => s.estado === 'pendiente');
                 const balasActual = arma.cantidadBalasActual !== undefined ? arma.cantidadBalasActual : arma.cantidadBalasInicial || 0;
                 const balasInicial = arma.cantidadBalasInicial || 0;
