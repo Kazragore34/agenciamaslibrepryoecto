@@ -1106,21 +1106,24 @@ async function registrarDepositoTipoRapido(tipoId) {
  */
 async function cargarSolicitudesPendientesSargento() {
     const currentUser = getCurrentUser();
-    if (!currentUser || !esSargentoOAdmin()) return;
+    if (!currentUser || !esSargentoOAdmin()) {
+        console.log('⚠️ No se puede cargar solicitudes: usuario no válido o no es sargento');
+        return;
+    }
+    
+    // Asegurar que el grid esté en 4 columnas ANTES de cargar datos
+    const gridEl = document.getElementById('gridPrincipal');
+    if (gridEl) {
+        gridEl.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+    }
+    
+    // Mostrar la columna de entregas rápidas ANTES de cargar datos
+    const columnaEl = document.getElementById('columnaEntregasRapidas');
+    if (columnaEl) {
+        columnaEl.style.display = 'flex';
+    }
     
     try {
-        // Cambiar grid a 4 columnas para sargentos
-        const gridEl = document.getElementById('gridPrincipal');
-        if (gridEl) {
-            gridEl.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
-        }
-        
-        // Mostrar la columna de entregas rápidas
-        const columnaEl = document.getElementById('columnaEntregasRapidas');
-        if (columnaEl) {
-            columnaEl.style.display = 'flex';
-        }
-        
         const seccionEl = document.getElementById('seccionAccesoRapidoExtra');
         const listaEl = document.getElementById('solicitudesPendientesSargento');
         const contadorEl = document.getElementById('contadorSolicitudesPendientes');
