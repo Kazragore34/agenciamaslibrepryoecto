@@ -849,6 +849,24 @@ async function inicializarMenu() {
         return;
     }
     
+    // Ajustar grid según rol: 3 columnas para prospects, 4 para sargentos
+    const gridEl = document.getElementById('gridPrincipal');
+    if (gridEl) {
+        if (esSargentoOAdmin()) {
+            gridEl.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+            const columnaEl = document.getElementById('columnaEntregasRapidas');
+            if (columnaEl) {
+                columnaEl.style.display = 'flex';
+            }
+        } else {
+            gridEl.style.gridTemplateColumns = '1fr 1fr 1fr';
+            const columnaEl = document.getElementById('columnaEntregasRapidas');
+            if (columnaEl) {
+                columnaEl.style.display = 'none';
+            }
+        }
+    }
+    
     // Configurar botones de acceso rápido
     const btnSolicitarBalas = document.getElementById('btnSolicitarBalasRapido');
     const btnSolicitarChaleco = document.getElementById('btnSolicitarChalecoRapido');
