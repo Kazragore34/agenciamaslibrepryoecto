@@ -154,10 +154,18 @@
             if (!esSargentoOAdmin()) return;
             
             try {
+                console.log('Cargando tickets pendientes para sargento:', currentUser.id);
                 const tickets = await obtenerTicketsPorDealer(currentUser.id);
+                console.log('Total tickets obtenidos:', tickets.length);
                 const ticketsPendientes = tickets.filter(t => t.estado === 'pendiente_dealer');
+                console.log('Tickets pendientes de confirmar:', ticketsPendientes.length);
                 
                 const listaEl = document.getElementById('listaTicketsPendientes');
+                
+                if (!listaEl) {
+                    console.error('Elemento listaTicketsPendientes no encontrado');
+                    return;
+                }
                 
                 if (ticketsPendientes.length === 0) {
                     listaEl.innerHTML = '<p style="color: #6b7280;">No hay tickets pendientes de confirmar</p>';
@@ -178,7 +186,7 @@
                         <td><strong>${ticket.ticketId}</strong></td>
                         <td>${ticket.vendedorNombre}</td>
                         <td>${ticket.montoAprox ? '$' + ticket.montoAprox.toLocaleString() : 'N/A'}</td>
-                        <td><strong style="color: #10b981;">$${ticket.montoEntregado.toLocaleString()}</strong></td>
+                        <td><strong style="color: #10b981;">$${ticket.montoEntregado ? ticket.montoEntregado.toLocaleString() : 'N/A'}</strong></td>
                         <td>${fechaStr}</td>
                         <td>
                             <button class="btn-success btn-sm" onclick="confirmarTicketDealer('${ticket.id}')" style="margin-right: 0.5rem;">Confirmar</button>
@@ -191,6 +199,10 @@
                 listaEl.innerHTML = html;
             } catch (error) {
                 console.error('Error cargando tickets pendientes:', error);
+                const listaEl = document.getElementById('listaTicketsPendientes');
+                if (listaEl) {
+                    listaEl.innerHTML = '<p style="color: #ef4444;">Error cargando tickets: ' + error.message + '</p>';
+                }
             }
         }
 

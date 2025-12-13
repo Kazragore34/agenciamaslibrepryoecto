@@ -1170,6 +1170,11 @@
                 mensajeEl.className = 'auth-message success';
                 mensajeEl.style.display = 'block';
                 
+                // Recargar la lista de depósitos pendientes
+                if (esProspect()) {
+                    cargarDepositosPendientesProspect();
+                }
+                
                 setTimeout(() => {
                     mensajeEl.style.display = 'none';
                 }, 5000);
