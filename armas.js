@@ -245,7 +245,7 @@ async function entregarBalas(armaId, solicitudIndex) {
         solicitudesBalas[solicitudIndex].estado = 'entregada';
         solicitudesBalas[solicitudIndex].sargentoConfirmo = currentUser.id;
         solicitudesBalas[solicitudIndex].sargentoNombre = `${currentUser.nombre} ${currentUser.apellido}`;
-        solicitudesBalas[solicitudIndex].fechaConfirmacion = firebase.firestore.FieldValue.serverTimestamp();
+        solicitudesBalas[solicitudIndex].fechaConfirmacion = new Date(); // Usar fecha de JavaScript en lugar de serverTimestamp
         
         const cantidadEntregada = solicitudesBalas[solicitudIndex].cantidad || 0;
         
