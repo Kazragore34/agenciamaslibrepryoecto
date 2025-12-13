@@ -850,7 +850,8 @@ async function inicializarMenu() {
     const btnSolicitarBalas = document.getElementById('btnSolicitarBalasRapido');
     const btnSolicitarChaleco = document.getElementById('btnSolicitarChalecoRapido');
     
-    if (btnSolicitarBalas && esProspect()) {
+    // Botones de acceso rápido para prospects y sargentos
+    if (btnSolicitarBalas && (esProspect() || esSargentoOAdmin())) {
         btnSolicitarBalas.addEventListener('click', async () => {
             try {
                 const armas = await obtenerArmasPorVendedor(currentUser.id);
@@ -880,7 +881,7 @@ async function inicializarMenu() {
         });
     }
     
-    if (btnSolicitarChaleco && esProspect()) {
+    if (btnSolicitarChaleco && (esProspect() || esSargentoOAdmin())) {
         btnSolicitarChaleco.addEventListener('click', async () => {
             try {
                 await ensureDb();
@@ -903,6 +904,9 @@ async function inicializarMenu() {
                         mostrarModal('Solicitud de chaleco enviada correctamente', 'success');
                         cargarArmasActivas();
                         cargarTicketsDepositosResumen();
+                        if (esSargentoOAdmin()) {
+                            await cargarSolicitudesPendientesSargento();
+                        }
                     } catch (error) {
                         mostrarModal('Error: ' + error.message, 'error');
                     }
