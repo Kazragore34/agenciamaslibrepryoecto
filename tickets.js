@@ -514,7 +514,107 @@ async function obtenerDineroEntregadoSemana(vendedorId) {
 }
 
 /**
- * Crea un depósito de dinero negro
+ * Crea un depósito de dinero negro con sargento específico
+ * @param {Object} importes - Objeto con los importes por tipo de dinero negro { tipoId: importe }
+ * @param {string} sargentoId - ID del sargento al que se le deja el dinero
+ * @returns {Promise<string>} - ID del depósito creado
+ */
+async function crearDepositoDineroNegroConSargento(importes, sargentoId) {
+    await ensureDb();
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+        throw new Error('No hay usuario autenticado');
+    }
+    
+    // Verificar que haya al menos un importe mayor a 0
+    const tieneImportes = Object.values(importes).some(importe => importe > 0);
+    if (!tieneImportes) {
+        throw new Error('Debes agregar al menos un importe para registrar el depósito');
+    }
+    
+    // Verificar que el sargento existe
+    const sargentoDoc = await db.collection('users').doc(sargentoId).get();
+    if (!sargentoDoc.exists) {
+        throw new Error('Sargento no encontrado');
+    }
+    const sargentoData = sargentoDoc.data();
+    if (sargentoData.rol !== 'sargento' && sargentoData.rol !== 'admin') {
+        throw new Error('El usuario seleccionado no es un sargento');
+    }
+    
+    try {
+        console.log('=== crearDepositoDineroNegroConSargento ===');
+        console.log('importes recibidos:', importes);
+        console.log('sargentoId:', sargentoId);
+        console.log('TIPOS_DINERO_NEGRO disponible?:', typeof TIPOS_DINERO_NEGRO !== 'undefined');
+        
+        if (typeof TIPOS_DINERO_NEGRO === 'undefined') {
+            throw new Error('TIPOS_DINERO_NEGRO no está definido. Asegúrate de que productos.js esté cargado antes de tickets.js');
+        }
+        
+        // Convertir importes a array de objetos con tipo y monto
+        const detallesDeposito = [];
+        Object.keys(importes).forEach(tipoId => {
+            if (importes[tipoId] > 0) {
+                const tipo = TIPOS_DINERO_NEGRO.find(t => t.id === tipoId);
+                console.log(`Buscando tipo ${tipoId}:`, tipo);
+                if (tipo) {
+                    detallesDeposito.push({
+                        tipoId: tipoId,
+                        tipoNombre: tipo.nombre,
+                        monto: parseFloat(importes[tipoId])
+                    });
+                } else {
+                    console.warn(`Tipo ${tipoId} no encontrado en TIPOS_DINERO_NEGRO`);
+                }
+            }
+        });
+        
+        console.log('detallesDeposito:', detallesDeposito);
+        
+        if (detallesDeposito.length === 0) {
+            throw new Error('No se encontraron tipos válidos para los importes proporcionados');
+        }
+        
+        // Calcular monto total
+        const montoTotal = detallesDeposito.reduce((sum, detalle) => sum + detalle.monto, 0);
+        console.log('montoTotal calculado:', montoTotal);
+        
+        const depositoData = {
+            usuarioId: currentUser.id,
+            usuarioNombre: `${currentUser.nombre} ${currentUser.apellido}`,
+            usuarioRol: currentUser.rol,
+            sargentoId: sargentoId,
+            sargentoNombre: `${sargentoData.nombre} ${sargentoData.apellido}`,
+            detalles: detallesDeposito,
+            montoTotal,
+            estado: 'pendiente',
+            fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
+            fechaAprobacion: null,
+            sargentoAprobo: null,
+            sargentoNombreAprobo: null,
+            motivoRechazo: null,
+            sargentoRechazo: null,
+            sargentoNombreRechazo: null,
+            fechaRechazo: null
+        };
+        
+        console.log('depositoData a guardar:', depositoData);
+        console.log('Guardando en colección depositos_dinero_negro...');
+        
+        const docRef = await db.collection('depositos_dinero_negro').add(depositoData);
+        console.log('✅ Depósito guardado con ID:', docRef.id);
+        
+        return docRef.id;
+    } catch (error) {
+        console.error('Error creando depósito de dinero negro:', error);
+        throw error;
+    }
+}
+
+/**
+ * Crea un depósito de dinero negro (versión antigua, mantiene compatibilidad)
  * @param {Object} importes - Objeto con los importes por tipo de dinero negro { tipoId: importe }
  * @returns {Promise<string>} - ID del depósito creado
  */
