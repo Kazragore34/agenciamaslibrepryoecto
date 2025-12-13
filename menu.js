@@ -181,93 +181,148 @@ function verDetallesEntrega(entregaId) {
 }
 
 /**
- * Carga los tickets de dinero pendientes (versión compacta)
+ * Carga tickets y depósitos resumidos (debajo de Armas Activas)
  */
-async function cargarTicketsPendientes() {
+async function cargarTicketsDepositosResumen() {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
     
     try {
-        // Tanto vendedores como dealers pueden recibir tickets
-        const tickets = await obtenerTicketsPendientesVendedor(currentUser.id);
-        const ticketsEl = document.getElementById('ticketsPendientes');
-        const contadorEl = document.getElementById('contadorTickets');
+        const resumenEl = document.getElementById('ticketsDepositosResumen');
+        const contadorEl = document.getElementById('contadorTicketsDepositos');
         
-        if (!ticketsEl) return;
+        if (!resumenEl) return;
+        
+        let items = [];
+        
+        // Cargar tickets
+        try {
+            let tickets = [];
+            if (esSargentoOAdmin()) {
+                const ticketsCreados = await obtenerTicketsPorDealer(currentUser.id);
+                const ticketsRecibidos = await obtenerTicketsPorVendedor(currentUser.id);
+                const ticketsIds = new Set();
+                ticketsCreados.forEach(t => {
+                    ticketsIds.add(t.id);
+                    tickets.push({ ...t, tipo: 'ticket' });
+                });
+                ticketsRecibidos.forEach(t => {
+                    if (!ticketsIds.has(t.id)) {
+                        tickets.push({ ...t, tipo: 'ticket' });
+                    }
+                });
+            } else {
+                tickets = await obtenerTicketsPorVendedor(currentUser.id);
+                tickets = tickets.map(t => ({ ...t, tipo: 'ticket' }));
+            }
+            items.push(...tickets);
+        } catch (error) {
+            console.error('Error cargando tickets:', error);
+        }
+        
+        // Cargar depósitos
+        try {
+            const depositos = await obtenerDepositosPorUsuario(currentUser.id);
+            items.push(...depositos);
+        } catch (error) {
+            console.error('Error cargando depósitos:', error);
+        }
+        
+        // Ordenar por fecha (más recientes primero)
+        items.sort((a, b) => {
+            const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+            const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+            return fechaB - fechaA;
+        });
+        
+        // Mostrar solo los últimos 5
+        const itemsMostrar = items.slice(0, 5);
         
         if (contadorEl) {
-            if (tickets.length > 0) {
-                contadorEl.textContent = tickets.length;
+            if (items.length > 0) {
+                contadorEl.textContent = items.length;
                 contadorEl.style.display = 'inline-block';
             } else {
                 contadorEl.style.display = 'none';
             }
         }
         
-        if (tickets.length === 0) {
-            ticketsEl.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 1rem;">No hay tickets pendientes</p>';
+        if (itemsMostrar.length === 0) {
+            resumenEl.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 0.5rem; font-size: 0.75rem;">No hay tickets ni depósitos</p>';
             return;
         }
         
-        let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
-        tickets.forEach((ticket, index) => {
-            const fecha = ticket.fechaCreacion?.toDate();
-            const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'Fecha no disponible';
-            const expandId = `expandTicket_${index}`;
-            const montoAprox = ticket.montoAprox ? `$${ticket.montoAprox.toLocaleString()}` : 'N/A';
+        let html = '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
+        itemsMostrar.forEach((item, index) => {
+            const fecha = item.fechaCreacion?.toDate();
+            const fechaStr = fecha ? fecha.toLocaleDateString('es-PE') : 'N/A';
+            const esTicket = item.tipo === 'ticket';
+            const esDeposito = item.tipo === 'deposito';
+            
+            let estadoColor = '#6b7280';
+            let estadoTexto = '';
+            if (esTicket) {
+                if (item.estado === 'pendiente' || item.estado === 'pendiente_dealer') {
+                    estadoColor = '#f59e0b';
+                    estadoTexto = 'Pendiente';
+                } else if (item.estado === 'confirmado') {
+                    estadoColor = '#10b981';
+                    estadoTexto = 'Confirmado';
+                } else if (item.estado === 'rechazado') {
+                    estadoColor = '#ef4444';
+                    estadoTexto = 'Rechazado';
+                }
+            } else if (esDeposito) {
+                if (item.estado === 'pendiente') {
+                    estadoColor = '#f59e0b';
+                    estadoTexto = 'Pendiente';
+                } else if (item.estado === 'aprobado') {
+                    estadoColor = '#10b981';
+                    estadoTexto = 'Aprobado';
+                } else if (item.estado === 'rechazado') {
+                    estadoColor = '#ef4444';
+                    estadoTexto = 'Rechazado';
+                }
+            }
+            
+            const monto = esTicket ? (item.montoEntregado || item.montoAprox || 0) : (item.montoTotal || 0);
+            const codigo = esTicket ? (item.ticketId || 'N/A') : (item.depositoId || 'N/A');
             
             html += `
-                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #dbeafe; transition: all 0.2s;" 
-                     onmouseover="this.style.boxShadow='0 2px 4px rgba(0,0,0,0.1)'" 
-                     onmouseout="this.style.boxShadow='none'">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; color: #374151; margin-bottom: 0.25rem;">
-                                ${ticket.ticketId || 'N/A'}
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; background: ${esTicket ? '#dbeafe' : '#fef3c7'}; transition: all 0.2s; cursor: pointer;" 
+                     onmouseover="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.1)'" 
+                     onmouseout="this.style.boxShadow='none'"
+                     onclick="window.location.href='tickets_dinero.html${esTicket ? '?id=' + item.id : ''}'">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: #374151; font-size: 0.75rem; margin-bottom: 0.125rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${codigo}
                             </div>
-                            <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">
-                                De: ${ticket.dealerNombre || 'Sargento'}
-                            </div>
-                            <div style="font-size: 0.75rem; color: #9ca3af;">
-                                ${fechaStr}
+                            <div style="font-size: 0.625rem; color: #6b7280;">
+                                ${fechaStr} • $${monto.toLocaleString()}
                             </div>
                         </div>
-                        <span style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; white-space: nowrap;">
-                            Pendiente
+                        <span style="background: ${estadoColor}; color: white; padding: 0.125rem 0.375rem; border-radius: 9999px; font-size: 0.625rem; white-space: nowrap; margin-left: 0.5rem;">
+                            ${estadoTexto}
                         </span>
                     </div>
-                    
-                    <!-- Detalles expandibles -->
-                    <div id="${expandId}" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb;">
-                        <div style="margin-bottom: 0.5rem; font-size: 0.875rem; color: #6b7280;">
-                            <div><strong>Monto Aprox:</strong> ${montoAprox}</div>
-                            <div style="margin-top: 0.25rem;"><strong>Monto Entregado:</strong> ${ticket.montoEntregado ? `$${ticket.montoEntregado.toLocaleString()}` : 'Pendiente'}</div>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button onclick="confirmarTicketRapido('${ticket.id}')" 
-                                    style="flex: 1; background: #10b981; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
-                                ✅ Confirmar
-                            </button>
-                            <button onclick="verDetallesTicket('${ticket.id}')" 
-                                    style="flex: 1; background: #3b82f6; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
-                                📋 Ver Detalles
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Botón para expandir/colapsar -->
-                    <button onclick="toggleExpand('${expandId}')" 
-                            style="width: 100%; margin-top: 0.5rem; background: transparent; border: 1px solid #d1d5db; color: #6b7280; padding: 0.375rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer;">
-                        <span id="${expandId}_icon">▼</span> Ver más
-                    </button>
                 </div>
             `;
         });
-        html += '</div>';
         
-        ticketsEl.innerHTML = html;
+        if (items.length > 5) {
+            html += `
+                <button onclick="window.location.href='tickets_dinero.html'" 
+                        style="width: 100%; margin-top: 0.25rem; background: transparent; border: 1px solid #d1d5db; color: #6b7280; padding: 0.375rem; border-radius: 0.375rem; font-size: 0.75rem; cursor: pointer;">
+                    Ver todos (${items.length})
+                </button>
+            `;
+        }
+        
+        html += '</div>';
+        resumenEl.innerHTML = html;
     } catch (error) {
-        console.error('Error cargando tickets pendientes:', error);
+        console.error('Error cargando tickets y depósitos resumen:', error);
     }
 }
 
@@ -651,9 +706,9 @@ async function inicializarMenu() {
     // Cargar datos
     await cargarResumenMetas();
     await cargarEntregasPendientes();
-    await cargarTicketsPendientes();
     await cargarEstadisticasDiarias();
     await cargarEstadisticasSemanales();
     await cargarArmasActivas();
+    await cargarTicketsDepositosResumen();
 }
 
