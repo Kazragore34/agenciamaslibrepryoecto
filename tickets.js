@@ -740,16 +740,24 @@ async function obtenerDepositosPendientesProspect(prospectId) {
     }
     
     try {
+        // Cargar todos los depósitos del usuario y filtrar en el cliente para evitar índices compuestos
         const snapshot = await db.collection('depositos_dinero_negro')
             .where('usuarioId', '==', prospectId)
-            .where('estado', '==', 'pendiente')
-            .orderBy('fechaCreacion', 'desc')
             .get();
         
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        const depositos = snapshot.docs
+            .map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }))
+            .filter(deposito => deposito.estado === 'pendiente')
+            .sort((a, b) => {
+                const fechaA = a.fechaCreacion?.toDate() || new Date(0);
+                const fechaB = b.fechaCreacion?.toDate() || new Date(0);
+                return fechaB - fechaA; // Más recientes primero
+            });
+        
+        return depositos;
     } catch (error) {
         console.error('Error obteniendo depósitos pendientes del prospect:', error);
         throw error;
