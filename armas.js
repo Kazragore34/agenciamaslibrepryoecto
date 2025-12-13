@@ -100,10 +100,13 @@ async function solicitarRecargaBalas(armaId, cantidad) {
         }
         
         // Verificar estado actual de las solicitudes
+        console.log('=== SOLICITANDO BALAS ===');
         console.log('Estado actual del arma:', {
             id: armaId,
             solicitudesBalasActuales: armaData.solicitudesBalas,
-            cantidadSolicitudesActuales: (armaData.solicitudesBalas || []).length
+            cantidadSolicitudesActuales: (armaData.solicitudesBalas || []).length,
+            tipoSolicitudesBalas: typeof armaData.solicitudesBalas,
+            esArray: Array.isArray(armaData.solicitudesBalas)
         });
         
         const solicitud = {
@@ -112,27 +115,31 @@ async function solicitarRecargaBalas(armaId, cantidad) {
             estado: 'pendiente' // Asegurar que el estado sea exactamente 'pendiente'
         };
         
-        const solicitudesBalas = armaData.solicitudesBalas || [];
+        const solicitudesBalas = Array.isArray(armaData.solicitudesBalas) 
+            ? [...armaData.solicitudesBalas] 
+            : [];
         solicitudesBalas.push(solicitud);
         
-        console.log('Agregando solicitud de balas:', JSON.stringify(solicitud, null, 2));
-        console.log('Array completo de solicitudes antes de guardar:', JSON.stringify(solicitudesBalas, null, 2));
+        console.log('Agregando solicitud de balas:', {
+            cantidad: solicitud.cantidad,
+            estado: solicitud.estado,
+            fecha: 'serverTimestamp'
+        });
         console.log('Total solicitudes después de agregar:', solicitudesBalas.length);
         
-        // Usar arrayUnion para asegurar que se agregue correctamente
-        // Pero primero necesitamos obtener el documento completo y actualizarlo
+        // Actualizar el array completo
         await armaRef.update({
-            solicitudesBalas: firebase.firestore.FieldValue.arrayUnion(solicitud)
+            solicitudesBalas: solicitudesBalas
         });
         
-        console.log('Solicitud de balas guardada correctamente usando arrayUnion');
+        console.log('✅ Solicitud de balas guardada correctamente');
         
-        // Verificar que se guardó correctamente
+        // Verificar que se guardó correctamente leyendo de nuevo
         const armaDocVerificacion = await armaRef.get();
         const armaDataVerificacion = armaDocVerificacion.data();
         console.log('Verificación después de guardar:', {
-            solicitudesBalasGuardadas: armaDataVerificacion.solicitudesBalas,
-            cantidadSolicitudesGuardadas: (armaDataVerificacion.solicitudesBalas || []).length
+            cantidadSolicitudesGuardadas: (armaDataVerificacion.solicitudesBalas || []).length,
+            ultimaSolicitud: armaDataVerificacion.solicitudesBalas?.[armaDataVerificacion.solicitudesBalas.length - 1]
         });
     } catch (error) {
         console.error('Error solicitando recarga de balas:', error);
