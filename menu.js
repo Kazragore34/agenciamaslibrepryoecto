@@ -220,27 +220,36 @@ async function cargarEntregasConfirmadas() {
         tickets.forEach(ticket => {
             if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas)) {
                 ticket.entregasRelacionadas.forEach(entId => {
-                    if (ticket.estado === 'confirmado_dealer') {
+                    // Verificar todos los estados posibles
+                    if (ticket.estado === 'confirmado' || ticket.estado === 'confirmado_dealer') {
                         entregasConTicketConfirmado.add(entId);
-                    } else if (ticket.estado === 'pendiente_dealer') {
+                    } else if (ticket.estado === 'pendiente' || ticket.estado === 'pendiente_dealer') {
                         entregasConTicketPendiente.add(entId);
                     }
                 });
             }
         });
         
-        if (entregasConfirmadas.length === 0) {
-            entregasEl.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 1rem;">No hay entregas confirmadas</p>';
+        // Filtrar entregas: solo mostrar las que NO tienen ticket pendiente o confirmado
+        const entregasParaMostrar = entregasConfirmadas.filter(entrega => {
+            const tieneTicketConfirmado = entregasConTicketConfirmado.has(entrega.id);
+            const tieneTicketPendiente = entregasConTicketPendiente.has(entrega.id);
+            // Solo mostrar si NO tiene ticket confirmado ni pendiente
+            return !tieneTicketConfirmado && !tieneTicketPendiente;
+        });
+        
+        if (entregasParaMostrar.length === 0) {
+            entregasEl.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 1rem;">No hay entregas confirmadas sin ticket. Todas las entregas ya tienen tickets pendientes o confirmados.</p>';
             return;
         }
         
         // Limitar a máximo 3 entregas (las más recientes)
-        const entregasConfirmadasMostrar = entregasConfirmadas.slice(0, 3);
+        const entregasConfirmadasMostrar = entregasParaMostrar.slice(0, 3);
         
         let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
-        if (entregasConfirmadas.length > 3) {
+        if (entregasParaMostrar.length > 3) {
             html += `<p style="color: #6b7280; font-size: 0.75rem; text-align: center; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem; margin-bottom: 0.5rem;">
-                Mostrando 3 de ${entregasConfirmadas.length}. <a href="tickets_dinero.html" style="color: #3b82f6; text-decoration: underline;">Ver todas</a>
+                Mostrando 3 de ${entregasParaMostrar.length}. <a href="tickets_dinero.html" style="color: #3b82f6; text-decoration: underline;">Ver todas</a>
             </p>`;
         }
         entregasConfirmadasMostrar.forEach((entrega, index) => {
@@ -250,26 +259,14 @@ async function cargarEntregasConfirmadas() {
                 `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`
             ).join(', ');
             const tieneMasProductos = entrega.productos.length > 2;
-            const tieneTicketConfirmado = entregasConTicketConfirmado.has(entrega.id);
-            const tieneTicketPendiente = entregasConTicketPendiente.has(entrega.id);
             const expandId = `expandEntregaConfirmada_${index}`;
             
-            let estadoBadge = '';
-            let botonAccion = '';
-            
-            if (tieneTicketConfirmado) {
-                estadoBadge = '<span style="background: #10b981; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">✓ Ticket Confirmado</span>';
-                botonAccion = '<span style="color: #10b981; font-size: 0.75rem;">No se puede modificar</span>';
-            } else if (tieneTicketPendiente) {
-                estadoBadge = '<span style="background: #f59e0b; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">Pendiente</span>';
-                botonAccion = '<span style="color: #f59e0b; font-size: 0.75rem;">Esperando confirmación</span>';
-            } else {
-                estadoBadge = '<span style="background: #6b7280; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">Sin Ticket</span>';
-                botonAccion = `<button onclick="crearTicketDesdeEntregaRapido('${entrega.id}', '${entrega.dealerId}')" 
+            // Estas entregas ya están filtradas, solo pueden no tener ticket o tener rechazado
+            let estadoBadge = '<span style="background: #6b7280; color: white; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">Sin Ticket</span>';
+            let botonAccion = `<button onclick="crearTicketDesdeEntregaRapido('${entrega.id}', '${entrega.dealerId}')" 
                                     style="background: #3b82f6; color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; font-weight: 500;">
                                     Crear Ticket
                                 </button>`;
-            }
             
             html += `
                 <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.75rem; background: #f0fdf4; transition: all 0.2s;" 
@@ -334,13 +331,14 @@ async function crearTicketDesdeEntregaRapido(entregaId, dealerId) {
         const ticketExistente = tickets.find(ticket => {
             if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas)) {
                 return ticket.entregasRelacionadas.includes(entregaId) && 
-                       (ticket.estado === 'pendiente_dealer' || ticket.estado === 'confirmado_dealer');
+                       (ticket.estado === 'pendiente' || ticket.estado === 'pendiente_dealer' || 
+                        ticket.estado === 'confirmado' || ticket.estado === 'confirmado_dealer');
             }
             return false;
         });
         
         if (ticketExistente) {
-            if (ticketExistente.estado === 'confirmado_dealer') {
+            if (ticketExistente.estado === 'confirmado' || ticketExistente.estado === 'confirmado_dealer') {
                 mostrarModal('Esta entrega ya tiene un ticket confirmado. No se puede crear otro.', 'warning');
             } else {
                 mostrarModal('Esta entrega ya tiene un ticket pendiente. Espera a que el sargento lo confirme o rechace.', 'warning');
@@ -370,7 +368,8 @@ async function crearTicketDesdeEntregaRapido(entregaId, dealerId) {
                 const ticketExistenteRecheck = ticketsRecheck.find(ticket => {
                     if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas)) {
                         return ticket.entregasRelacionadas.includes(entregaId) && 
-                               (ticket.estado === 'pendiente_dealer' || ticket.estado === 'confirmado_dealer');
+                               (ticket.estado === 'pendiente' || ticket.estado === 'pendiente_dealer' || 
+                                ticket.estado === 'confirmado' || ticket.estado === 'confirmado_dealer');
                     }
                     return false;
                 });

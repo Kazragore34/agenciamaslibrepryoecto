@@ -6,11 +6,12 @@
     <title>Tickets de Dinero - Sistema de Control</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="styles-fichaje.css">
+    <script src="modal.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-    <div class="stats-container">
+    <div class="stats-container" style="padding-top: 6rem;">
         <div class="fichaje-header">
             <h1>Tickets de Dinero</h1>
             <div>
@@ -390,9 +391,10 @@
                     return;
                 }
                 
-                // Obtener todos los tickets para verificar cuáles entregas ya tienen ticket CONFIRMADO
+                // Obtener todos los tickets para verificar cuáles entregas ya tienen ticket
                 const tickets = await obtenerTicketsPorVendedor(currentUser.id);
                 const entregasConTicketConfirmado = new Set();
+                const entregasConTicketPendiente = new Set();
                 const entregasConTicketRechazado = new Set();
                 
                 tickets.forEach(ticket => {
@@ -402,40 +404,50 @@
                             if (ticket.estado === 'confirmado') {
                                 entregasConTicketConfirmado.add(eId);
                             }
+                            // Si el ticket está pendiente (pendiente o pendiente_dealer), no mostrar la entrega
+                            else if (ticket.estado === 'pendiente' || ticket.estado === 'pendiente_dealer') {
+                                entregasConTicketPendiente.add(eId);
+                            }
                             // Si el ticket está rechazado, se puede crear uno nuevo
-                            if (ticket.estado === 'rechazado') {
+                            else if (ticket.estado === 'rechazado') {
                                 entregasConTicketRechazado.add(eId);
                             }
                         });
                     }
                 });
                 
+                // Filtrar entregas: solo mostrar las que NO tienen ticket pendiente o confirmado
+                const entregasParaMostrar = entregasConfirmadas.filter(entrega => {
+                    const tieneTicketConfirmado = entregasConTicketConfirmado.has(entrega.id);
+                    const tieneTicketPendiente = entregasConTicketPendiente.has(entrega.id);
+                    // Solo mostrar si NO tiene ticket confirmado ni pendiente (o si tiene rechazado, se puede crear uno nuevo)
+                    return !tieneTicketConfirmado && !tieneTicketPendiente;
+                });
+                
+                if (entregasParaMostrar.length === 0) {
+                    listaEl.innerHTML = '<p style="color: #6b7280;">No hay entregas confirmadas sin ticket. Todas las entregas ya tienen tickets pendientes o confirmados.</p>';
+                    return;
+                }
+                
                 let html = '<table class="data-table"><thead><tr><th>Sargento</th><th>Productos</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
                 
-                entregasConfirmadas.forEach(entrega => {
+                entregasParaMostrar.forEach(entrega => {
                     const fecha = entrega.fechaCreacion?.toDate();
                     const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
-                    const tieneTicketConfirmado = entregasConTicketConfirmado.has(entrega.id);
                     const tieneTicketRechazado = entregasConTicketRechazado.has(entrega.id);
                     
-                    // Buscar el ticket más reciente para esta entrega para mostrar su estado
-                    const ticketReciente = tickets
+                    // Buscar el ticket más reciente para esta entrega (solo si fue rechazado)
+                    const ticketReciente = tieneTicketRechazado ? tickets
                         .filter(t => t.entregasRelacionadas && t.entregasRelacionadas.includes(entrega.id))
                         .sort((a, b) => {
                             const fechaA = a.fechaCreacion?.toDate() || new Date(0);
                             const fechaB = b.fechaCreacion?.toDate() || new Date(0);
                             return fechaB - fechaA;
-                        })[0];
+                        })[0] : null;
                     
-                    let estadoTicket = '';
-                    if (tieneTicketConfirmado && ticketReciente) {
-                        estadoTicket = `<span class="estado-badge success">Confirmado</span>`;
-                    } else if (tieneTicketRechazado && ticketReciente) {
-                        estadoTicket = `<span class="estado-badge error">Rechazado</span>`;
-                    } else if (ticketReciente && ticketReciente.estado === 'pendiente_dealer') {
-                        estadoTicket = `<span class="estado-badge pendiente">Pendiente de confirmación</span>`;
-                    } else {
-                        estadoTicket = '<span style="color: #6b7280;">Sin ticket</span>';
+                    let estadoTicket = '<span style="color: #6b7280;">Sin ticket</span>';
+                    if (tieneTicketRechazado && ticketReciente) {
+                        estadoTicket = `<span class="estado-badge error">Ticket anterior rechazado</span>`;
                     }
                     
                     html += `<tr>
@@ -444,15 +456,11 @@
                         <td>${fechaStr}</td>
                         <td>${estadoTicket}</td>
                         <td>
-                            ${tieneTicketConfirmado ? `
-                                <span style="color: #10b981; font-weight: 500;">✓ Ticket confirmado - No se puede modificar</span>
-                            ` : tieneTicketRechazado ? `
+                            ${tieneTicketRechazado ? `
                                 <button class="btn-primary btn-sm" onclick="crearTicketDesdeEntrega('${entrega.id}', '${entrega.dealerId}')">
                                     Crear Nuevo Ticket
                                 </button>
                                 <span style="color: #6b7280; font-size: 0.875rem; margin-left: 0.5rem;">(El anterior fue rechazado)</span>
-                            ` : ticketReciente && ticketReciente.estado === 'pendiente_dealer' ? `
-                                <span style="color: #f59e0b; font-weight: 500;">Esperando confirmación del sargento</span>
                             ` : `
                                 <button class="btn-primary btn-sm" onclick="crearTicketDesdeEntrega('${entrega.id}', '${entrega.dealerId}')">
                                     Crear Ticket de Dinero
@@ -470,29 +478,73 @@
         }
 
         async function crearTicketDesdeEntrega(entregaId, dealerId) {
-            // Obtener la entrega para obtener el monto aprox
+            // VERIFICAR SI YA EXISTE UN TICKET PARA ESTA ENTREGA
             try {
                 await ensureDb();
+                const tickets = await obtenerTicketsPorVendedor(currentUser.id);
+                const ticketExistente = tickets.find(ticket => {
+                    if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas)) {
+                        return ticket.entregasRelacionadas.includes(entregaId) && 
+                               (ticket.estado === 'pendiente' || ticket.estado === 'pendiente_dealer' || 
+                                ticket.estado === 'confirmado' || ticket.estado === 'confirmado_dealer');
+                    }
+                    return false;
+                });
+                
+                if (ticketExistente) {
+                    if (ticketExistente.estado === 'confirmado' || ticketExistente.estado === 'confirmado_dealer') {
+                        mostrarModal('Esta entrega ya tiene un ticket confirmado. No se puede crear otro.', 'warning');
+                    } else {
+                        mostrarModal('Esta entrega ya tiene un ticket pendiente. Espera a que el sargento lo confirme o rechace.', 'warning');
+                    }
+                    // Recargar para actualizar el estado
+                    cargarEntregasConfirmadasVendedor();
+                    return;
+                }
+                
+                // Obtener la entrega para obtener el monto aprox
                 const entregaDoc = await db.collection('entregas_productos').doc(entregaId).get();
                 if (!entregaDoc.exists) {
-                    alert('Entrega no encontrada');
+                    mostrarModal('Entrega no encontrada', 'error');
                     return;
                 }
                 const entrega = entregaDoc.data();
                 const montoAprox = entrega.precioAprox || null;
                 
-                const monto = prompt('Ingresa el monto que entregaste por esta venta:');
-                if (!monto || isNaN(monto) || parseFloat(monto) <= 0) {
-                    alert('Monto inválido');
-                    return;
-                }
-                
-                mostrarMensaje('Creando ticket...', 'info');
-                // Los prospects pueden crear tickets para sí mismos
-                const ticketId = await crearTicketDineroVendedorConAprox(dealerId, currentUser.id, parseFloat(monto), montoAprox, [entregaId]);
-                mostrarMensaje('Ticket creado y confirmado correctamente', 'success');
-                cargarEntregasConfirmadasVendedor();
-                cargarTickets();
+                mostrarPrompt('Ingresa el monto que entregaste por esta venta:', '0', 'number', async (monto) => {
+                    if (!monto || isNaN(monto) || parseFloat(monto) <= 0) {
+                        mostrarModal('Monto inválido', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        // Verificar nuevamente antes de crear (doble verificación)
+                        const ticketsRecheck = await obtenerTicketsPorVendedor(currentUser.id);
+                        const ticketExistenteRecheck = ticketsRecheck.find(ticket => {
+                            if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas)) {
+                                return ticket.entregasRelacionadas.includes(entregaId) && 
+                                       (ticket.estado === 'pendiente' || ticket.estado === 'pendiente_dealer' || 
+                                        ticket.estado === 'confirmado' || ticket.estado === 'confirmado_dealer');
+                            }
+                            return false;
+                        });
+                        
+                        if (ticketExistenteRecheck) {
+                            mostrarModal('Esta entrega ya tiene un ticket. La página se actualizará.', 'warning');
+                            cargarEntregasConfirmadasVendedor();
+                            return;
+                        }
+                        
+                        mostrarMensaje('Creando ticket...', 'info');
+                        // Los prospects pueden crear tickets para sí mismos
+                        const ticketId = await crearTicketDineroVendedorConAprox(dealerId, currentUser.id, parseFloat(monto), montoAprox, [entregaId]);
+                        mostrarMensaje('Ticket creado correctamente', 'success');
+                        cargarEntregasConfirmadasVendedor();
+                        cargarTickets();
+                    } catch (error) {
+                        mostrarMensaje(error.message, 'error');
+                    }
+                });
             } catch (error) {
                 mostrarMensaje(error.message, 'error');
             }
