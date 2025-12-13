@@ -560,12 +560,16 @@
                     .get();
                 
                 const currentUser = getCurrentUser();
+                // Filtrar solo prospects (excluir sargentos, admins y el usuario actual)
                 const prospects = snapshot.docs
                     .map(doc => ({
                         id: doc.id,
                         ...doc.data()
                     }))
-                    .filter(user => user.id !== currentUser.id); // Excluir al sargento actual
+                    .filter(user => 
+                        user.id !== currentUser.id && 
+                        user.rol === 'prospect' // Solo mostrar prospects
+                    );
                 
                 const select = document.getElementById('prospectSelectEntrega');
                 if (!select) return;
@@ -583,8 +587,14 @@
                     option.textContent = `${p.nombre} ${p.apellido} (${p.username})`;
                     select.appendChild(option);
                 });
+                
+                console.log('Prospects cargados:', prospects.length);
             } catch (error) {
                 console.error('Error cargando prospects:', error);
+                const select = document.getElementById('prospectSelectEntrega');
+                if (select) {
+                    select.innerHTML = '<option value="">Error cargando prospects</option>';
+                }
             }
         }
 
