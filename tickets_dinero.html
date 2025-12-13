@@ -520,6 +520,7 @@
                 // Mostrar secciones DEPOSITO y MESAS
                 document.getElementById('seccionDeposito').style.display = 'block';
                 document.getElementById('seccionMesas').style.display = 'block';
+                cargarSargentosDeposito();
                 cargarDineroNegro();
             } else if (esProspect()) {
                 // Prospects: pueden confirmar entregas y crear tickets
@@ -534,6 +535,7 @@
                 // Mostrar secciones DEPOSITO y MESAS
                 document.getElementById('seccionDeposito').style.display = 'block';
                 document.getElementById('seccionMesas').style.display = 'block';
+                cargarSargentosDeposito();
                 cargarDineroNegro();
             }
             cargarTickets();
