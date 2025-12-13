@@ -173,6 +173,10 @@
         let todosVendedores = [];
         let entregasConfirmadas = [];
         
+        // Objeto para almacenar los importes de dinero negro temporalmente
+        // Declarado al inicio para que esté disponible en todas las funciones
+        let dineroNegroTemp = {};
+        
         // Función para cargar entrega pendiente
         async function cargarEntregaPendiente(entregaId) {
             try {
