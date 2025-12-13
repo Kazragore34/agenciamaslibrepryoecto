@@ -956,6 +956,11 @@ async function inicializarMenu() {
     await cargarEstadisticasSemanales();
     await cargarArmasActivas();
     await cargarTicketsDepositosResumen();
+    
+    // Cargar solicitudes pendientes para sargentos (Entregas Rápidas)
+    if (esSargentoOAdmin()) {
+        await cargarSolicitudesPendientesSargento();
+    }
 }
 
 /**
@@ -1123,15 +1128,36 @@ async function cargarSolicitudesPendientesSargento() {
         if (!seccionEl || !listaEl) return;
         
         // Cargar todas las solicitudes pendientes
+        console.log('🔍 Cargando solicitudes pendientes para sargento:', currentUser.id);
+        
         const [entregasPendientes, depositosPendientes, solicitudesBalas, solicitudesChalecos, ticketsPendientes] = await Promise.all([
-            obtenerEntregasPorDealer(currentUser.id).then(entregas => entregas.filter(e => e.estado === 'pendiente')),
-            obtenerDepositosPendientes().then(depositos => depositos.filter(d => d.sargentoId === currentUser.id)),
-            obtenerSolicitudesBalasPendientes(),
-            obtenerSolicitudesChalecosIndependientesPendientes(),
-            obtenerTicketsPorDealer(currentUser.id).then(tickets => tickets.filter(t => t.estado === 'pendiente_dealer' || t.estado === 'pendiente'))
+            obtenerEntregasPorDealer(currentUser.id).then(entregas => {
+                const filtradas = entregas.filter(e => e.estado === 'pendiente');
+                console.log('📦 Entregas pendientes:', filtradas.length);
+                return filtradas;
+            }),
+            obtenerDepositosPendientes().then(depositos => {
+                const filtradas = depositos.filter(d => d.sargentoId === currentUser.id);
+                console.log('💰 Depósitos pendientes:', filtradas.length);
+                return filtradas;
+            }),
+            obtenerSolicitudesBalasPendientes().then(balas => {
+                console.log('🎯 Solicitudes de balas pendientes:', balas.length);
+                return balas;
+            }),
+            obtenerSolicitudesChalecosIndependientesPendientes().then(chalecos => {
+                console.log('🛡️ Solicitudes de chalecos pendientes:', chalecos.length);
+                return chalecos;
+            }),
+            obtenerTicketsPorDealer(currentUser.id).then(tickets => {
+                const filtradas = tickets.filter(t => t.estado === 'pendiente_dealer' || t.estado === 'pendiente');
+                console.log('💵 Tickets pendientes:', filtradas.length);
+                return filtradas;
+            })
         ]);
         
         const totalSolicitudes = entregasPendientes.length + depositosPendientes.length + solicitudesBalas.length + solicitudesChalecos.length + ticketsPendientes.length;
+        console.log('📊 Total solicitudes pendientes:', totalSolicitudes);
         
         if (contadorEl) {
             if (totalSolicitudes > 0) {
@@ -1330,13 +1356,22 @@ async function cargarSolicitudesPendientesSargento() {
         // Agregar mensaje si hay más solicitudes
         const totalMostradas = entregasPendientes.slice(0, 2).length + depositosPendientes.slice(0, 2).length + 
                               ticketsPendientes.slice(0, 2).length + solicitudesBalas.slice(0, 2).length + solicitudesChalecos.slice(0, 2).length;
+        console.log('📊 Total mostradas:', totalMostradas, 'de', totalSolicitudes);
+        
         if (totalSolicitudes > totalMostradas) {
             html += `<p style="color: #6b7280; font-size: 0.75rem; text-align: center; padding: 0.5rem; background: #f3f4f6; border-radius: 0.375rem; margin-top: 0.5rem;">
                 Mostrando ${totalMostradas} de ${totalSolicitudes}. <a href="entregas.html" style="color: #3b82f6; text-decoration: underline;">Ver todas</a>
             </p>`;
         }
         
+        console.log('✅ Renderizando HTML en listaEl');
         listaEl.innerHTML = html;
+        
+        // Asegurar que la sección esté visible
+        if (seccionEl) {
+            seccionEl.style.display = 'block';
+            console.log('✅ Sección de entregas rápidas visible');
+        }
     } catch (error) {
         console.error('Error cargando solicitudes pendientes:', error);
     }
