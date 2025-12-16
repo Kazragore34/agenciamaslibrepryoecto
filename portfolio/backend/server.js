@@ -20,16 +20,16 @@ const initRetell = async () => {
   try {
     // Usar import dinámico para módulos CommonJS
     const retellModule = await import('retell-sdk')
-    // El módulo puede exportar de diferentes formas
+    // El módulo puede exportar RetellClient o default
     let Retell = null
     
     // Intentar diferentes formas de obtener el constructor
-    if (retellModule.default && typeof retellModule.default === 'function') {
+    if (retellModule.RetellClient && typeof retellModule.RetellClient === 'function') {
+      Retell = retellModule.RetellClient
+    } else if (retellModule.default && typeof retellModule.default === 'function') {
       Retell = retellModule.default
     } else if (retellModule.Retell && typeof retellModule.Retell === 'function') {
       Retell = retellModule.Retell
-    } else if (typeof retellModule === 'function') {
-      Retell = retellModule
     }
     
     if (!Retell) {
