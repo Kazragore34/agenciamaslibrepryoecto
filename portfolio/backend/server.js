@@ -22,11 +22,22 @@ const initRetell = async () => {
     const retellModule = await import('retell-sdk')
     console.log('📦 Módulo retell-sdk cargado. Keys:', Object.keys(retellModule))
     
-    // El módulo exporta default como el constructor principal
-    const Retell = retellModule.default || retellModule.Retell || retellModule.RetellClient
+    // El módulo exporta RetellClient o default como constructor
+    // En Render aparece RetellClient, en local aparece default
+    let Retell = null
+    
+    if (retellModule.RetellClient && typeof retellModule.RetellClient === 'function') {
+      Retell = retellModule.RetellClient
+      console.log('📦 Usando RetellClient como constructor')
+    } else if (retellModule.default && typeof retellModule.default === 'function') {
+      Retell = retellModule.default
+      console.log('📦 Usando default como constructor')
+    }
     
     if (!Retell || typeof Retell !== 'function') {
       console.error('❌ No se pudo encontrar el constructor Retell. Estructura del módulo:', Object.keys(retellModule))
+      console.error('🔍 RetellClient type:', typeof retellModule.RetellClient)
+      console.error('🔍 default type:', typeof retellModule.default)
       return
     }
     
