@@ -36,10 +36,18 @@ export default function RetellCallButton() {
       }
 
       // Crear llamada a través del backend
-      const accessToken = await createRetellCall()
-
-      if (!accessToken) {
-        throw new Error('No se recibió el token de acceso')
+      let accessToken
+      try {
+        accessToken = await createRetellCall()
+        if (!accessToken) {
+          throw new Error('No se recibió el token de acceso del servidor')
+        }
+      } catch (apiError: any) {
+        console.error('Error en API:', apiError)
+        if (apiError.code === 'ECONNREFUSED' || apiError.message?.includes('Network Error')) {
+          throw new Error('El servidor no está disponible. Verifica que el backend esté corriendo en http://localhost:3000')
+        }
+        throw new Error(apiError.response?.data?.error || apiError.message || 'Error al conectar con el servidor')
       }
 
       // Inicializar RetellWebClient
@@ -140,10 +148,25 @@ export default function RetellCallButton() {
                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               <div>
-                <p className="text-yellow-800 font-medium">Permisos de micrófono requeridos</p>
+                <p className="text-yellow-800 font-medium">
+                  {errorMessage?.includes('servidor') || errorMessage?.includes('Network') 
+                    ? 'Error de conexión' 
+                    : 'Permisos de micrófono requeridos'}
+                </p>
                 <p className="text-yellow-700 text-sm mt-1">
                   {errorMessage || 'Por favor, habilita los permisos del micrófono desde la configuración de tu navegador para usar esta función.'}
                 </p>
+                {errorMessage?.includes('servidor') && (
+                  <div className="mt-3 p-3 bg-yellow-100 rounded text-xs">
+                    <p className="font-semibold mb-1">Para solucionar:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-yellow-800">
+                      <li>Abre una terminal en <code className="bg-yellow-200 px-1 rounded">portfolio/backend</code></li>
+                      <li>Ejecuta: <code className="bg-yellow-200 px-1 rounded">npm install</code></li>
+                      <li>Luego: <code className="bg-yellow-200 px-1 rounded">npm start</code></li>
+                      <li>El servidor debe estar en <code className="bg-yellow-200 px-1 rounded">http://localhost:3000</code></li>
+                    </ol>
+                  </div>
+                )}
               </div>
             </div>
           </div>

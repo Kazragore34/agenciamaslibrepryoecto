@@ -55,18 +55,6 @@ export default function Integraciones() {
       image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400'
     },
     {
-      id: 'quotes',
-      title: 'Frases Inspiradoras',
-      description: 'API de frases motivacionales e inspiradoras. Perfecto para aplicaciones de bienestar y productividad.',
-      endpoint: 'https://api.quotable.io/quotes?limit=10',
-      data: null,
-      loading: false,
-      error: null,
-      icon: '💭',
-      color: 'from-slate-500 to-slate-600',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'
-    },
-    {
       id: 'languages',
       title: 'API de Idiomas',
       description: 'API para obtener información sobre idiomas del mundo, códigos ISO, nombres nativos y más.',
@@ -101,12 +89,6 @@ export default function Integraciones() {
         response = await axios.get(demo.endpoint, { params: { _limit: 10 } })
       } else if (demo.id === 'countries') {
         response = await axios.get(demo.endpoint)
-      } else if (demo.id === 'quotes') {
-        // Arreglar API de frases con mejor manejo de errores
-        response = await axios.get('https://api.quotable.io/quotes', { 
-          params: { limit: 10 },
-          timeout: 10000
-        })
       } else if (demo.id === 'languages') {
         response = await axios.get('https://restcountries.com/v3.1/all?fields=name,languages,flags')
       } else {
@@ -205,23 +187,6 @@ export default function Integraciones() {
               <span className="mr-4">📝 Publicación #{post.id}</span>
               <span>👤 Usuario {post.userId}</span>
             </div>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-  const renderQuotesData = (data: any) => {
-    // Manejar tanto results como array directo
-    const quotes = data?.results || (Array.isArray(data) ? data : [])
-    if (!Array.isArray(quotes) || quotes.length === 0) return null
-    
-    return (
-      <div className="space-y-4 max-h-96 overflow-y-auto">
-        {quotes.map((quote: any, index: number) => (
-          <div key={index} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
-            <p className="text-gray-700 italic mb-2">"{quote.content || quote.text || quote.quote}"</p>
-            <p className="text-sm text-gray-600 font-semibold">— {quote.author || 'Anónimo'}</p>
           </div>
         ))}
       </div>
@@ -380,7 +345,6 @@ export default function Integraciones() {
         {selectedApi.id === 'products' && renderProductData(selectedApi.data)}
         {selectedApi.id === 'users' && renderUserData(selectedApi.data)}
         {selectedApi.id === 'posts' && renderPostData(selectedApi.data)}
-        {selectedApi.id === 'quotes' && renderQuotesData(selectedApi.data)}
         {selectedApi.id === 'languages' && renderLanguagesData(selectedApi.data)}
         {selectedApi.id === 'countries' && renderCountriesData(selectedApi.data)}
       </div>

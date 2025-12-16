@@ -299,19 +299,35 @@ export default function Home() {
                   viewport={{ once: true }}
                   transition={{ 
                     duration: 0.3, 
-                    delay: index * 0.05,
-                    rotate: { duration: 0.5, ease: "easeInOut" },
-                    scale: { duration: 0.2 }
+                    delay: index * 0.05
                   }}
                   whileHover={{ 
-                    rotate: [0, -5, 5, -5, 0],
-                    scale: 1.1,
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
+                    scale: 1.2,
+                    y: -12,
+                    z: 50,
                   }}
-                  className="group"
+                  className="group relative"
                 >
-                  <div className={`card h-full ${tech.color} hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-4 border border-gray-200 hover:border-gray-300`}>
-                    <div className="w-12 h-12 mb-3 flex items-center justify-center bg-white rounded-lg p-2 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                  <motion.div
+                    className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%)',
+                      filter: 'blur(20px)',
+                    }}
+                    transition={{ duration: 0.3 }}
+                  />
+                  <div className={`card h-full ${tech.color} hover:shadow-2xl transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-4 border-2 border-transparent group-hover:border-blue-300 relative z-10`}>
+                    <motion.div 
+                      className="w-12 h-12 mb-3 flex items-center justify-center bg-white rounded-lg p-2"
+                      whileHover={{
+                        scale: [1, 1.2, 1],
+                        rotate: [0, 180, 360],
+                      }}
+                      transition={{
+                        duration: 0.6,
+                        ease: "easeInOut"
+                      }}
+                    >
                       <img
                         src={tech.logo}
                         alt={tech.name}
@@ -325,10 +341,13 @@ export default function Home() {
                           }
                         }}
                       />
-                    </div>
-                    <p className="font-semibold text-center text-sm text-gray-800 group-hover:text-slate-700 transition-colors">
+                    </motion.div>
+                    <motion.p 
+                      className="font-semibold text-center text-sm text-gray-800 group-hover:text-blue-600 transition-colors"
+                      whileHover={{ scale: 1.1 }}
+                    >
                       {tech.name}
-                    </p>
+                    </motion.p>
                   </div>
                 </motion.div>
               ))}

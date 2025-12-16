@@ -38,7 +38,13 @@ const botResponses = [
 
 export default function DemoChatbot() {
   useEffect(() => {
-    window.scrollTo(0, 0)
+    // Forzar scroll al inicio inmediatamente y después de un pequeño delay
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      document.documentElement.scrollTop = 0
+      document.body.scrollTop = 0
+    }, 100)
   }, [])
 
   const [messages, setMessages] = useState<Message[]>([
