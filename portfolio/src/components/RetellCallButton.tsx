@@ -38,16 +38,17 @@ export default function RetellCallButton() {
       // Crear llamada a través del backend
       let accessToken
       try {
+        console.log('📞 Iniciando creación de llamada...')
         accessToken = await createRetellCall()
+        console.log('✅ Access token recibido:', accessToken ? 'Sí' : 'No')
+        
         if (!accessToken) {
           throw new Error('No se recibió el token de acceso del servidor')
         }
       } catch (apiError: any) {
-        console.error('Error en API:', apiError)
-        if (apiError.code === 'ECONNREFUSED' || apiError.message?.includes('Network Error') || apiError.response?.status === 404) {
-          throw new Error('El backend no está disponible. Por favor, contacta al administrador para configurar el servidor de Retell.ai.')
-        }
-        throw new Error(apiError.response?.data?.error || apiError.message || 'Error al conectar con el servidor')
+        console.error('❌ Error en API:', apiError)
+        // El error ya viene con un mensaje descriptivo de createRetellCall
+        throw apiError
       }
 
       // Inicializar RetellWebClient
