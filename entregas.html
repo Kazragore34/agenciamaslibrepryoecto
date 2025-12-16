@@ -177,16 +177,65 @@
                 html += `<strong>⚠️ Tienes ${ticketsPendientes.length} ticket(s) pendiente(s) de confirmar</strong>`;
                 html += '</div>';
                 
-                html += '<table class="data-table"><thead><tr><th>Ticket ID</th><th>Prospect</th><th>Monto Aprox</th><th>Monto Entregado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                html += '<table class="data-table"><thead><tr><th>Ticket ID</th><th>Prospect</th><th>Monto Aprox</th><th>Monto Aprox por Teléfono</th><th>Monto Aprox por Persona</th><th>Monto Entregado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                
+                // Obtener todas las entregas relacionadas de una vez
+                const entregasIds = new Set();
+                ticketsPendientes.forEach(ticket => {
+                    if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas)) {
+                        ticket.entregasRelacionadas.forEach(id => entregasIds.add(id));
+                    }
+                });
+                
+                const entregasMap = {};
+                if (entregasIds.size > 0) {
+                    await ensureDb();
+                    // Firestore limita 'in' a 10 elementos, así que cargamos en lotes
+                    const entregasIdsArray = Array.from(entregasIds);
+                    const lotes = [];
+                    for (let i = 0; i < entregasIdsArray.length; i += 10) {
+                        lotes.push(entregasIdsArray.slice(i, i + 10));
+                    }
+                    
+                    for (const lote of lotes) {
+                        const entregasSnapshot = await db.collection('entregas_productos')
+                            .where(firebase.firestore.FieldPath.documentId(), 'in', lote)
+                            .get();
+                        
+                        entregasSnapshot.forEach(doc => {
+                            entregasMap[doc.id] = doc.data();
+                        });
+                    }
+                }
                 
                 ticketsPendientes.forEach(ticket => {
                     const fecha = ticket.fechaCreacion?.toDate();
                     const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
                     
+                    // Calcular montos aproximados desde entregas relacionadas
+                    let montoAproxTelefono = null;
+                    let montoAproxPersona = null;
+                    
+                    if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas) && ticket.entregasRelacionadas.length > 0) {
+                        ticket.entregasRelacionadas.forEach(entregaId => {
+                            const entrega = entregasMap[entregaId];
+                            if (entrega) {
+                                if (entrega.precioAproxTelefono !== undefined) {
+                                    montoAproxTelefono = (montoAproxTelefono || 0) + entrega.precioAproxTelefono;
+                                }
+                                if (entrega.precioAproxPersona !== undefined) {
+                                    montoAproxPersona = (montoAproxPersona || 0) + entrega.precioAproxPersona;
+                                }
+                            }
+                        });
+                    }
+                    
                     html += `<tr style="background: #fef3c7;">
                         <td><strong>${ticket.ticketId}</strong></td>
                         <td>${ticket.vendedorNombre}</td>
                         <td>${ticket.montoAprox ? '$' + ticket.montoAprox.toLocaleString() : 'N/A'}</td>
+                        <td>${montoAproxTelefono !== null ? '$' + montoAproxTelefono.toLocaleString() : 'N/A'}</td>
+                        <td>${montoAproxPersona !== null ? '$' + montoAproxPersona.toLocaleString() : 'N/A'}</td>
                         <td><strong style="color: #10b981;">$${ticket.montoEntregado ? ticket.montoEntregado.toLocaleString() : 'N/A'}</strong></td>
                         <td>${fechaStr}</td>
                         <td>
