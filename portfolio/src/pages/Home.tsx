@@ -1,47 +1,151 @@
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 
 export default function Home() {
   return (
-    <div>
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-          Desarrollador Web
-          <span className="text-primary-600"> Profesional</span>
-        </h1>
-        <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          Creo soluciones web modernas, escalables y con las últimas tecnologías.
-          E-commerce, Chatbots, Landing Pages y más.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/servicios" className="btn-primary">
-            Ver Servicios
-          </Link>
-          <Link to="/contacto" className="btn-secondary">
-            Contactar
-          </Link>
+    <div className="min-h-screen">
+      {/* Hero Section Mejorado */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-white to-primary-50">
+        <div className="container mx-auto px-4 py-24 md:py-32">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center max-w-4xl mx-auto"
+          >
+            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+              Desarrollador Web
+              <span className="block text-primary-600 mt-2">Profesional</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+              Transformo ideas en soluciones digitales modernas, escalables y con las últimas tecnologías.
+              <span className="block mt-2 text-lg">E-commerce, Chatbots, Landing Pages y más.</span>
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/servicios" className="btn-primary text-lg px-8 py-4">
+                Ver Servicios
+              </Link>
+              <Link to="/proyectos" className="btn-secondary text-lg px-8 py-4">
+                Ver Proyectos
+              </Link>
+              <Link to="/contacto" className="btn-outline text-lg px-8 py-4">
+                Contactar
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Servicios Destacados */}
-      <section className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12">Servicios Principales</h2>
+      {/* Estadísticas */}
+      <section className="py-16 bg-white border-y border-gray-100">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { number: '50+', label: 'Proyectos Completados' },
+              { number: '100%', label: 'Clientes Satisfechos' },
+              { number: '24/7', label: 'Soporte Disponible' },
+              { number: '5+', label: 'Años de Experiencia' },
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <div className="text-4xl md:text-5xl font-bold text-primary-600 mb-2">{stat.number}</div>
+                <div className="text-gray-600">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Servicios Destacados Mejorados */}
+      <section className="container mx-auto px-4 py-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl md:text-5xl font-bold mb-4">Servicios Principales</h2>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Soluciones completas para hacer crecer tu negocio digital
+          </p>
+        </motion.div>
+
         <div className="grid md:grid-cols-3 gap-8">
           {[
-            { title: 'E-commerce', desc: 'Tiendas online completas y funcionales', link: '/servicios' },
-            { title: 'Chatbots', desc: 'IA conversacional para WhatsApp y web', link: '/ia-demo' },
-            { title: 'Integraciones API', desc: 'Conexión con APIs externas profesionales', link: '/integraciones' },
-          ].map((service) => (
-            <div
+            { 
+              title: 'E-commerce', 
+              desc: 'Tiendas online completas y funcionales con pasarelas de pago integradas',
+              icon: '🛒',
+              link: '/servicios',
+              color: 'from-blue-500 to-blue-600'
+            },
+            { 
+              title: 'Chatbots IA', 
+              desc: 'Asistentes inteligentes para WhatsApp y web con integración n8n',
+              icon: '💬',
+              link: '/ia-demo',
+              color: 'from-green-500 to-green-600'
+            },
+            { 
+              title: 'Integraciones API', 
+              desc: 'Conexión profesional con APIs externas para potenciar tu negocio',
+              icon: '🔌',
+              link: '/integraciones',
+              color: 'from-purple-500 to-purple-600'
+            },
+          ].map((service, index) => (
+            <motion.div
               key={service.title}
-              className="card cursor-pointer"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              className="group"
             >
               <Link to={service.link || '#'}>
-                <h3 className="text-xl font-semibold mb-2 hover:text-primary-600 transition-colors">{service.title}</h3>
-                <p className="text-gray-600">{service.desc}</p>
+                <div className="card h-full hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
+                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center text-3xl mb-6 group-hover:scale-110 transition-transform`}>
+                    {service.icon}
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3 group-hover:text-primary-600 transition-colors">
+                    {service.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">{service.desc}</p>
+                  <div className="mt-6 text-primary-600 font-semibold group-hover:translate-x-2 transition-transform inline-flex items-center">
+                    Saber más
+                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
               </Link>
-            </div>
+            </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-20">
+        <div className="container mx-auto px-4 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              ¿Listo para llevar tu negocio al siguiente nivel?
+            </h2>
+            <p className="text-xl mb-8 text-primary-100 max-w-2xl mx-auto">
+              Trabajemos juntos para crear la solución digital perfecta para tu empresa
+            </p>
+            <Link to="/contacto" className="inline-block bg-white text-primary-600 font-semibold px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors">
+              Comenzar Proyecto
+            </Link>
+          </motion.div>
         </div>
       </section>
     </div>
