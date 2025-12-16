@@ -44,8 +44,8 @@ export default function RetellCallButton() {
         }
       } catch (apiError: any) {
         console.error('Error en API:', apiError)
-        if (apiError.code === 'ECONNREFUSED' || apiError.message?.includes('Network Error')) {
-          throw new Error('El servidor no está disponible. Verifica que el backend esté corriendo en http://localhost:3000')
+        if (apiError.code === 'ECONNREFUSED' || apiError.message?.includes('Network Error') || apiError.response?.status === 404) {
+          throw new Error('El backend no está disponible. Por favor, contacta al administrador para configurar el servidor de Retell.ai.')
         }
         throw new Error(apiError.response?.data?.error || apiError.message || 'Error al conectar con el servidor')
       }
@@ -149,22 +149,17 @@ export default function RetellCallButton() {
               </svg>
               <div>
                 <p className="text-yellow-800 font-medium">
-                  {errorMessage?.includes('servidor') || errorMessage?.includes('Network') 
+                  {errorMessage?.includes('backend') || errorMessage?.includes('servidor') || errorMessage?.includes('Network') 
                     ? 'Error de conexión' 
                     : 'Permisos de micrófono requeridos'}
                 </p>
                 <p className="text-yellow-700 text-sm mt-1">
                   {errorMessage || 'Por favor, habilita los permisos del micrófono desde la configuración de tu navegador para usar esta función.'}
                 </p>
-                {errorMessage?.includes('servidor') && (
+                {errorMessage?.includes('backend') && (
                   <div className="mt-3 p-3 bg-yellow-100 rounded text-xs">
-                    <p className="font-semibold mb-1">Para solucionar:</p>
-                    <ol className="list-decimal list-inside space-y-1 text-yellow-800">
-                      <li>Abre una terminal en <code className="bg-yellow-200 px-1 rounded">portfolio/backend</code></li>
-                      <li>Ejecuta: <code className="bg-yellow-200 px-1 rounded">npm install</code></li>
-                      <li>Luego: <code className="bg-yellow-200 px-1 rounded">npm start</code></li>
-                      <li>El servidor debe estar en <code className="bg-yellow-200 px-1 rounded">http://localhost:3000</code></li>
-                    </ol>
+                    <p className="font-semibold mb-1 text-yellow-800">El backend de Retell.ai necesita estar configurado en el servidor.</p>
+                    <p className="text-yellow-700 mt-2">Por favor, contacta al administrador para habilitar esta funcionalidad.</p>
                   </div>
                 )}
               </div>
