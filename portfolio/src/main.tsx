@@ -4,16 +4,8 @@ import App from './App.tsx'
 import './index.css'
 import { logDebug, logError, checkEnvironment } from './utils/debug'
 
-// Logs de debugging
-console.log('🚀 ==========================================')
-console.log('🚀 PORTFOLIO INICIANDO - BUILD C983AyZb')
-console.log('🚀 ==========================================')
+// Inicialización de la aplicación
 logDebug('🚀 Portfolio iniciando...')
-logDebug('📍 URL:', window.location.href)
-logDebug('⏰ Tiempo:', new Date().toISOString())
-logDebug('🔧 Modo:', import.meta.env.MODE)
-logDebug('📦 Base URL:', import.meta.env.BASE_URL)
-console.log('📦 Script cargado:', document.currentScript?.src || 'N/A')
 
 // Verificar que el DOM está listo
 const rootElement = document.getElementById('root')
@@ -48,32 +40,13 @@ if (!rootElement) {
   }, 0)
 
        try {
-         console.log('⚛️  ==========================================')
-         console.log('⚛️  RENDERIZANDO REACT - VERSIÓN MEJORADA')
-         console.log('⚛️  Build: index.C983AyZb.js')
-         console.log('⚛️  ==========================================')
          logDebug('⚛️  Renderizando React...')
          ReactDOM.createRoot(rootElement).render(
            <React.StrictMode>
              <App />
            </React.StrictMode>,
          )
-         console.log('✅ React renderizado correctamente')
          logDebug('✅ React renderizado correctamente')
-         
-         // Verificar después de renderizar
-         setTimeout(() => {
-           const rootContent = rootElement.innerHTML
-           console.log('📄 Contenido del root (primeros 500 chars):', rootContent.substring(0, 500))
-           console.log('📏 Tamaño del contenido:', rootContent.length, 'caracteres')
-           
-           if (rootContent.includes('Estadísticas') || rootContent.includes('50+')) {
-             console.log('✅ CONTENIDO MEJORADO DETECTADO EN EL DOM')
-           } else {
-             console.error('❌ ERROR: Contenido mejorado NO encontrado en el DOM')
-             console.error('❌ El DOM contiene:', rootContent.substring(0, 200))
-           }
-         }, 2000)
   } catch (error: any) {
     logError('❌ Error al renderizar React', error)
     rootElement.innerHTML = `
