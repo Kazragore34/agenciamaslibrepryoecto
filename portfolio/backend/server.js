@@ -26,17 +26,29 @@ const initRetell = async () => {
     // En Render aparece RetellClient, en local aparece default
     let Retell = null
     
-    if (retellModule.RetellClient && typeof retellModule.RetellClient === 'function') {
-      Retell = retellModule.RetellClient
-      console.log('📦 Usando RetellClient como constructor')
-    } else if (retellModule.default && typeof retellModule.default === 'function') {
+    // Intentar usar default primero (funciona en local)
+    // Luego RetellClient (aparece en Render)
+    if (retellModule.default && typeof retellModule.default === 'function') {
       Retell = retellModule.default
       console.log('📦 Usando default como constructor')
+    } else if (retellModule.RetellClient && typeof retellModule.RetellClient === 'function') {
+      Retell = retellModule.RetellClient
+      console.log('📦 Usando RetellClient como constructor')
+    } else if (retellModule.RetellClient) {
+      // RetellClient puede ser un objeto, no una función
+      console.log('📦 RetellClient es:', typeof retellModule.RetellClient, Object.keys(retellModule.RetellClient || {}))
+      // Intentar usar default de todas formas
+      if (retellModule.default) {
+        Retell = retellModule.default
+        console.log('📦 Usando default como fallback')
+      }
     }
     
     if (!Retell || typeof Retell !== 'function') {
       console.error('❌ No se pudo encontrar el constructor Retell. Estructura del módulo:', Object.keys(retellModule))
+      console.error('🔍 RetellClient:', retellModule.RetellClient)
       console.error('🔍 RetellClient type:', typeof retellModule.RetellClient)
+      console.error('🔍 default:', retellModule.default)
       console.error('🔍 default type:', typeof retellModule.default)
       return
     }
