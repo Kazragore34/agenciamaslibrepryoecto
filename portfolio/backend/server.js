@@ -20,33 +20,29 @@ const initRetell = async () => {
   try {
     // Usar import dinámico para módulos CommonJS
     const retellModule = await import('retell-sdk')
-    // El módulo puede exportar RetellClient o default
-    let Retell = null
+    console.log('📦 Módulo retell-sdk cargado. Keys:', Object.keys(retellModule))
     
-    // Intentar diferentes formas de obtener el constructor
-    // En Render aparece RetellClient, en local aparece default
-    if (retellModule.RetellClient && typeof retellModule.RetellClient === 'function') {
-      Retell = retellModule.RetellClient
-      console.log('📦 Usando RetellClient como constructor')
-    } else if (retellModule.default && typeof retellModule.default === 'function') {
-      Retell = retellModule.default
-      console.log('📦 Usando default como constructor')
-    } else if (retellModule.Retell && typeof retellModule.Retell === 'function') {
-      Retell = retellModule.Retell
-      console.log('📦 Usando Retell como constructor')
-    }
+    // El módulo exporta default como el constructor principal
+    const Retell = retellModule.default || retellModule.Retell || retellModule.RetellClient
     
-    if (!Retell) {
+    if (!Retell || typeof Retell !== 'function') {
       console.error('❌ No se pudo encontrar el constructor Retell. Estructura del módulo:', Object.keys(retellModule))
       return
     }
     
+    console.log('📦 Constructor encontrado:', Retell.name || 'Retell')
+    
+    // Crear el cliente con la API key
+    const apiKey = process.env.RETELL_API_KEY || 'key_57585684f15a8c742487f38bdef5'
     retellClient = new Retell({
-      apiKey: process.env.RETELL_API_KEY || 'key_57585684f15a8c742487f38bdef5',
+      apiKey: apiKey,
     })
     
+    // Esperar un momento para que el cliente se inicialice completamente
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
     // Verificar que el cliente se inicializó correctamente
-    console.log('✅ Retell.ai cliente inicializado')
+    console.log('✅ Retell.ai cliente creado')
     console.log('🔍 Estructura del cliente:', Object.keys(retellClient))
     console.log('📞 Tiene call?', !!retellClient.call)
     console.log('📞 Tipo de call:', typeof retellClient.call)
@@ -56,8 +52,15 @@ const initRetell = async () => {
       console.log('📞 Métodos de call:', Object.keys(retellClient.call))
       console.log('📞 Tiene createWebCall?', typeof retellClient.call.createWebCall)
       console.log('📞 Tiene createCall?', typeof retellClient.call.createCall)
+      console.log('✅ Retell.ai cliente inicializado correctamente')
     } else {
       console.error('❌ El cliente no tiene la propiedad call')
+      console.error('🔍 Propiedades disponibles:', Object.keys(retellClient))
+      // Intentar acceder a call de otra forma
+      if (retellClient['call']) {
+        console.log('📞 call encontrado con bracket notation')
+        retellClient.call = retellClient['call']
+      }
     }
   } catch (error) {
     console.error('❌ Error inicializando Retell.ai:', error)
