@@ -7,35 +7,63 @@ En Hostinger necesitas los archivos **compilados** que apuntan a `assets/*.js`.
 
 ## Solución: Hacer Build LOCALMENTE
 
-### Paso 1: En tu computadora local
+### Paso 1: Instalar dependencias (IMPORTANTE)
 
-```bash
-cd portfolio
-npm install
-npm run build
+**Primero, asegúrate de estar en la carpeta portfolio:**
+
+```powershell
+cd C:\Users\lobo6\agencia\portfolio
 ```
 
-### Paso 2: Verificar archivos generados
+**Luego instala todas las dependencias (incluye terser):**
 
-Después del build, debes tener:
-- ✅ `dist/index.html` (con referencias a `assets/*.js`)
-- ✅ `dist/assets/` (carpeta con JS y CSS compilados)
+```powershell
+npm install
+```
 
-### Paso 3: Copiar a la raíz (para Hostinger)
+Esto instalará todas las dependencias necesarias, incluyendo `terser` que es requerido para minificar el código.
 
-El script `build-and-deploy.sh` hace esto automáticamente, o manualmente:
+### Paso 2: Hacer Build
 
-```bash
-# Copiar index.html compilado
-cp dist/index.html index.html
+**Usa el script especial para Hostinger que copia automáticamente los archivos:**
 
-# Copiar assets
-cp -r dist/assets assets
+```powershell
+npm run build:hostinger
+```
+
+Este comando:
+1. Compila el proyecto (genera `dist/`)
+2. Copia automáticamente `index.html` y `assets/` a la raíz de `portfolio/`
+
+**O si prefieres hacerlo manualmente:**
+
+```powershell
+npm run build
+# Luego copia manualmente:
+copy dist\index.html index.html
+xcopy /E /I /Y dist\assets assets
+```
+
+### Paso 3: Verificar archivos generados
+
+Después del build, debes tener en la raíz de `portfolio/`:
+- ✅ `index.html` (con referencias a `/assets/*.js`)
+- ✅ `assets/` (carpeta con JS y CSS compilados)
+
+**Verifica que `index.html` tenga:**
+```html
+<script type="module" src="/assets/index-[hash].js"></script>
+```
+
+**NO debe tener:**
+```html
+<script type="module" src="/src/main.tsx"></script>
 ```
 
 ### Paso 4: Subir a Git
 
-```bash
+```powershell
+cd C:\Users\lobo6\agencia
 git add portfolio/index.html portfolio/assets/
 git commit -m "Build para producción"
 git push
