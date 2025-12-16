@@ -55,6 +55,23 @@
             </div>
         </div>
 
+        <!-- Listados completos accesibles para todos los roles -->
+        <div class="stats-grid" style="margin-top: 2rem;">
+            <div class="stats-card" style="grid-column: span 2; overflow-x: auto;">
+                <h3>Lista completa de Tickets</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Todos los tickets (ordenados del más reciente)</p>
+                <div id="listaTicketsCompleta"></div>
+            </div>
+        </div>
+
+        <div class="stats-grid" style="margin-top: 2rem;">
+            <div class="stats-card" style="grid-column: span 2; overflow-x: auto;">
+                <h3>Lista completa de Armas Entregadas</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Todas las armas entregadas (ordenadas del más reciente)</p>
+                <div id="listaArmasCompleta"></div>
+            </div>
+        </div>
+
         <div class="stats-grid" style="margin-top: 2rem;">
             <div class="stats-card">
                 <h3>MESA</h3>
@@ -148,8 +165,16 @@
                 const productosMas = await obtenerProductosMasEntregados();
                 mostrarProductosMas(productosMas);
 
+                // Listas completas (tickets y armas) visibles para todos
+                const tickets = await obtenerTodosTickets();
+                mostrarListaTickets(tickets);
+
+                const armas = await obtenerTodasArmas();
+                mostrarListaArmas(armas);
+
                 // Cargar gráficas
                 await cargarGraficasDinero();
+                await cargarGraficasEntregas();
             } catch (error) {
                 console.error('Error cargando estadísticas:', error);
             }
@@ -467,6 +492,181 @@
                 console.error('Error obteniendo productos más entregados:', error);
                 return [];
             }
+        }
+
+        // Lista completa de tickets (visible para todos)
+        async function obtenerTodosTickets() {
+            try {
+                const snapshot = await db.collection('tickets_dinero')
+                    .orderBy('fechaCreacion', 'desc')
+                    .get();
+
+                return snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    const fecha = data.fechaCreacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+                    return {
+                        id: doc.id,
+                        ticketId: data.ticketId || 'N/A',
+                        vendedorNombre: data.vendedorNombre || 'N/A',
+                        dealerNombre: data.dealerNombre || 'N/A',
+                        montoEntregado: data.montoEntregado || null,
+                        montoAprox: data.montoAprox || null,
+                        estado: data.estado || 'N/A',
+                        fechaStr
+                    };
+                });
+            } catch (error) {
+                console.error('Error obteniendo tickets:', error);
+                return [];
+            }
+        }
+
+        function mostrarListaTickets(tickets) {
+            const container = document.getElementById('listaTicketsCompleta');
+            if (!container) return;
+
+            if (!tickets || tickets.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 1rem;">No hay tickets registrados</p>';
+                return;
+            }
+
+            let html = `
+                <div style="overflow-x: auto;">
+                    <table class="data-table" style="min-width: 900px;">
+                        <thead>
+                            <tr>
+                                <th>Ticket</th>
+                                <th>Prospect</th>
+                                <th>Sargento</th>
+                                <th>Monto Entregado</th>
+                                <th>Monto Aprox</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            tickets.forEach(ticket => {
+                const estadoClass = ticket.estado === 'confirmado' || ticket.estado === 'confirmado_dealer' ? 'success'
+                    : ticket.estado === 'rechazado' ? 'error'
+                    : 'pendiente';
+                html += `
+                    <tr>
+                        <td><strong>${ticket.ticketId}</strong></td>
+                        <td>${ticket.vendedorNombre}</td>
+                        <td>${ticket.dealerNombre}</td>
+                        <td>${ticket.montoEntregado ? '$' + ticket.montoEntregado.toLocaleString() : 'N/A'}</td>
+                        <td>${ticket.montoAprox ? '$' + ticket.montoAprox.toLocaleString() : 'N/A'}</td>
+                        <td><span class="estado-badge ${estadoClass}">${ticket.estado}</span></td>
+                        <td>${ticket.fechaStr}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Lista completa de armas (visible para todos)
+        async function obtenerTodasArmas() {
+            try {
+                // Obtener todas las armas y ordenar en el cliente para evitar problemas con índices
+                const snapshot = await db.collection('entregas_armas').get();
+
+                const armas = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    const fecha = data.fechaCreacion?.toDate();
+                    const fechaStr = fecha ? fecha.toLocaleString('es-PE') : 'N/A';
+                    const balasActual = data.cantidadBalasActual !== undefined ? data.cantidadBalasActual : data.cantidadBalasInicial || 0;
+                    const balasInicial = data.cantidadBalasInicial || 0;
+                    return {
+                        id: doc.id,
+                        tipoArma: data.tipoArma || 'N/A',
+                        vendedorNombre: data.vendedorNombre || 'N/A',
+                        dealerNombre: data.dealerNombre || 'N/A',
+                        chaleco: data.chaleco || false,
+                        balasActual,
+                        balasInicial,
+                        estado: data.estado || 'N/A',
+                        motivoPerdida: data.motivoPerdida || null,
+                        fechaCreacion: fecha,
+                        fechaStr
+                    };
+                });
+
+                // Ordenar por fecha de creación (más recientes primero)
+                armas.sort((a, b) => {
+                    const fechaA = a.fechaCreacion || new Date(0);
+                    const fechaB = b.fechaCreacion || new Date(0);
+                    return fechaB - fechaA;
+                });
+
+                return armas;
+            } catch (error) {
+                console.error('Error obteniendo armas:', error);
+                return [];
+            }
+        }
+
+        function mostrarListaArmas(armas) {
+            const container = document.getElementById('listaArmasCompleta');
+            if (!container) return;
+
+            if (!armas || armas.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 1rem;">No hay armas registradas</p>';
+                return;
+            }
+
+            let html = `
+                <div style="overflow-x: auto;">
+                    <table class="data-table" style="min-width: 900px;">
+                        <thead>
+                            <tr>
+                                <th>Tipo de Arma</th>
+                                <th>Prospect</th>
+                                <th>Sargento</th>
+                                <th>Balas Actual</th>
+                                <th>Balas Inicial</th>
+                                <th>Chaleco</th>
+                                <th>Estado</th>
+                                <th>Motivo Pérdida</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            armas.forEach(arma => {
+                const estadoClass = arma.estado === 'activa' ? 'success' : 'error';
+                html += `
+                    <tr>
+                        <td><strong>${arma.tipoArma}</strong></td>
+                        <td>${arma.vendedorNombre}</td>
+                        <td>${arma.dealerNombre}</td>
+                        <td>${arma.balasActual}</td>
+                        <td>${arma.balasInicial}</td>
+                        <td>${arma.chaleco ? 'Sí' : 'No'}</td>
+                        <td><span class="estado-badge ${estadoClass}">${arma.estado}</span></td>
+                        <td>${arma.motivoPerdida || 'N/A'}</td>
+                        <td>${arma.fechaStr}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
         }
 
         async function obtenerEstadoEntregas() {

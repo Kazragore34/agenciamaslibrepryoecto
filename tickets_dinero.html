@@ -864,7 +864,7 @@
 
         // Cargar entregas confirmadas para relacionar
         async function cargarEntregasConfirmadas() {
-            if (!esDealer()) return;
+            if (!esSargentoOAdmin()) return;
             
             try {
                 const entregas = await obtenerEntregasPorDealer(currentUser.id);

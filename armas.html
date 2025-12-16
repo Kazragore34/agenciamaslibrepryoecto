@@ -218,8 +218,8 @@
         async function cargarArmas() {
             try {
                 let armas = [];
-                if (esSargento()) {
-                    // Sargentos ven las armas que entregaron
+                if (esSargentoOAdmin()) {
+                    // Sargentos y admins ven las armas que entregaron
                     armas = await obtenerArmasPorDealer(currentUser.id);
                 } else {
                     // Prospects ven las armas que recibieron
@@ -574,7 +574,7 @@
         }
 
         // Inicializar
-        if (esSargento()) {
+        if (esSargentoOAdmin()) {
             cargarProspectsArmas();
             // Mostrar formulario de creación para sargentos
             const formularioCrearArma = document.getElementById('formularioCrearArma');

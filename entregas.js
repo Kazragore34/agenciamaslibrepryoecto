@@ -34,13 +34,16 @@ async function crearEntregaProductos(sargentoId, prospectId, productos, itemsAdi
         }
         const prospectData = prospectDoc.data();
         
-        // Calcular precio aproximado
-        const precioAprox = calcularPrecioAprox(productos);
+        // Calcular precios aproximados (por teléfono y por persona)
+        const preciosAprox = calcularPreciosAprox(productos);
+        const precioAprox = preciosAprox.telefono; // Mantener para compatibilidad
         
-        // Agregar precioAprox a cada producto
+        // Agregar precios a cada producto
         const productosConPrecio = productos.map(p => ({
             ...p,
-            precioAprox: obtenerPrecioMinimo(p.tipo)
+            precioAprox: obtenerPrecioMinimo(p.tipo), // Compatibilidad
+            precioTelefono: obtenerPrecioTelefono(p.tipo),
+            precioPersona: obtenerPrecioPersona(p.tipo)
         }));
         
         const entregaData = {
@@ -52,7 +55,9 @@ async function crearEntregaProductos(sargentoId, prospectId, productos, itemsAdi
             itemsAdicionales,
             estado: 'pendiente',
             fechaCreacion: firebase.firestore.FieldValue.serverTimestamp(),
-            precioAprox,
+            precioAprox, // Compatibilidad
+            precioAproxTelefono: preciosAprox.telefono,
+            precioAproxPersona: preciosAprox.persona,
             notas: notas || ''
         };
         
@@ -160,8 +165,8 @@ async function rechazarEntrega(entregaId, motivo) {
 async function eliminarEntrega(entregaId) {
     await ensureDb();
     
-    if (!esDealer()) {
-        throw new Error('Solo los dealers pueden eliminar entregas');
+    if (!esSargentoOAdmin()) {
+        throw new Error('Solo los sargentos y administradores pueden eliminar entregas');
     }
     
     const currentUser = getCurrentUser();

@@ -1,14 +1,18 @@
 // Configuración de productos, precios y constantes del sistema
 
 const PRODUCTOS = {
-    coca: { nombre: 'Coca', precioMin: null },
-    meta: { nombre: 'Meta', precioMin: null },
-    crack: { nombre: 'Crack', precioMin: null },
-    weed: { nombre: 'Weed', precioMin: null },
-    semilla_maleza: { nombre: 'Semilla Maleza', precioMin: 170 },
-    semilla_amarillo: { nombre: 'Semilla Amarillo', precioMin: 180 },
-    semilla_azul: { nombre: 'Semilla Azul', precioMin: 220 },
-    semilla_morado: { nombre: 'Semilla Morado', precioMin: 210 }
+    coca: { nombre: 'Coca', precioTelefono: null, precioPersona: null },
+    meta: { nombre: 'Meta', precioTelefono: null, precioPersona: null },
+    crack: { nombre: 'Crack', precioTelefono: null, precioPersona: { min: 550, max: 600 } },
+    weed: { nombre: 'Weed', precioTelefono: null, precioPersona: null },
+    semilla_maleza: { nombre: 'Semilla Maleza', precioTelefono: 170, precioPersona: 230 },
+    semilla_amarillo: { nombre: 'Semilla Amarillo', precioTelefono: { min: 175, max: 187 }, precioPersona: 250 },
+    semilla_azul: { nombre: 'Semilla Azul', precioTelefono: { min: 200, max: 240 }, precioPersona: 320 },
+    semilla_morado: { nombre: 'Semilla Morado', precioTelefono: { min: 230, max: 250 }, precioPersona: 350 },
+    brote_maleza: { nombre: 'Brote Maleza', precioTelefono: 170, precioPersona: 230 },
+    brote_amarillo: { nombre: 'Brote Amarillo (Kush)', precioTelefono: { min: 175, max: 187 }, precioPersona: 250 },
+    brote_azul: { nombre: 'Brote Azul', precioTelefono: { min: 200, max: 240 }, precioPersona: 320 },
+    brote_morado: { nombre: 'Brote Morado', precioTelefono: { min: 230, max: 250 }, precioPersona: 350 }
 };
 
 const ITEMS_ADICIONALES = ['fertilizante', 'maceta', 'regadera'];
@@ -41,36 +45,117 @@ const TIPOS_DINERO_NEGRO = [
 ];
 
 /**
- * Obtiene el precio mínimo de un producto
+ * Obtiene el precio mínimo de un producto (compatibilidad con código antiguo)
  * @param {string} tipoProducto - Tipo de producto
  * @returns {number|null} - Precio mínimo o null si no tiene
  */
 function obtenerPrecioMinimo(tipoProducto) {
-    if (PRODUCTOS[tipoProducto] && PRODUCTOS[tipoProducto].precioMin) {
-        return PRODUCTOS[tipoProducto].precioMin;
+    if (PRODUCTOS[tipoProducto]) {
+        const producto = PRODUCTOS[tipoProducto];
+        // Si tiene precioTelefono, usar el mínimo de ese rango
+        if (producto.precioTelefono) {
+            if (typeof producto.precioTelefono === 'object' && producto.precioTelefono.min) {
+                return producto.precioTelefono.min;
+            }
+            return producto.precioTelefono;
+        }
+        // Si tiene precioPersona, usar el mínimo de ese rango
+        if (producto.precioPersona) {
+            if (typeof producto.precioPersona === 'object' && producto.precioPersona.min) {
+                return producto.precioPersona.min;
+            }
+            return producto.precioPersona;
+        }
     }
     return null;
 }
 
 /**
- * Calcula el precio aproximado total de una lista de productos
+ * Obtiene el precio por teléfono de un producto
+ * @param {string} tipoProducto - Tipo de producto
+ * @returns {number|null} - Precio por teléfono (mínimo si es rango) o null si no tiene
+ */
+function obtenerPrecioTelefono(tipoProducto) {
+    if (PRODUCTOS[tipoProducto] && PRODUCTOS[tipoProducto].precioTelefono) {
+        const precio = PRODUCTOS[tipoProducto].precioTelefono;
+        if (typeof precio === 'object' && precio.min) {
+            return precio.min;
+        }
+        return precio;
+    }
+    return null;
+}
+
+/**
+ * Obtiene el precio por persona de un producto
+ * @param {string} tipoProducto - Tipo de producto
+ * @returns {number|null} - Precio por persona (mínimo si es rango) o null si no tiene
+ */
+function obtenerPrecioPersona(tipoProducto) {
+    if (PRODUCTOS[tipoProducto] && PRODUCTOS[tipoProducto].precioPersona) {
+        const precio = PRODUCTOS[tipoProducto].precioPersona;
+        if (typeof precio === 'object' && precio.min) {
+            return precio.min;
+        }
+        return precio;
+    }
+    return null;
+}
+
+/**
+ * Calcula el precio aproximado total de una lista de productos (compatibilidad con código antiguo)
  * @param {Array} productos - Array de objetos {tipo, cantidad}
- * @returns {number} - Precio aproximado total
+ * @returns {number} - Precio aproximado total (usa precio por teléfono)
  */
 function calcularPrecioAprox(productos) {
-    let total = 0;
+    const precios = calcularPreciosAprox(productos);
+    return precios.telefono;
+}
+
+/**
+ * Calcula los precios aproximados totales (por teléfono y por persona) de una lista de productos
+ * @param {Array} productos - Array de objetos {tipo, cantidad}
+ * @returns {Object} - Objeto con {telefono: number, persona: number}
+ */
+function calcularPreciosAprox(productos) {
+    let totalTelefono = 0;
+    let totalPersona = 0;
+    
     productos.forEach(producto => {
-        const precioMin = obtenerPrecioMinimo(producto.tipo);
-        if (precioMin !== null) {
-            // Si es una semilla, el precio es por brote, y 1 semilla = 10 brotes
-            if (producto.tipo.startsWith('semilla_')) {
-                total += precioMin * producto.cantidad * BROTES_POR_SEMILLA;
-            } else {
-                total += precioMin * producto.cantidad;
+        const precioTelefono = obtenerPrecioTelefono(producto.tipo);
+        const precioPersona = obtenerPrecioPersona(producto.tipo);
+        
+        // Si es una semilla, el precio es por brote, y 1 semilla = 10 brotes
+        if (producto.tipo.startsWith('semilla_')) {
+            if (precioTelefono !== null) {
+                totalTelefono += precioTelefono * producto.cantidad * BROTES_POR_SEMILLA;
+            }
+            if (precioPersona !== null) {
+                totalPersona += precioPersona * producto.cantidad * BROTES_POR_SEMILLA;
+            }
+        } else if (producto.tipo.startsWith('brote_')) {
+            // Los brotes se venden directamente
+            if (precioTelefono !== null) {
+                totalTelefono += precioTelefono * producto.cantidad;
+            }
+            if (precioPersona !== null) {
+                totalPersona += precioPersona * producto.cantidad;
+            }
+        } else {
+            // Otros productos (crack, meta, etc.)
+            if (precioTelefono !== null) {
+                totalTelefono += precioTelefono * producto.cantidad;
+            }
+            if (precioPersona !== null) {
+                totalPersona += precioPersona * producto.cantidad;
             }
         }
     });
-    return total;
+    
+    return {
+        telefono: totalTelefono,
+        persona: totalPersona
+    };
 }
 
 /**

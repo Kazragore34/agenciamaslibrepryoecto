@@ -514,7 +514,7 @@
                     return fechaB - fechaA;
                 });
                 
-                let html = '<table class="data-table"><thead><tr><th>Sargento</th><th>Prospect</th><th>Productos</th><th>Monto Aprox</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                let html = '<table class="data-table"><thead><tr><th>Sargento</th><th>Prospect</th><th>Productos</th><th>Monto Aprox por Teléfono</th><th>Monto Aprox por Persona</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
                 
                 entregas.forEach(entrega => {
                     const fecha = entrega.fechaCreacion?.toDate();
@@ -525,11 +525,16 @@
                     // Buscar tickets relacionados
                     const tieneTicket = entrega.ticketsRelacionados && entrega.ticketsRelacionados.length > 0;
                     
+                    // Obtener precios (usar nuevos campos si existen, sino usar precioAprox para compatibilidad)
+                    const precioTelefono = entrega.precioAproxTelefono !== undefined ? entrega.precioAproxTelefono : (entrega.precioAprox || null);
+                    const precioPersona = entrega.precioAproxPersona !== undefined ? entrega.precioAproxPersona : null;
+                    
                     html += `<tr>
                         <td><strong>${entrega.dealerNombre}</strong></td>
                         <td><strong>${entrega.vendedorNombre}</strong></td>
                         <td>${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')}</td>
-                        <td>${entrega.precioAprox ? '$' + entrega.precioAprox.toLocaleString() : 'N/A'}</td>
+                        <td>${precioTelefono ? '$' + precioTelefono.toLocaleString() : 'N/A'}</td>
+                        <td>${precioPersona ? '$' + precioPersona.toLocaleString() : 'N/A'}</td>
                         <td><span class="estado-badge ${estadoClass}">${entrega.estado}</span></td>
                         <td>${fechaStr}</td>
                         <td>
@@ -593,8 +598,24 @@
                             <div style="margin-bottom: 1rem;">
                                 <strong>Productos:</strong>
                                 <ul style="margin: 0.5rem 0 0 1.5rem;">
-                                    ${entrega.productos.map(p => `<li>${obtenerNombreProducto(p.tipo)}: ${p.cantidad}${p.precioAprox ? ` (Precio aprox: $${p.precioAprox.toLocaleString()})` : ''}</li>`).join('')}
+                                    ${entrega.productos.map(p => {
+                                        const precioTel = p.precioTelefono !== undefined ? p.precioTelefono : (p.precioAprox || null);
+                                        const precioPer = p.precioPersona !== undefined ? p.precioPersona : null;
+                                        let precioTexto = '';
+                                        if (precioTel || precioPer) {
+                                            const precios = [];
+                                            if (precioTel) precios.push(`Teléfono: $${precioTel.toLocaleString()}`);
+                                            if (precioPer) precios.push(`Persona: $${precioPer.toLocaleString()}`);
+                                            precioTexto = ` (${precios.join(', ')})`;
+                                        }
+                                        return `<li>${obtenerNombreProducto(p.tipo)}: ${p.cantidad}${precioTexto}</li>`;
+                                    }).join('')}
                                 </ul>
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem; padding: 0.75rem; background: #f3f4f6; border-radius: 0.375rem;">
+                                <p style="margin: 0;"><strong>Monto Aprox por Teléfono:</strong> ${entrega.precioAproxTelefono !== undefined ? '$' + entrega.precioAproxTelefono.toLocaleString() : (entrega.precioAprox ? '$' + entrega.precioAprox.toLocaleString() : 'N/A')}</p>
+                                <p style="margin: 0.5rem 0 0 0;"><strong>Monto Aprox por Persona:</strong> ${entrega.precioAproxPersona !== undefined ? '$' + entrega.precioAproxPersona.toLocaleString() : 'N/A'}</p>
                             </div>
                             
                             ${entrega.itemsAdicionales && entrega.itemsAdicionales.length > 0 ? `
