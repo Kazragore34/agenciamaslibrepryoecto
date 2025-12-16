@@ -5,7 +5,6 @@ const navItems = [
   { path: '/', label: 'Inicio' },
   { path: '/servicios', label: 'Servicios' },
   { path: '/proyectos', label: 'Proyectos' },
-  { path: '/tecnologias', label: 'Tecnologías' },
   { path: '/integraciones', label: 'APIs' },
   { path: '/ia-demo', label: 'IA Demo' },
   { path: '/contacto', label: 'Contacto' },
@@ -30,13 +29,13 @@ export default function Header() {
                   key={item.path}
                   to={item.path}
                   className={`relative px-3 py-2 font-medium transition-colors ${
-                    isActive ? 'text-primary-600' : 'text-gray-700 hover:text-primary-600'
+                    isActive ? 'text-slate-700' : 'text-gray-700 hover:text-slate-700'
                   }`}
                 >
                   {item.label}
                   {isActive && (
                     <motion.div
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-700"
                       layoutId="underline"
                     />
                   )}

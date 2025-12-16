@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 
 export default function DemoLanding() {
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',

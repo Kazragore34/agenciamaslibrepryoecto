@@ -16,11 +16,61 @@ const tecnologiasPrincipales = [
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [showMoreTechs, setShowMoreTechs] = useState(false)
+  
+  // Tecnologías adicionales para mostrar cuando se expande
+  const tecnologiasAdicionales = [
+    { name: 'Vite', category: 'Frontend', logo: 'https://vitejs.dev/logo.svg', color: 'bg-purple-50' },
+    { name: 'PostgreSQL', category: 'Database', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg', color: 'bg-blue-50' },
+    { name: 'Git', category: 'DevOps', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg', color: 'bg-orange-50' },
+    { name: 'Retell.ai', category: 'AI', logo: 'https://retell.ai/favicon.ico', color: 'bg-indigo-50' },
+    { name: 'Google Analytics', category: 'Analytics', logo: 'https://www.google.com/analytics/images/home/ga-icon.svg', color: 'bg-yellow-50' },
+  ]
+  
+  const todasLasTecnologias = showMoreTechs 
+    ? [...tecnologiasPrincipales, ...tecnologiasAdicionales]
+    : tecnologiasPrincipales
 
   return (
     <div className="min-h-screen">
+      {/* Sección IA Destacada */}
+      <section className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white py-12">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col md:flex-row items-center justify-between gap-6"
+          >
+            <div className="flex-1">
+              <h2 className="text-3xl md:text-4xl font-bold mb-3">
+                🤖 Inteligencia Artificial Integrada
+              </h2>
+              <p className="text-lg text-gray-200 mb-4">
+                Prueba nuestras capacidades de IA con llamadas de voz en tiempo real y chatbots inteligentes
+              </p>
+              <Link 
+                to="/ia-demo" 
+                className="inline-block bg-white text-slate-800 font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Probar IA Demo →
+              </Link>
+            </div>
+            <div className="flex gap-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold">24/7</div>
+                <div className="text-sm text-gray-300">Disponible</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold">100%</div>
+                <div className="text-sm text-gray-300">Automatizado</div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Hero Section Mejorado */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-white to-primary-50">
+      <section className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-gray-50">
         <div className="container mx-auto px-4 py-24 md:py-32">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -239,7 +289,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-6">
-            {tecnologiasPrincipales
+            {todasLasTecnologias
               .filter(tech => !selectedCategory || tech.category === selectedCategory)
               .map((tech, index) => (
                 <motion.div
@@ -248,10 +298,18 @@ export default function Home() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  whileHover={{ scale: 1.15, y: -5 }}
+                  whileHover={{ 
+                    rotate: [0, -5, 5, -5, 0],
+                    scale: 1.1,
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
+                  }}
+                  transition={{ 
+                    rotate: { duration: 0.5, ease: "easeInOut" },
+                    scale: { duration: 0.2 }
+                  }}
                   className="group"
                 >
-                  <div className={`card h-full ${tech.color} hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-4 border-2 border-transparent hover:border-primary-300`}>
+                  <div className={`card h-full ${tech.color} hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col items-center justify-center p-4 border border-gray-200 hover:border-gray-300`}>
                     <div className="w-12 h-12 mb-3 flex items-center justify-center bg-white rounded-lg p-2 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                       <img
                         src={tech.logo}
@@ -281,12 +339,20 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mt-12"
           >
-            <Link to="/tecnologias" className="text-slate-700 font-semibold hover:text-slate-800 inline-flex items-center">
-              Ver todas las tecnologías
-              <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <button
+              onClick={() => setShowMoreTechs(!showMoreTechs)}
+              className="text-slate-700 font-semibold hover:text-slate-800 inline-flex items-center px-6 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              {showMoreTechs ? 'Mostrar menos' : 'Mostrar más'}
+              <svg 
+                className={`w-5 h-5 ml-2 transition-transform duration-300 ${showMoreTechs ? 'rotate-180' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
-            </Link>
+            </button>
           </motion.div>
         </div>
       </section>
@@ -365,7 +431,7 @@ export default function Home() {
                     }}
                   />
                 </div>
-                <h3 className="text-xl font-bold mb-3 group-hover:text-primary-600 transition-colors">
+                <h3 className="text-xl font-bold mb-3 group-hover:text-slate-700 transition-colors">
                   {item.title}
                 </h3>
                 <p className="text-gray-600 text-sm leading-relaxed">{item.desc}</p>

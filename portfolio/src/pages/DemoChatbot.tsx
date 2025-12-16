@@ -37,6 +37,10 @@ const botResponses = [
 ]
 
 export default function DemoChatbot() {
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,

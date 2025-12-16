@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 
@@ -100,6 +100,10 @@ const products: Product[] = [
 export default function DemoEcommerce() {
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([])
   const [showCart, setShowCart] = useState(false)
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
   const addToCart = (product: Product) => {
     setCart(prev => {
