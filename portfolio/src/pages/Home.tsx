@@ -1,10 +1,66 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 
 export default function Home() {
+  useEffect(() => {
+    console.log('🏠 ==========================================')
+    console.log('🏠 HOME COMPONENT - BUILD NUEVO VERIFICACIÓN')
+    console.log('🏠 Fecha:', new Date().toISOString())
+    console.log('🏠 ==========================================')
+    
+    // INDICADOR VISUAL MUY OBVIO
+    const indicator = document.createElement('div')
+    indicator.id = 'build-verification'
+    indicator.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #00ff00;
+      color: black;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+      z-index: 99999;
+      border: 3px solid #000000;
+    `
+    indicator.textContent = '✅ BUILD NUEVO CARGADO - Si ves esto, el código SÍ se actualizó'
+    document.body.insertBefore(indicator, document.body.firstChild)
+    
+    setTimeout(() => {
+      indicator.style.display = 'none'
+    }, 8000)
+  }, [])
 
   return (
     <div className="min-h-screen">
+      {/* INDICADOR DE VERIFICACIÓN CENTRAL */}
+      <div style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 999998,
+        background: '#00ff00',
+        color: 'black',
+        padding: '25px 40px',
+        fontSize: '24px',
+        fontWeight: 'bold',
+        border: '5px solid #000000',
+        borderRadius: '15px',
+        boxShadow: '0 0 30px rgba(0,255,0,0.8)',
+        textAlign: 'center'
+      }}>
+        <div style={{ marginBottom: '15px' }}>
+          ✅ BUILD ACTUALIZADO
+        </div>
+        <div style={{ fontSize: '16px' }}>
+          Si ves este mensaje verde, el nuevo código SÍ se está cargando
+        </div>
+      </div>
+
       {/* Hero Section Mejorado */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-white to-primary-50">
         <div className="container mx-auto px-4 py-24 md:py-32">
