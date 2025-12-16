@@ -177,7 +177,7 @@
                 html += `<strong>⚠️ Tienes ${ticketsPendientes.length} ticket(s) pendiente(s) de confirmar</strong>`;
                 html += '</div>';
                 
-                html += '<table class="data-table"><thead><tr><th>Ticket ID</th><th>Prospect</th><th>Monto Aprox</th><th>Monto Aprox por Teléfono</th><th>Monto Aprox por Persona</th><th>Monto Entregado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                html += '<table class="data-table"><thead><tr><th>Ticket ID</th><th>Prospect</th><th>Monto Aprox</th><th>Monto Aprox por Teléfono</th><th>Monto Aprox por Persona</th><th>Monto Entregado</th><th>Tipo de Venta</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
                 
                 // Obtener todas las entregas relacionadas de una vez
                 const entregasIds = new Set();
@@ -230,6 +230,12 @@
                         });
                     }
                     
+                    // Obtener tipo de venta
+                    const tipoVenta = ticket.tipoVenta || 'N/A';
+                    const tipoVentaTexto = tipoVenta === 'persona' ? 'Por Persona' : 
+                                          tipoVenta === 'telefono' ? 'Al por Mayor' : 
+                                          tipoVenta === 'ambos' ? 'Ambos' : 'N/A';
+                    
                     html += `<tr style="background: #fef3c7;">
                         <td><strong>${ticket.ticketId}</strong></td>
                         <td>${ticket.vendedorNombre}</td>
@@ -237,6 +243,7 @@
                         <td>${montoAproxTelefono !== null ? '$' + montoAproxTelefono.toLocaleString() : 'N/A'}</td>
                         <td>${montoAproxPersona !== null ? '$' + montoAproxPersona.toLocaleString() : 'N/A'}</td>
                         <td><strong style="color: #10b981;">$${ticket.montoEntregado ? ticket.montoEntregado.toLocaleString() : 'N/A'}</strong></td>
+                        <td><span class="badge" style="background: ${tipoVenta === 'persona' ? '#dbeafe' : tipoVenta === 'telefono' ? '#fef3c7' : '#d1fae5'}; color: ${tipoVenta === 'persona' ? '#1e40af' : tipoVenta === 'telefono' ? '#92400e' : '#065f46'};">${tipoVentaTexto}</span></td>
                         <td>${fechaStr}</td>
                         <td>
                             <button class="btn-success btn-sm" onclick="confirmarTicketDealer('${ticket.id}')" style="margin-right: 0.5rem;">Confirmar</button>
@@ -563,7 +570,34 @@
                     return fechaB - fechaA;
                 });
                 
-                let html = '<table class="data-table"><thead><tr><th>Sargento</th><th>Prospect</th><th>Productos</th><th>Monto Aprox por Teléfono</th><th>Monto Aprox por Persona</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
+                // Obtener todos los tickets relacionados para mostrar montos entregados
+                const entregasIds = entregas.map(e => e.id);
+                const ticketsMap = {};
+                
+                if (entregasIds.length > 0) {
+                    await ensureDb();
+                    // Buscar tickets que tengan estas entregas relacionadas
+                    const ticketsSnapshot = await db.collection('tickets_dinero').get();
+                    ticketsSnapshot.forEach(doc => {
+                        const ticket = doc.data();
+                        if (ticket.entregasRelacionadas && Array.isArray(ticket.entregasRelacionadas)) {
+                            ticket.entregasRelacionadas.forEach(entregaId => {
+                                if (entregasIds.includes(entregaId)) {
+                                    if (!ticketsMap[entregaId]) {
+                                        ticketsMap[entregaId] = [];
+                                    }
+                                    ticketsMap[entregaId].push({
+                                        id: doc.id,
+                                        montoEntregado: ticket.montoEntregado,
+                                        estado: ticket.estado
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+                
+                let html = '<table class="data-table"><thead><tr><th>Sargento</th><th>Prospect</th><th>Productos</th><th>Monto Aprox por Teléfono</th><th>Monto Aprox por Persona</th><th>Monto Entregado</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody>';
                 
                 entregas.forEach(entrega => {
                     const fecha = entrega.fechaCreacion?.toDate();
@@ -573,6 +607,9 @@
                     
                     // Buscar tickets relacionados
                     const tieneTicket = entrega.ticketsRelacionados && entrega.ticketsRelacionados.length > 0;
+                    const ticketsRelacionados = ticketsMap[entrega.id] || [];
+                    const ticketConfirmado = ticketsRelacionados.find(t => t.estado === 'confirmado');
+                    const montoEntregado = ticketConfirmado ? ticketConfirmado.montoEntregado : null;
                     
                     // Obtener precios (usar nuevos campos si existen, sino usar precioAprox para compatibilidad)
                     const precioTelefono = entrega.precioAproxTelefono !== undefined ? entrega.precioAproxTelefono : (entrega.precioAprox || null);
@@ -584,6 +621,7 @@
                         <td>${entrega.productos.map(p => `${obtenerNombreProducto(p.tipo)}: ${p.cantidad}`).join(', ')}</td>
                         <td>${precioTelefono ? '$' + precioTelefono.toLocaleString() : 'N/A'}</td>
                         <td>${precioPersona ? '$' + precioPersona.toLocaleString() : 'N/A'}</td>
+                        <td><strong style="color: #10b981;">${montoEntregado ? '$' + montoEntregado.toLocaleString() : 'N/A'}</strong></td>
                         <td><span class="estado-badge ${estadoClass}">${entrega.estado}</span></td>
                         <td>${fechaStr}</td>
                         <td>
