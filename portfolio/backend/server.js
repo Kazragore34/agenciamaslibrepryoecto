@@ -1,7 +1,9 @@
 import express from 'express'
 import cors from 'cors'
-import { Retell } from 'retell-sdk'
+import pkg from 'retell-sdk'
 import dotenv from 'dotenv'
+
+const { Retell } = pkg
 
 dotenv.config()
 
