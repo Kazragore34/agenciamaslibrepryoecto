@@ -20,13 +20,30 @@ const initRetell = async () => {
   try {
     // Usar import dinámico para módulos CommonJS
     const retellModule = await import('retell-sdk')
-    const Retell = retellModule.default || retellModule.Retell || retellModule
+    // El módulo puede exportar de diferentes formas
+    let Retell = null
+    
+    // Intentar diferentes formas de obtener el constructor
+    if (retellModule.default && typeof retellModule.default === 'function') {
+      Retell = retellModule.default
+    } else if (retellModule.Retell && typeof retellModule.Retell === 'function') {
+      Retell = retellModule.Retell
+    } else if (typeof retellModule === 'function') {
+      Retell = retellModule
+    }
+    
+    if (!Retell) {
+      console.error('❌ No se pudo encontrar el constructor Retell. Estructura del módulo:', Object.keys(retellModule))
+      return
+    }
+    
     retellClient = new Retell({
       apiKey: process.env.RETELL_API_KEY || 'key_57585684f15a8c742487f38bdef5',
     })
     console.log('✅ Retell.ai cliente inicializado correctamente')
   } catch (error) {
     console.error('❌ Error inicializando Retell.ai:', error)
+    console.error('Stack:', error.stack)
     // No lanzamos el error para que el servidor pueda iniciar sin Retell
   }
 }
