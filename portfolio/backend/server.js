@@ -24,12 +24,16 @@ const initRetell = async () => {
     let Retell = null
     
     // Intentar diferentes formas de obtener el constructor
+    // En Render aparece RetellClient, en local aparece default
     if (retellModule.RetellClient && typeof retellModule.RetellClient === 'function') {
       Retell = retellModule.RetellClient
+      console.log('📦 Usando RetellClient como constructor')
     } else if (retellModule.default && typeof retellModule.default === 'function') {
       Retell = retellModule.default
+      console.log('📦 Usando default como constructor')
     } else if (retellModule.Retell && typeof retellModule.Retell === 'function') {
       Retell = retellModule.Retell
+      console.log('📦 Usando Retell como constructor')
     }
     
     if (!Retell) {
