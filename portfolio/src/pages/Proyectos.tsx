@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Link } from 'react-router-dom'
 
 interface Proyecto {
   title: string
@@ -28,7 +29,7 @@ const proyectos: Proyecto[] = [
       'Multi-vendedor'
     ],
     results: 'Aumento del 250% en ventas online en los primeros 6 meses',
-    demoUrl: '#'
+    demoUrl: '/demo/ecommerce'
   },
   {
     title: 'Chatbot WhatsApp',
@@ -45,7 +46,7 @@ const proyectos: Proyecto[] = [
       'Multi-idioma'
     ],
     results: 'Reducción del 70% en tiempo de respuesta y aumento del 40% en conversiones',
-    demoUrl: '#'
+    demoUrl: '/demo/chatbot'
   },
   {
     title: 'Landing Page High Conversion',
@@ -62,7 +63,7 @@ const proyectos: Proyecto[] = [
       'Carga ultra-rápida'
     ],
     results: 'Aumento del 300% en conversiones y reducción del 50% en tasa de rebote',
-    demoUrl: '#'
+    demoUrl: '/demo/landing'
   },
 ]
 
@@ -193,14 +194,13 @@ export default function Proyectos() {
 
                 <div className="flex gap-4">
                   {selectedProyecto.demoUrl && (
-                    <a
-                      href={selectedProyecto.demoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      to={selectedProyecto.demoUrl}
                       className="btn-primary"
+                      onClick={() => setSelectedProyecto(null)}
                     >
                       Ver Demo
-                    </a>
+                    </Link>
                   )}
                   <button
                     onClick={() => setSelectedProyecto(null)}

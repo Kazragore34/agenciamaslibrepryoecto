@@ -10,6 +10,9 @@ import Tecnologias from './pages/Tecnologias'
 import IADemo from './pages/IADemo'
 import Integraciones from './pages/Integraciones'
 import Contacto from './pages/Contacto'
+import DemoEcommerce from './pages/DemoEcommerce'
+import DemoChatbot from './pages/DemoChatbot'
+import DemoLanding from './pages/DemoLanding'
 import { trackPageView } from './utils/analytics'
 
 function AppContent() {
@@ -38,6 +41,9 @@ function AppContent() {
         <Route path="/ia-demo" element={<IADemo />} />
         <Route path="/integraciones" element={<Integraciones />} />
         <Route path="/contacto" element={<Contacto />} />
+        <Route path="/demo/ecommerce" element={<DemoEcommerce />} />
+        <Route path="/demo/chatbot" element={<DemoChatbot />} />
+        <Route path="/demo/landing" element={<DemoLanding />} />
       </Routes>
       {/* IAN está presente en todas las páginas, fuera del Router */}
       <ChatbotWidget />
