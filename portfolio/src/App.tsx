@@ -16,11 +16,16 @@ function AppContent() {
   const location = useLocation()
 
   useEffect(() => {
+    console.log('📍 Navegación a:', location.pathname)
     // Trackear cambio de página de forma asíncrona
     setTimeout(() => {
       trackPageView(location.pathname)
     }, 100)
   }, [location])
+
+  useEffect(() => {
+    console.log('✅ App montado correctamente')
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50">

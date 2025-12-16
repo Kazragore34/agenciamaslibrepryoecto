@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:hostinger": "vite build && echo '✅ Build completado. Archivos listos para subir a Hostinger.'",
     "preview": "vite preview",
     "test": "vitest",
     "test:e2e": "playwright test"
