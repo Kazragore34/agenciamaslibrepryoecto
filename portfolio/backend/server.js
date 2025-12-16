@@ -44,10 +44,21 @@ const initRetell = async () => {
     retellClient = new Retell({
       apiKey: process.env.RETELL_API_KEY || 'key_57585684f15a8c742487f38bdef5',
     })
-    console.log('✅ Retell.ai cliente inicializado correctamente')
+    
+    // Verificar que el cliente se inicializó correctamente
+    console.log('✅ Retell.ai cliente inicializado')
     console.log('🔍 Estructura del cliente:', Object.keys(retellClient))
     console.log('📞 Tiene call?', !!retellClient.call)
     console.log('📞 Tipo de call:', typeof retellClient.call)
+    
+    // Verificar que call tiene los métodos necesarios
+    if (retellClient.call) {
+      console.log('📞 Métodos de call:', Object.keys(retellClient.call))
+      console.log('📞 Tiene createWebCall?', typeof retellClient.call.createWebCall)
+      console.log('📞 Tiene createCall?', typeof retellClient.call.createCall)
+    } else {
+      console.error('❌ El cliente no tiene la propiedad call')
+    }
   } catch (error) {
     console.error('❌ Error inicializando Retell.ai:', error)
     console.error('Stack:', error.stack)
@@ -112,9 +123,12 @@ app.post('/api/retell/create-call', async (req, res) => {
       }
     }
 
+    // La respuesta de createWebCall tiene access_token directamente
+    console.log('✅ Respuesta de Retell:', JSON.stringify(response, null, 2))
+    
     res.json({
-      access_token: response.call?.callId || response.callId || response.id,
-      call_id: response.call?.callId || response.callId || response.id
+      access_token: response.access_token || response.call?.callId || response.callId || response.id,
+      call_id: response.call_id || response.call?.callId || response.callId || response.id
     })
   } catch (error) {
     console.error('Error creating Retell call:', error)
