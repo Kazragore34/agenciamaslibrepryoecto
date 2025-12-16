@@ -1068,14 +1068,14 @@
                 </div>`;
             }
             
-            html += '<div style="overflow-x: auto;"><table class="data-table" style="width: 100%; min-width: 800px;"><thead><tr>';
+            html += '<div style="overflow-x: auto;"><table class="data-table" style="width: 100%; min-width: 900px; table-layout: auto;"><thead><tr>';
             html += '<th style="white-space: nowrap;">Tipo</th>';
             if (tieneTicketsCreados && tieneTicketsRecibidos) {
-                html += '<th style="white-space: nowrap;">Usuario</th><th style="white-space: nowrap;">ID</th><th style="white-space: nowrap;">Monto Aprox</th><th style="white-space: nowrap;">Monto Entregado</th><th style="white-space: nowrap;">Estado</th><th style="white-space: nowrap;">Fecha</th><th style="white-space: nowrap;">Acciones</th>';
+                html += '<th style="white-space: nowrap;">Usuario</th><th style="white-space: nowrap;">ID</th><th style="white-space: nowrap;">Monto Aprox</th><th style="white-space: nowrap;">Monto Entregado</th><th style="white-space: nowrap;">Estado</th><th style="white-space: nowrap; min-width: 180px;">Fecha</th><th style="white-space: nowrap;">Acciones</th>';
             } else if (tieneTicketsCreados) {
-                html += '<th style="white-space: nowrap;">Vendedor</th><th style="white-space: nowrap;">ID</th><th style="white-space: nowrap;">Monto Aprox</th><th style="white-space: nowrap;">Monto Entregado</th><th style="white-space: nowrap;">Estado</th><th style="white-space: nowrap;">Fecha</th><th style="white-space: nowrap;">Acciones</th>';
+                html += '<th style="white-space: nowrap;">Vendedor</th><th style="white-space: nowrap;">ID</th><th style="white-space: nowrap;">Monto Aprox</th><th style="white-space: nowrap;">Monto Entregado</th><th style="white-space: nowrap;">Estado</th><th style="white-space: nowrap; min-width: 180px;">Fecha</th><th style="white-space: nowrap;">Acciones</th>';
             } else {
-                html += '<th style="white-space: nowrap;">ID</th><th style="white-space: nowrap;">Sargento/Dealer</th><th style="white-space: nowrap;">Monto Entregado</th><th style="white-space: nowrap;">Estado</th><th style="white-space: nowrap;">Fecha</th><th style="white-space: nowrap;">Acciones</th>';
+                html += '<th style="white-space: nowrap;">ID</th><th style="white-space: nowrap;">Sargento/Dealer</th><th style="white-space: nowrap;">Monto Entregado</th><th style="white-space: nowrap;">Estado</th><th style="white-space: nowrap; min-width: 180px;">Fecha</th><th style="white-space: nowrap;">Acciones</th>';
             }
             html += '</tr></thead><tbody>';
             
@@ -1128,8 +1128,8 @@
                     }
                     <td>${montoEntregado ? '$' + montoEntregado.toLocaleString() : '-'}</td>
                     <td><span class="estado-badge ${estadoClass}">${item.estado}</span></td>
-                    <td>${fechaStr}</td>
-                    <td>
+                    <td style="white-space: nowrap; min-width: 180px;">${fechaStr}</td>
+                    <td style="white-space: nowrap;">
                         ${esTicket && item.estado === 'pendiente' && esRecibidoPorMi ? 
                             `<button class="btn-success btn-sm" onclick="confirmarTicketModal('${item.id}')">Confirmar</button>` : 
                             ''
