@@ -45,6 +45,9 @@ const initRetell = async () => {
       apiKey: process.env.RETELL_API_KEY || 'key_57585684f15a8c742487f38bdef5',
     })
     console.log('✅ Retell.ai cliente inicializado correctamente')
+    console.log('🔍 Estructura del cliente:', Object.keys(retellClient))
+    console.log('📞 Tiene call?', !!retellClient.call)
+    console.log('📞 Tipo de call:', typeof retellClient.call)
   } catch (error) {
     console.error('❌ Error inicializando Retell.ai:', error)
     console.error('Stack:', error.stack)
