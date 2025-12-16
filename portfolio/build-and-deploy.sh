@@ -34,11 +34,23 @@ echo ""
 echo "🏗️  Paso 3: Compilando proyecto..."
 npm run build
 
-# Verificar que el build se completó
-if [ ! -f "index.html" ] || [ ! -d "assets" ]; then
-    echo "❌ Error: El build no generó los archivos esperados"
+# Verificar que el build se completó en dist/
+if [ ! -f "dist/index.html" ]; then
+    echo "❌ Error: El build no generó dist/index.html"
     echo "Verifica los errores arriba"
     exit 1
+fi
+
+# Paso 3.5: Copiar archivos de dist/ a la raíz (para Hostinger)
+echo ""
+echo "📋 Paso 3.5: Copiando archivos para Hostinger..."
+cp dist/index.html index.html
+if [ -d "dist/assets" ]; then
+    rm -rf assets 2>/dev/null || true
+    cp -r dist/assets assets
+    echo "✅ Archivos copiados a la raíz"
+else
+    echo "⚠️  No se encontró dist/assets/"
 fi
 
 # Paso 4: Verificar estructura

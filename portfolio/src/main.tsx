@@ -2,50 +2,64 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { logDebug, logError, checkEnvironment } from './utils/debug'
 
 // Logs de debugging
-console.log('🚀 Portfolio iniciando...')
-console.log('📍 URL:', window.location.href)
-console.log('⏰ Tiempo:', new Date().toISOString())
+logDebug('🚀 Portfolio iniciando...')
+logDebug('📍 URL:', window.location.href)
+logDebug('⏰ Tiempo:', new Date().toISOString())
+logDebug('🔧 Modo:', import.meta.env.MODE)
+logDebug('📦 Base URL:', import.meta.env.BASE_URL)
 
 // Verificar que el DOM está listo
 const rootElement = document.getElementById('root')
 if (!rootElement) {
-  console.error('❌ Error: No se encontró el elemento #root')
-  document.body.innerHTML = '<div style="padding: 20px; text-align: center;"><h1>Error de Carga</h1><p>No se pudo encontrar el elemento root. Verifica que index.html esté correcto.</p></div>'
+  logError('❌ Error: No se encontró el elemento #root', null)
+  document.body.innerHTML = `
+    <div style="padding: 20px; text-align: center; font-family: Arial, sans-serif;">
+      <h1>❌ Error de Carga</h1>
+      <p>No se pudo encontrar el elemento #root.</p>
+      <p>Verifica que index.html tenga: <code>&lt;div id="root"&gt;&lt;/div&gt;</code></p>
+      <p><a href="/debug.html">Ver página de debug</a></p>
+    </div>
+  `
 } else {
-  console.log('✅ Elemento root encontrado')
+  logDebug('✅ Elemento root encontrado')
+  
+  // Verificar entorno y assets
+  checkEnvironment()
   
   // Inicializar servicios de forma asíncrona para no bloquear el render
   setTimeout(() => {
-    console.log('📊 Inicializando servicios...')
+    logDebug('📊 Inicializando servicios...')
     import('./utils/analytics').then(({ initAnalytics }) => {
       initAnalytics()
-      console.log('✅ Analytics inicializado')
-    }).catch(err => console.warn('⚠️ Analytics no disponible:', err))
+      logDebug('✅ Analytics inicializado')
+    }).catch(err => logError('⚠️ Analytics no disponible', err))
     
     import('./utils/sentry').then(({ initSentry }) => {
       initSentry()
-      console.log('✅ Sentry inicializado')
-    }).catch(err => console.warn('⚠️ Sentry no disponible:', err))
+      logDebug('✅ Sentry inicializado')
+    }).catch(err => logError('⚠️ Sentry no disponible', err))
   }, 0)
 
   try {
-    console.log('⚛️  Renderizando React...')
+    logDebug('⚛️  Renderizando React...')
     ReactDOM.createRoot(rootElement).render(
       <React.StrictMode>
         <App />
       </React.StrictMode>,
     )
-    console.log('✅ React renderizado correctamente')
-  } catch (error) {
-    console.error('❌ Error al renderizar React:', error)
+    logDebug('✅ React renderizado correctamente')
+  } catch (error: any) {
+    logError('❌ Error al renderizar React', error)
     rootElement.innerHTML = `
-      <div style="padding: 20px; text-align: center;">
-        <h1>Error de Carga</h1>
-        <p>Hubo un error al cargar la aplicación.</p>
-        <pre style="text-align: left; background: #f5f5f5; padding: 10px; border-radius: 4px;">${error}</pre>
+      <div style="padding: 20px; text-align: center; font-family: Arial, sans-serif;">
+        <h1>❌ Error de Carga</h1>
+        <p>Hubo un error al cargar la aplicación React.</p>
+        <pre style="text-align: left; background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">${error?.message || error}</pre>
         <p><a href="/debug.html">Ver página de debug</a></p>
+        <p><a href="/test.html">Verificar servidor</a></p>
       </div>
     `
   }
