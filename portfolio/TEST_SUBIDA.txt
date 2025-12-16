@@ -1,0 +1,16 @@
+✅ ARCHIVO DE PRUEBA - VERIFICACIÓN DE SUBIDA A GIT
+
+Este archivo fue creado el: 2025-12-16
+Hora: 12:30 (aproximada)
+
+Si puedes ver este archivo en Hostinger, significa que:
+1. ✅ Los archivos se están subiendo correctamente a Git
+2. ✅ El git pull en Hostinger está funcionando
+3. ✅ Los archivos están llegando al servidor
+
+Si NO puedes ver este archivo:
+- Verifica que hayas hecho git pull en Hostinger
+- Verifica que estés buscando en la carpeta correcta (portfolio/)
+- Verifica los permisos del archivo
+
+ESTE ARCHIVO PUEDE SER ELIMINADO DESPUÉS DE LA VERIFICACIÓN.
