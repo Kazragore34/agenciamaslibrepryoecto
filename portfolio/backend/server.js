@@ -70,19 +70,51 @@ app.post('/api/retell/create-call', async (req, res) => {
       throw new Error('Retell.ai no está disponible. Por favor, verifica la configuración.')
     }
     
+    console.log('🔍 Cliente disponible. Propiedades:', Object.keys(retellClient))
+    console.log('📞 retellClient.call existe?', !!retellClient.call)
+    
     const agentId = process.env.RETELL_AGENT_ID || 'agent_b3d667fee19fd64018b0257518'
     
-    const response = await retellClient.call.createCall({
-      agentId: agentId,
-      metadata: {
-        userId: req.body.userId || 'anonymous',
-        source: 'portfolio-demo'
+    // Intentar diferentes formas de crear la llamada
+    let response
+    if (retellClient.call && retellClient.call.createCall) {
+      // Método estándar
+      response = await retellClient.call.createCall({
+        agentId: agentId,
+        metadata: {
+          userId: req.body.userId || 'anonymous',
+          source: 'portfolio-demo'
+        }
+      })
+    } else if (retellClient.call && retellClient.call.create) {
+      // Método alternativo
+      response = await retellClient.call.create({
+        agentId: agentId,
+        metadata: {
+          userId: req.body.userId || 'anonymous',
+          source: 'portfolio-demo'
+        }
+      })
+    } else {
+      // Usar directamente el módulo Call si está disponible
+      const retellModule = await import('retell-sdk')
+      if (retellModule.Call) {
+        const Call = retellModule.Call
+        response = await Call.create({
+          agentId: agentId,
+          metadata: {
+            userId: req.body.userId || 'anonymous',
+            source: 'portfolio-demo'
+          }
+        })
+      } else {
+        throw new Error('No se pudo encontrar el método para crear llamadas. Estructura del cliente: ' + JSON.stringify(Object.keys(retellClient)))
       }
-    })
+    }
 
     res.json({
-      access_token: response.call.callId,
-      call_id: response.call.callId
+      access_token: response.call?.callId || response.callId || response.id,
+      call_id: response.call?.callId || response.callId || response.id
     })
   } catch (error) {
     console.error('Error creating Retell call:', error)
