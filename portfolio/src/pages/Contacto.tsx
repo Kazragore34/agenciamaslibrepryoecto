@@ -55,9 +55,8 @@ export default function Contacto() {
                 
                 <div className="space-y-4">
                   {[
-                    { icon: '📧', label: 'Email', value: 'contacto@ejemplo.com', link: 'mailto:contacto@ejemplo.com' },
-                    { icon: '📱', label: 'WhatsApp', value: '+34 600 000 000', link: 'https://wa.me/34600000000' },
-                    { icon: '💼', label: 'LinkedIn', value: 'linkedin.com/in/tu-perfil', link: 'https://linkedin.com' },
+                    { icon: '📧', label: 'Email', value: 'alfaro34kevin@gmail.com', link: 'mailto:alfaro34kevin@gmail.com' },
+                    { icon: '📱', label: 'WhatsApp', value: '+34 722 539 447', link: 'https://wa.me/34722539447' },
                   ].map((contact, idx) => (
                     <a
                       key={idx}
