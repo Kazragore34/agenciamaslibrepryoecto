@@ -1,7 +1,31 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 
 export default function Home() {
+  useEffect(() => {
+    console.log('🏠 ==========================================')
+    console.log('🏠 HOME COMPONENT CARGADO - VERSIÓN MEJORADA')
+    console.log('🏠 Build: index.C983AyZb.js')
+    console.log('🏠 Fecha:', new Date().toISOString())
+    console.log('🏠 ==========================================')
+    
+    // Verificar que las secciones existen
+    setTimeout(() => {
+      const statsSection = document.querySelector('[data-section="estadisticas"]')
+      const ctaSection = document.querySelector('[data-section="cta"]')
+      console.log('📊 Sección Estadísticas encontrada:', !!statsSection)
+      console.log('📢 Sección CTA encontrada:', !!ctaSection)
+      
+      if (!statsSection) {
+        console.error('❌ ERROR: Sección de estadísticas NO encontrada en el DOM')
+      }
+      if (!ctaSection) {
+        console.error('❌ ERROR: Sección CTA NO encontrada en el DOM')
+      }
+    }, 1000)
+  }, [])
+
   return (
     <div className="min-h-screen">
       {/* Hero Section Mejorado */}
@@ -37,7 +61,11 @@ export default function Home() {
       </section>
 
       {/* Estadísticas */}
-      <section className="py-16 bg-white border-y border-gray-100">
+      <section 
+        data-section="estadisticas"
+        className="py-16 bg-white border-y border-gray-100"
+        style={{ border: '2px solid red' }} // Temporal para debug visual
+      >
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
@@ -129,7 +157,11 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-20">
+      <section 
+        data-section="cta"
+        className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-20"
+        style={{ border: '2px solid yellow' }} // Temporal para debug visual
+      >
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
