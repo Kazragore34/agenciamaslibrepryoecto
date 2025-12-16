@@ -5,8 +5,8 @@ import { createRequire } from 'module'
 
 const require = createRequire(import.meta.url)
 const retellSdk = require('retell-sdk')
-// Retell puede ser la exportación por defecto o una propiedad
-const Retell = retellSdk.Retell || retellSdk.default?.Retell || retellSdk.default || retellSdk
+// Retell puede estar en diferentes lugares según la versión del módulo
+const Retell = retellSdk.Retell || retellSdk.default || retellSdk
 
 dotenv.config()
 
