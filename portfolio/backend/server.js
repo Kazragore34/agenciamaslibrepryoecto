@@ -4,7 +4,9 @@ import dotenv from 'dotenv'
 import { createRequire } from 'module'
 
 const require = createRequire(import.meta.url)
-const { Retell } = require('retell-sdk')
+const retellSdk = require('retell-sdk')
+// Retell puede ser la exportación por defecto o una propiedad
+const Retell = retellSdk.Retell || retellSdk.default?.Retell || retellSdk.default || retellSdk
 
 dotenv.config()
 
