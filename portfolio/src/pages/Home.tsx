@@ -297,15 +297,16 @@ export default function Home() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  transition={{ 
+                    duration: 0.3, 
+                    delay: index * 0.05,
+                    rotate: { duration: 0.5, ease: "easeInOut" },
+                    scale: { duration: 0.2 }
+                  }}
                   whileHover={{ 
                     rotate: [0, -5, 5, -5, 0],
                     scale: 1.1,
                     boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
-                  }}
-                  transition={{ 
-                    rotate: { duration: 0.5, ease: "easeInOut" },
-                    scale: { duration: 0.2 }
                   }}
                   className="group"
                 >
