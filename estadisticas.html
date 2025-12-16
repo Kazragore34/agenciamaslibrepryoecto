@@ -73,6 +73,14 @@
         </div>
 
         <div class="stats-grid" style="margin-top: 2rem;">
+            <div class="stats-card" style="grid-column: span 2; overflow-x: auto;">
+                <h3>Lista completa de Depósitos de Dinero Negro</h3>
+                <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Todos los depósitos de dinero negro (ordenados del más reciente)</p>
+                <div id="listaDepositosCompleta"></div>
+            </div>
+        </div>
+
+        <div class="stats-grid" style="margin-top: 2rem;">
             <div class="stats-card">
                 <h3>MESA</h3>
                 <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem;">Estadísticas de mesa</p>
@@ -171,6 +179,9 @@
 
                 const armas = await obtenerTodasArmas();
                 mostrarListaArmas(armas);
+
+                const depositos = await obtenerTodosDepositos();
+                mostrarListaDepositos(depositos);
 
                 // Cargar gráficas
                 await cargarGraficasDinero();
@@ -656,6 +667,123 @@
                         <td><span class="estado-badge ${estadoClass}">${arma.estado}</span></td>
                         <td>${arma.motivoPerdida || 'N/A'}</td>
                         <td>${arma.fechaStr}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // Lista completa de depósitos de dinero negro (visible para todos)
+        async function obtenerTodosDepositos() {
+            try {
+                // Obtener todos los depósitos y ordenar en el cliente
+                const snapshot = await db.collection('depositos_dinero_negro').get();
+
+                const depositos = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    const fechaCreacion = data.fechaCreacion?.toDate();
+                    const fechaAprobacion = data.fechaAprobacion?.toDate();
+                    const fechaRechazo = data.fechaRechazo?.toDate();
+                    const fechaCreacionStr = fechaCreacion ? fechaCreacion.toLocaleString('es-PE') : 'N/A';
+                    const fechaAprobacionStr = fechaAprobacion ? fechaAprobacion.toLocaleString('es-PE') : null;
+                    const fechaRechazoStr = fechaRechazo ? fechaRechazo.toLocaleString('es-PE') : null;
+                    
+                    return {
+                        id: doc.id,
+                        depositoId: data.depositoId || 'N/A',
+                        usuarioNombre: data.usuarioNombre || 'N/A',
+                        usuarioRol: data.usuarioRol || 'N/A',
+                        sargentoNombre: data.sargentoNombre || 'N/A',
+                        detalles: data.detalles || [],
+                        montoTotal: data.montoTotal || 0,
+                        estado: data.estado || 'N/A',
+                        sargentoNombreAprobo: data.sargentoNombreAprobo || null,
+                        sargentoNombreRechazo: data.sargentoNombreRechazo || null,
+                        motivoRechazo: data.motivoRechazo || null,
+                        fechaCreacion: fechaCreacion,
+                        fechaCreacionStr,
+                        fechaAprobacionStr,
+                        fechaRechazoStr
+                    };
+                });
+
+                // Ordenar por fecha de creación (más recientes primero)
+                depositos.sort((a, b) => {
+                    const fechaA = a.fechaCreacion || new Date(0);
+                    const fechaB = b.fechaCreacion || new Date(0);
+                    return fechaB - fechaA;
+                });
+
+                return depositos;
+            } catch (error) {
+                console.error('Error obteniendo depósitos:', error);
+                return [];
+            }
+        }
+
+        function mostrarListaDepositos(depositos) {
+            const container = document.getElementById('listaDepositosCompleta');
+            if (!container) return;
+
+            if (!depositos || depositos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 1rem;">No hay depósitos registrados</p>';
+                return;
+            }
+
+            let html = `
+                <div style="overflow-x: auto;">
+                    <table class="data-table" style="min-width: 1000px;">
+                        <thead>
+                            <tr>
+                                <th>Depósito ID</th>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Sargento Destinatario</th>
+                                <th>Detalles</th>
+                                <th>Monto Total</th>
+                                <th>Estado</th>
+                                <th>Fecha Creación</th>
+                                <th>Fecha Aprobación</th>
+                                <th>Fecha Rechazo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            depositos.forEach(deposito => {
+                const estadoClass = deposito.estado === 'aprobado' ? 'success'
+                    : deposito.estado === 'rechazado' ? 'error'
+                    : 'pendiente';
+                
+                // Formatear detalles
+                const detallesStr = deposito.detalles.length > 0
+                    ? deposito.detalles.map(d => `${d.tipoNombre}: $${d.monto.toLocaleString()}`).join(', ')
+                    : 'N/A';
+                
+                html += `
+                    <tr>
+                        <td><strong>${deposito.depositoId}</strong></td>
+                        <td>${deposito.usuarioNombre}</td>
+                        <td>${deposito.usuarioRol}</td>
+                        <td>${deposito.sargentoNombre}</td>
+                        <td style="max-width: 300px; word-wrap: break-word;">${detallesStr}</td>
+                        <td><strong>$${deposito.montoTotal.toLocaleString()}</strong></td>
+                        <td>
+                            <span class="estado-badge ${estadoClass}">${deposito.estado}</span>
+                            ${deposito.sargentoNombreAprobo ? `<br><span style="font-size: 0.75rem; color: #6b7280;">Aprobado por: ${deposito.sargentoNombreAprobo}</span>` : ''}
+                            ${deposito.sargentoNombreRechazo ? `<br><span style="font-size: 0.75rem; color: #6b7280;">Rechazado por: ${deposito.sargentoNombreRechazo}</span>` : ''}
+                            ${deposito.motivoRechazo ? `<br><span style="font-size: 0.75rem; color: #ef4444;">Motivo: ${deposito.motivoRechazo}</span>` : ''}
+                        </td>
+                        <td>${deposito.fechaCreacionStr}</td>
+                        <td>${deposito.fechaAprobacionStr || 'N/A'}</td>
+                        <td>${deposito.fechaRechazoStr || 'N/A'}</td>
                     </tr>
                 `;
             });
