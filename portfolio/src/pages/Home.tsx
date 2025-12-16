@@ -6,9 +6,33 @@ export default function Home() {
   useEffect(() => {
     console.log('🏠 ==========================================')
     console.log('🏠 HOME COMPONENT CARGADO - VERSIÓN MEJORADA')
-    console.log('🏠 Build: index.C983AyZb.js')
+    console.log('🏠 Build: index.W54KtfCS.js')
     console.log('🏠 Fecha:', new Date().toISOString())
     console.log('🏠 ==========================================')
+    
+    // INDICADOR VISUAL MUY OBVIO
+    const indicator = document.createElement('div')
+    indicator.id = 'build-indicator'
+    indicator.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #ff0000;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 99999;
+      border: 5px solid yellow;
+    `
+    indicator.textContent = '✅ BUILD BgctxsMH CARGADO - VERSIÓN MEJORADA CON ESTADÍSTICAS Y CTA'
+    document.body.insertBefore(indicator, document.body.firstChild)
+    
+    setTimeout(() => {
+      indicator.style.display = 'none'
+    }, 10000)
     
     // Verificar que las secciones existen
     setTimeout(() => {
@@ -28,6 +52,47 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      {/* BOTÓN DE PRUEBA MUY VISIBLE */}
+      <div style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 999999,
+        background: 'red',
+        color: 'white',
+        padding: '30px 50px',
+        fontSize: '32px',
+        fontWeight: 'bold',
+        border: '10px solid yellow',
+        borderRadius: '20px',
+        boxShadow: '0 0 50px rgba(255,0,0,0.8)',
+        textAlign: 'center'
+      }}>
+        <div style={{ marginBottom: '20px' }}>
+          ✅ BUILD BTmT0Hvd FUNCIONANDO
+        </div>
+        <div style={{ fontSize: '18px' }}>
+          Si ves este botón, los cambios SÍ se están aplicando
+        </div>
+        <button
+          onClick={() => alert('✅ ¡FUNCIONA! El build nuevo está cargado correctamente')}
+          style={{
+            marginTop: '20px',
+            padding: '15px 30px',
+            fontSize: '20px',
+            background: 'yellow',
+            color: 'black',
+            border: 'none',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
+          CLICK AQUÍ PARA VERIFICAR
+        </button>
+      </div>
+
       {/* Hero Section Mejorado */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-white to-primary-50">
         <div className="container mx-auto px-4 py-24 md:py-32">
@@ -60,12 +125,28 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Estadísticas */}
+      {/* Estadísticas - VERSIÓN MEJORADA */}
       <section 
         data-section="estadisticas"
         className="py-16 bg-white border-y border-gray-100"
-        style={{ border: '2px solid red' }} // Temporal para debug visual
+        style={{ 
+          border: '5px solid red',
+          backgroundColor: '#fff5f5',
+          padding: '40px 0'
+        }}
       >
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          background: 'red',
+          color: 'white',
+          padding: '10px',
+          fontSize: '14px',
+          fontWeight: 'bold'
+        }}>
+          SECCIÓN ESTADÍSTICAS - BUILD BgctxsMH
+        </div>
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
@@ -156,12 +237,28 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA Section - VERSIÓN MEJORADA */}
       <section 
         data-section="cta"
         className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-20"
-        style={{ border: '2px solid yellow' }} // Temporal para debug visual
+        style={{ 
+          border: '5px solid yellow',
+          backgroundColor: '#15803d',
+          position: 'relative'
+        }}
       >
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          background: 'yellow',
+          color: 'black',
+          padding: '10px',
+          fontSize: '14px',
+          fontWeight: 'bold'
+        }}>
+          SECCIÓN CTA - BUILD BgctxsMH
+        </div>
         <div className="container mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
