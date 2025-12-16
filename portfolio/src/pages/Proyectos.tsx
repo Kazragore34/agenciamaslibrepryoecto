@@ -19,7 +19,7 @@ const proyectos: Proyecto[] = [
     description: 'Plataforma completa de comercio electrónico con múltiples vendedores',
     fullDescription: 'Desarrollo de una plataforma completa de e-commerce con sistema multi-vendedor, gestión de inventario en tiempo real, pasarelas de pago integradas (Stripe, PayPal), sistema de reviews y ratings, y panel de administración completo.',
     tech: ['React', 'Node.js', 'MongoDB', 'Stripe'],
-    image: '🛒',
+    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop',
     features: [
       'Carrito de compras avanzado',
       'Sistema de pagos múltiples',
@@ -36,7 +36,7 @@ const proyectos: Proyecto[] = [
     description: 'Bot inteligente para WhatsApp con integración n8n y respuestas automáticas',
     fullDescription: 'Chatbot inteligente para WhatsApp Business con integración completa a n8n para automatizaciones, respuestas contextuales usando IA, gestión de leads automática, y sistema de tickets para escalamiento a humanos.',
     tech: ['Node.js', 'n8n', 'WhatsApp API', 'OpenAI'],
-    image: '💬',
+    image: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=600&h=400&fit=crop',
     features: [
       'Respuestas automáticas inteligentes',
       'Integración completa con n8n',
@@ -93,10 +93,18 @@ export default function Proyectos() {
             className="card group cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
             onClick={() => setSelectedProyecto(proyecto)}
           >
-            <div className="text-6xl mb-6 text-center group-hover:scale-110 transition-transform">
-              {proyecto.image}
+            <div className="w-full h-48 bg-gray-100 rounded-lg mb-6 overflow-hidden">
+              <img 
+                src={proyecto.image} 
+                alt={proyecto.title}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = 'https://via.placeholder.com/600x400?text=' + proyecto.title
+                }}
+              />
             </div>
-            <h3 className="text-2xl font-bold mb-3 group-hover:text-primary-600 transition-colors">
+            <h3 className="text-2xl font-bold mb-3 group-hover:text-slate-700 transition-colors">
               {proyecto.title}
             </h3>
             <p className="text-gray-600 mb-4">{proyecto.description}</p>
@@ -104,13 +112,13 @@ export default function Proyectos() {
               {proyecto.tech.map((tech) => (
                 <span
                   key={tech}
-                  className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium"
+                  className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium"
                 >
                   {tech}
                 </span>
               ))}
             </div>
-            <div className="text-primary-600 font-semibold group-hover:translate-x-2 transition-transform inline-flex items-center">
+            <div className="text-slate-700 font-semibold group-hover:translate-x-2 transition-transform inline-flex items-center">
               Ver detalles
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -140,7 +148,17 @@ export default function Proyectos() {
               <div className="p-8">
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <div className="text-6xl mb-4">{selectedProyecto.image}</div>
+                    <div className="w-full h-64 bg-gray-100 rounded-lg mb-4 overflow-hidden">
+                      <img 
+                        src={selectedProyecto.image} 
+                        alt={selectedProyecto.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = 'https://via.placeholder.com/600x400?text=' + selectedProyecto.title
+                        }}
+                      />
+                    </div>
                     <h2 className="text-3xl font-bold mb-2">{selectedProyecto.title}</h2>
                     <p className="text-gray-600 text-lg">{selectedProyecto.description}</p>
                   </div>
@@ -162,7 +180,7 @@ export default function Proyectos() {
                   <ul className="grid md:grid-cols-2 gap-2">
                     {selectedProyecto.features.map((feature, idx) => (
                       <li key={idx} className="flex items-center text-gray-700">
-                        <svg className="w-5 h-5 text-primary-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-5 h-5 text-slate-700 mr-2" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
                         {feature}
@@ -177,7 +195,7 @@ export default function Proyectos() {
                     {selectedProyecto.tech.map((tech) => (
                       <span
                         key={tech}
-                        className="px-4 py-2 bg-primary-100 text-primary-700 rounded-lg font-medium"
+                        className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium"
                       >
                         {tech}
                       </span>
@@ -186,9 +204,9 @@ export default function Proyectos() {
                 </div>
 
                 {selectedProyecto.results && (
-                  <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <h3 className="text-xl font-semibold mb-2 text-green-800">Resultados</h3>
-                    <p className="text-green-700">{selectedProyecto.results}</p>
+                  <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                    <h3 className="text-xl font-semibold mb-2 text-slate-800">Resultados</h3>
+                    <p className="text-slate-700">{selectedProyecto.results}</p>
                   </div>
                 )}
 

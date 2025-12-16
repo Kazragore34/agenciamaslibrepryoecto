@@ -107,9 +107,9 @@ export default function RetellCallButton() {
       {callStatus === 'connecting' && (
         <div className="space-y-2">
           <div className="flex items-center justify-center space-x-2">
-            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-            <div className="w-2 h-2 bg-primary-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-2 h-2 bg-slate-700 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-slate-700 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+            <div className="w-2 h-2 bg-slate-700 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
           </div>
           <p className="text-gray-600">Conectando...</p>
         </div>
@@ -149,7 +149,7 @@ export default function RetellCallButton() {
           </div>
           <motion.button
             onClick={handleTestCall}
-            className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+            className="bg-slate-700 text-white px-6 py-2 rounded-lg hover:bg-slate-800 transition-colors"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >

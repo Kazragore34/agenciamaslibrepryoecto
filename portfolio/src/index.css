@@ -10,7 +10,7 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors duration-200;
+    @apply bg-slate-700 text-white px-6 py-3 rounded-lg font-medium hover:bg-slate-800 transition-colors duration-200;
   }
   
   .btn-secondary {
@@ -18,7 +18,7 @@
   }
   
   .btn-outline {
-    @apply border-2 border-primary-600 text-primary-600 px-6 py-3 rounded-lg font-medium hover:bg-primary-600 hover:text-white transition-colors duration-200;
+    @apply border-2 border-slate-700 text-slate-700 px-6 py-3 rounded-lg font-medium hover:bg-slate-700 hover:text-white transition-colors duration-200;
   }
   
   .card {

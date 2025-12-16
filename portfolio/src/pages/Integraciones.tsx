@@ -27,7 +27,7 @@ export default function Integraciones() {
       loading: false,
       error: null,
       icon: '🛍️',
-      color: 'from-blue-500 to-blue-600',
+      color: 'from-slate-500 to-slate-600',
       image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400'
     },
     {
@@ -39,7 +39,7 @@ export default function Integraciones() {
       loading: false,
       error: null,
       icon: '👥',
-      color: 'from-green-500 to-green-600',
+      color: 'from-slate-500 to-slate-600',
       image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400'
     },
     {
@@ -51,7 +51,7 @@ export default function Integraciones() {
       loading: false,
       error: null,
       icon: '📝',
-      color: 'from-purple-500 to-purple-600',
+      color: 'from-slate-500 to-slate-600',
       image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400'
     },
     {
@@ -63,20 +63,20 @@ export default function Integraciones() {
       loading: false,
       error: null,
       icon: '💭',
-      color: 'from-pink-500 to-rose-600',
+      color: 'from-slate-500 to-slate-600',
       image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'
     },
     {
-      id: 'dogs',
-      title: 'API de Perros',
-      description: 'Integración con API de imágenes de perros. Ideal para demostrar consumo de APIs con imágenes.',
-      endpoint: 'https://dog.ceo/api/breeds/image/random/12',
+      id: 'languages',
+      title: 'API de Idiomas',
+      description: 'API para obtener información sobre idiomas del mundo, códigos ISO, nombres nativos y más.',
+      endpoint: 'https://restcountries.com/v3.1/all?fields=languages',
       data: null,
       loading: false,
       error: null,
-      icon: '🐕',
-      color: 'from-amber-500 to-orange-600',
-      image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400'
+      icon: '🌐',
+      color: 'from-slate-500 to-slate-600',
+      image: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=400'
     },
     {
       id: 'countries',
@@ -87,7 +87,7 @@ export default function Integraciones() {
       loading: false,
       error: null,
       icon: '🌍',
-      color: 'from-cyan-500 to-teal-600',
+      color: 'from-slate-500 to-slate-600',
       image: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=400'
     },
   ])
@@ -101,13 +101,22 @@ export default function Integraciones() {
         response = await axios.get(demo.endpoint, { params: { _limit: 10 } })
       } else if (demo.id === 'countries') {
         response = await axios.get(demo.endpoint)
+      } else if (demo.id === 'quotes') {
+        // Arreglar API de frases con mejor manejo de errores
+        response = await axios.get('https://api.quotable.io/quotes', { 
+          params: { limit: 10 },
+          timeout: 10000
+        })
+      } else if (demo.id === 'languages') {
+        response = await axios.get('https://restcountries.com/v3.1/all?fields=name,languages,flags')
       } else {
-        response = await axios.get(demo.endpoint)
+        response = await axios.get(demo.endpoint, { timeout: 10000 })
       }
       
       setSelectedApi({ ...demo, data: response.data, loading: false })
     } catch (error: any) {
-      setSelectedApi({ ...demo, error: error.message, loading: false })
+      const errorMessage = error.response?.data?.message || error.message || 'Error de red. Verifica tu conexión.'
+      setSelectedApi({ ...demo, error: errorMessage, loading: false })
     }
   }
 
@@ -155,7 +164,7 @@ export default function Integraciones() {
         {data.map((user: any) => (
           <div key={user.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
             <div className="flex items-center mb-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-slate-400 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3">
                 {user.name.charAt(0)}
               </div>
               <div>
@@ -174,7 +183,7 @@ export default function Integraciones() {
               </p>
               <p className="flex items-center text-gray-600">
                 <span className="mr-2">🏢</span>
-                {user.company?.name}
+                {user.company?.name || 'Sin empresa'}
               </p>
             </div>
           </div>
@@ -193,7 +202,7 @@ export default function Integraciones() {
             <h4 className="font-semibold text-lg mb-2">{post.title}</h4>
             <p className="text-gray-600 text-sm line-clamp-3">{post.body}</p>
             <div className="mt-3 flex items-center text-xs text-gray-500">
-              <span className="mr-4">📝 Post #{post.id}</span>
+              <span className="mr-4">📝 Publicación #{post.id}</span>
               <span>👤 Usuario {post.userId}</span>
             </div>
           </div>
@@ -203,36 +212,60 @@ export default function Integraciones() {
   }
 
   const renderQuotesData = (data: any) => {
-    if (!data?.results || !Array.isArray(data.results)) return null
+    // Manejar tanto results como array directo
+    const quotes = data?.results || (Array.isArray(data) ? data : [])
+    if (!Array.isArray(quotes) || quotes.length === 0) return null
     
     return (
       <div className="space-y-4 max-h-96 overflow-y-auto">
-        {data.results.map((quote: any, index: number) => (
+        {quotes.map((quote: any, index: number) => (
           <div key={index} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
-            <p className="text-gray-700 italic mb-2">"{quote.content}"</p>
-            <p className="text-sm text-gray-600 font-semibold">— {quote.author}</p>
+            <p className="text-gray-700 italic mb-2">"{quote.content || quote.text || quote.quote}"</p>
+            <p className="text-sm text-gray-600 font-semibold">— {quote.author || 'Anónimo'}</p>
           </div>
         ))}
       </div>
     )
   }
 
-  const renderDogsData = (data: any) => {
-    if (!data?.message || !Array.isArray(data.message)) return null
+  const renderLanguagesData = (data: any) => {
+    if (!Array.isArray(data) || data.length === 0) return null
+    
+    // Extraer y procesar idiomas
+    const languagesMap = new Map<string, { name: string; countries: string[] }>()
+    
+    data.forEach((country: any) => {
+      if (country.languages) {
+        Object.entries(country.languages).forEach(([code, name]: [string, any]) => {
+          if (!languagesMap.has(code)) {
+            languagesMap.set(code, { name, countries: [] })
+          }
+          if (country.name?.common) {
+            languagesMap.get(code)!.countries.push(country.name.common)
+          }
+        })
+      }
+    })
+    
+    const languages = Array.from(languagesMap.entries()).slice(0, 15)
     
     return (
-      <div className="grid md:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-        {data.message.map((url: string, index: number) => (
-          <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
-            <img 
-              src={url} 
-              alt={`Perro ${index + 1}`}
-              className="w-full h-48 object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement
-                target.src = 'https://via.placeholder.com/300x300?text=Perro'
-              }}
-            />
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+        {languages.map(([code, info], index) => (
+          <div key={index} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
+            <div className="flex items-center mb-3">
+              <div className="w-10 h-10 bg-slate-600 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                {code.toUpperCase().slice(0, 2)}
+              </div>
+              <div>
+                <h4 className="font-semibold">{info.name}</h4>
+                <p className="text-xs text-gray-500">Código: {code}</p>
+              </div>
+            </div>
+            <div className="text-xs text-gray-600">
+              <p className="font-semibold mb-1">Países ({info.countries.length}):</p>
+              <p className="line-clamp-2">{info.countries.slice(0, 3).join(', ')}...</p>
+            </div>
           </div>
         ))}
       </div>
@@ -294,13 +327,35 @@ export default function Integraciones() {
       )
     }
 
+    // Si es una capacidad de integración (sin endpoint)
+    if (selectedApi.id?.startsWith('capability-')) {
+      return (
+        <div className="p-6">
+          <div className="mb-6">
+            <h3 className="text-xl font-bold mb-4">Detalles de la Capacidad</h3>
+            <p className="text-gray-700 leading-relaxed">{selectedApi.description}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="font-semibold mb-2">Tecnologías relacionadas:</h4>
+            <ul className="list-disc list-inside space-y-1 text-sm text-gray-600">
+              <li>React / Vue / Angular</li>
+              <li>Axios / Fetch API</li>
+              <li>WebSockets / Socket.io</li>
+              <li>JWT / OAuth 2.0</li>
+              <li>Redis / Memcached</li>
+            </ul>
+          </div>
+        </div>
+      )
+    }
+
     if (!selectedApi.data) {
       return (
         <div className="text-center py-20">
-          <p className="text-gray-600 mb-4">Haz clic en "Probar API" para cargar los datos</p>
+          <p className="text-gray-600 mb-4">Haz clic en "Cargar Datos" para obtener información de la API</p>
           <button
             onClick={() => fetchData(selectedApi)}
-            className={`btn-primary bg-gradient-to-r ${selectedApi.color}`}
+            className="btn-primary bg-slate-600 hover:bg-slate-700"
           >
             Cargar Datos
           </button>
@@ -311,12 +366,14 @@ export default function Integraciones() {
     return (
       <div>
         <div className="mb-6">
-          <div className="text-xs text-gray-500 font-mono bg-gray-100 p-3 rounded break-all mb-4">
-            {selectedApi.endpoint}
-          </div>
+          {selectedApi.endpoint && (
+            <div className="text-xs text-gray-500 font-mono bg-gray-100 p-3 rounded break-all mb-4">
+              {selectedApi.endpoint}
+            </div>
+          )}
           <div className="text-sm font-semibold text-gray-700 flex items-center">
             <span className="mr-2">✅</span>
-            Resultados ({Array.isArray(selectedApi.data) ? selectedApi.data.length : selectedApi.data?.results?.length || 1} items)
+            Resultados ({Array.isArray(selectedApi.data) ? selectedApi.data.length : selectedApi.data?.results?.length || 1} elementos)
           </div>
         </div>
         
@@ -324,7 +381,7 @@ export default function Integraciones() {
         {selectedApi.id === 'users' && renderUserData(selectedApi.data)}
         {selectedApi.id === 'posts' && renderPostData(selectedApi.data)}
         {selectedApi.id === 'quotes' && renderQuotesData(selectedApi.data)}
-        {selectedApi.id === 'dogs' && renderDogsData(selectedApi.data)}
+        {selectedApi.id === 'languages' && renderLanguagesData(selectedApi.data)}
         {selectedApi.id === 'countries' && renderCountriesData(selectedApi.data)}
       </div>
     )
@@ -356,8 +413,16 @@ export default function Integraciones() {
               className="card group hover:shadow-2xl transition-all duration-300 cursor-pointer border-2 border-transparent hover:border-primary-200"
               onClick={() => openModal(demo)}
             >
-              <div className={`w-full h-32 bg-gradient-to-br ${demo.color} rounded-lg mb-4 flex items-center justify-center text-5xl group-hover:scale-110 transition-transform duration-300`}>
-                {demo.icon}
+              <div className="w-full h-32 bg-gray-100 rounded-lg mb-4 overflow-hidden">
+                <img 
+                  src={demo.image || 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=300&fit=crop'} 
+                  alt={demo.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.src = 'https://via.placeholder.com/400x300?text=' + demo.title
+                  }}
+                />
               </div>
               
               <h3 className="text-xl font-bold mb-2 group-hover:text-primary-600 transition-colors">{demo.title}</h3>
@@ -368,7 +433,7 @@ export default function Integraciones() {
               </div>
 
               <button
-                className={`w-full btn-primary text-sm bg-gradient-to-r ${demo.color} group-hover:scale-105 transition-transform`}
+                className="w-full btn-primary text-sm bg-slate-600 hover:bg-slate-700 group-hover:scale-105 transition-transform"
               >
                 Ver Detalles →
               </button>
@@ -376,7 +441,7 @@ export default function Integraciones() {
           ))}
         </div>
 
-        {/* Sección de Capacidades de Integración - Clickeable */}
+        {/* Sección de Capacidades de Integración - Clickeable con Modal */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -384,49 +449,68 @@ export default function Integraciones() {
           className="mt-16"
         >
           <h2 className="text-3xl font-bold mb-6 text-center">Capacidades de Integración</h2>
+          <p className="text-center text-gray-600 mb-8">Haz clic en cualquier capacidad para ver más detalles</p>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
                 icon: '🔌',
                 title: 'APIs RESTful',
                 desc: 'Integración con APIs REST estándar de la industria',
-                image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=200'
+                image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=300&fit=crop',
+                details: 'Implementación de clientes HTTP robustos, manejo de estados de respuesta, validación de datos y transformación de respuestas.'
               },
               {
                 icon: '📊',
                 title: 'Datos en Tiempo Real',
                 desc: 'Sincronización y actualización de datos en tiempo real',
-                image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=200'
+                image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop',
+                details: 'WebSockets, Server-Sent Events (SSE), polling inteligente y actualizaciones automáticas sin recargar la página.'
               },
               {
                 icon: '🔒',
                 title: 'Autenticación Segura',
                 desc: 'Implementación de OAuth, JWT y API keys',
-                image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=200'
+                image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=300&fit=crop',
+                details: 'OAuth 2.0, JWT tokens con refresh, API keys con rotación automática, y almacenamiento seguro de credenciales.'
               },
               {
                 icon: '⚡',
                 title: 'Optimización',
                 desc: 'Caché, paginación y manejo eficiente de datos',
-                image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200'
+                image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
+                details: 'Caché en memoria y localStorage, paginación inteligente, lazy loading, y compresión de respuestas.'
               },
               {
                 icon: '🛡️',
                 title: 'Manejo de Errores',
                 desc: 'Gestión robusta de errores y fallbacks',
-                image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=200'
+                image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=300&fit=crop',
+                details: 'Retry automático, circuit breakers, fallbacks elegantes, logging estructurado y notificaciones de errores.'
               },
               {
                 icon: '📱',
                 title: 'Responsive',
                 desc: 'Visualización adaptada a todos los dispositivos',
-                image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=200'
+                image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop',
+                details: 'Diseño mobile-first, breakpoints personalizados, imágenes adaptativas y touch-friendly interfaces.'
               },
             ].map((feature, index) => (
               <motion.div
                 key={index}
                 whileHover={{ scale: 1.05, y: -5 }}
-                className="bg-white rounded-lg p-4 hover:shadow-xl transition-all duration-300 cursor-pointer border-2 border-transparent hover:border-primary-200"
+                onClick={() => setSelectedApi({
+                  id: `capability-${index}`,
+                  title: feature.title,
+                  description: feature.details,
+                  endpoint: '',
+                  data: null,
+                  loading: false,
+                  error: null,
+                  icon: feature.icon,
+                  color: 'from-slate-500 to-slate-600',
+                  image: feature.image
+                })}
+                className="bg-white rounded-lg p-4 hover:shadow-xl transition-all duration-300 cursor-pointer border border-gray-200 hover:border-gray-300"
               >
                 <div className="w-full h-32 bg-gray-100 rounded-lg mb-3 overflow-hidden">
                   <img 
@@ -470,7 +554,7 @@ export default function Integraciones() {
                 onClick={(e) => e.stopPropagation()}
                 className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
               >
-                <div className={`bg-gradient-to-r ${selectedApi.color} text-white p-6 flex justify-between items-center`}>
+                <div className="bg-gradient-to-r from-slate-700 to-slate-800 text-white p-6 flex justify-between items-center">
                   <div>
                     <h2 className="text-2xl font-bold flex items-center">
                       <span className="text-4xl mr-3">{selectedApi.icon}</span>

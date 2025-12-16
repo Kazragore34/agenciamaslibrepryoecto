@@ -70,7 +70,7 @@ export default function Home() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <div className="text-4xl md:text-5xl font-bold text-primary-600 mb-2">{stat.number}</div>
+                <div className="text-4xl md:text-5xl font-bold text-slate-700 mb-2">{stat.number}</div>
                 <div className="text-gray-600">{stat.label}</div>
               </motion.div>
             ))}
@@ -92,31 +92,71 @@ export default function Home() {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { 
               title: 'E-commerce', 
               desc: 'Tiendas online completas y funcionales con pasarelas de pago integradas, gestión de inventario y panel administrativo.',
-              icon: '🛒',
+              image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop',
               link: '/demo/ecommerce',
-              color: 'from-blue-500 to-blue-600',
+              color: 'from-slate-600 to-slate-700',
               features: ['Carrito de compras', 'Pasarelas de pago', 'Panel admin', 'Gestión de inventario']
             },
             { 
               title: 'Chatbots IA', 
               desc: 'Asistentes inteligentes para WhatsApp y web con integración n8n, respuestas automáticas y atención 24/7.',
-              icon: '💬',
+              image: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?w=600&h=400&fit=crop',
               link: '/demo/chatbot',
-              color: 'from-green-500 to-green-600',
+              color: 'from-slate-600 to-slate-700',
               features: ['WhatsApp Business', 'IA conversacional', 'Automatización', 'Multi-canal']
+            },
+            { 
+              title: 'Landing Pages', 
+              desc: 'Páginas de aterrizaje optimizadas para conversión con A/B testing, formularios inteligentes y analytics.',
+              image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop',
+              link: '/demo/landing',
+              color: 'from-slate-600 to-slate-700',
+              features: ['Optimización SEO', 'A/B Testing', 'Formularios inteligentes', 'Analytics en tiempo real']
             },
             { 
               title: 'Integraciones API', 
               desc: 'Conexión profesional con APIs externas para potenciar tu negocio y automatizar procesos.',
-              icon: '🔌',
+              image: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=600&h=400&fit=crop',
               link: '/integraciones',
-              color: 'from-purple-500 to-purple-600',
+              color: 'from-slate-600 to-slate-700',
               features: ['APIs RESTful', 'Webhooks', 'Autenticación segura', 'Datos en tiempo real']
+            },
+            { 
+              title: 'Sistemas de Gestión', 
+              desc: 'Plataformas administrativas completas para gestionar tu negocio de forma eficiente.',
+              image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop',
+              link: '/servicios',
+              color: 'from-slate-600 to-slate-700',
+              features: ['Dashboards personalizados', 'Reportes automáticos', 'Gestión de usuarios', 'Permisos avanzados']
+            },
+            { 
+              title: 'Aplicaciones Web', 
+              desc: 'Aplicaciones web modernas y escalables desarrolladas con las últimas tecnologías.',
+              image: 'https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=600&h=400&fit=crop',
+              link: '/servicios',
+              color: 'from-slate-600 to-slate-700',
+              features: ['SPA React/Vue', 'PWA', 'Responsive design', 'Alto rendimiento']
+            },
+            { 
+              title: 'Automatización', 
+              desc: 'Automatización de procesos empresariales con n8n, integraciones y workflows inteligentes.',
+              image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600&h=400&fit=crop',
+              link: '/servicios',
+              color: 'from-slate-600 to-slate-700',
+              features: ['Workflows n8n', 'Integraciones múltiples', 'Automatización de tareas', 'Notificaciones']
+            },
+            { 
+              title: 'Consultoría Técnica', 
+              desc: 'Asesoramiento especializado para optimizar tu infraestructura tecnológica y procesos.',
+              image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=400&fit=crop',
+              link: '/contacto',
+              color: 'from-slate-600 to-slate-700',
+              features: ['Análisis de arquitectura', 'Optimización', 'Mejores prácticas', 'Capacitación']
             },
           ].map((service, index) => (
             <motion.div
@@ -128,27 +168,35 @@ export default function Home() {
               className="group"
             >
               <Link to={service.link || '#'}>
-                <div className="card h-full hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 border-transparent hover:border-primary-200">
-                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${service.color} flex items-center justify-center text-3xl mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                    {service.icon}
+                <div className="card h-full hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-200 hover:border-gray-300 overflow-hidden">
+                  <div className="w-full h-48 overflow-hidden bg-gray-100 mb-4">
+                    <img 
+                      src={service.image} 
+                      alt={service.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = 'https://via.placeholder.com/600x400?text=' + service.title
+                      }}
+                    />
                   </div>
-                  <h3 className="text-2xl font-bold mb-3 group-hover:text-primary-600 transition-colors">
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-slate-700 transition-colors">
                     {service.title}
                   </h3>
-                  <p className="text-gray-600 leading-relaxed mb-4">{service.desc}</p>
-                  <ul className="space-y-2 mb-6">
-                    {service.features?.map((feature, idx) => (
-                      <li key={idx} className="flex items-center text-sm text-gray-600">
-                        <svg className="w-4 h-4 text-primary-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-2">{service.desc}</p>
+                  <ul className="space-y-1.5 mb-4">
+                    {service.features?.slice(0, 3).map((feature, idx) => (
+                      <li key={idx} className="flex items-center text-xs text-gray-600">
+                        <svg className="w-3.5 h-3.5 text-slate-700 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
-                        {feature}
+                        <span className="line-clamp-1">{feature}</span>
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-6 text-primary-600 font-semibold group-hover:translate-x-2 transition-transform inline-flex items-center">
-                    Ver Demo
-                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="mt-auto text-slate-700 font-semibold text-sm group-hover:translate-x-2 transition-transform inline-flex items-center">
+                    Ver más
+                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
@@ -181,8 +229,8 @@ export default function Home() {
                 onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
                 className={`px-4 py-2 rounded-full font-medium transition-all duration-300 ${
                   selectedCategory === category
-                    ? 'bg-primary-600 text-white shadow-lg scale-105'
-                    : 'bg-white text-primary-700 hover:bg-primary-100'
+                    ? 'bg-slate-700 text-white shadow-lg scale-105'
+                    : 'bg-white text-slate-700 hover:bg-gray-100'
                 }`}
               >
                 {category}
@@ -219,7 +267,7 @@ export default function Home() {
                         }}
                       />
                     </div>
-                    <p className="font-semibold text-center text-sm text-gray-800 group-hover:text-primary-600 transition-colors">
+                    <p className="font-semibold text-center text-sm text-gray-800 group-hover:text-slate-700 transition-colors">
                       {tech.name}
                     </p>
                   </div>
@@ -233,7 +281,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mt-12"
           >
-            <Link to="/tecnologias" className="text-primary-600 font-semibold hover:text-primary-700 inline-flex items-center">
+            <Link to="/tecnologias" className="text-slate-700 font-semibold hover:text-slate-800 inline-flex items-center">
               Ver todas las tecnologías
               <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -260,40 +308,40 @@ export default function Home() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[
             {
-              icon: '⚡',
+              image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
               title: 'Rendimiento Optimizado',
               desc: 'Código limpio y eficiente que garantiza velocidad y escalabilidad para tu proyecto.',
-              color: 'from-yellow-400 to-orange-500'
+              color: 'from-slate-500 to-slate-600'
             },
             {
-              icon: '🔒',
+              image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=300&fit=crop',
               title: 'Seguridad Primero',
               desc: 'Implementación de mejores prácticas de seguridad para proteger tu negocio y datos.',
-              color: 'from-red-400 to-pink-500'
+              color: 'from-slate-500 to-slate-600'
             },
             {
-              icon: '📈',
+              image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop',
               title: 'Enfoque en Resultados',
               desc: 'No solo desarrollo, también te ayudo a alcanzar tus objetivos de negocio.',
-              color: 'from-green-400 to-emerald-500'
+              color: 'from-slate-500 to-slate-600'
             },
             {
-              icon: '💬',
+              image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=300&fit=crop',
               title: 'Comunicación Clara',
               desc: 'Mantengo comunicación constante y transparente durante todo el proyecto.',
-              color: 'from-blue-400 to-cyan-500'
+              color: 'from-slate-500 to-slate-600'
             },
             {
-              icon: '🎯',
+              image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=300&fit=crop',
               title: 'Solución a Medida',
               desc: 'Cada proyecto es único. Desarrollo soluciones personalizadas para tus necesidades.',
-              color: 'from-purple-400 to-indigo-500'
+              color: 'from-slate-500 to-slate-600'
             },
             {
-              icon: '🚀',
+              image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop',
               title: 'Entrega Rápida',
               desc: 'Metodologías ágiles que permiten ver resultados desde las primeras semanas.',
-              color: 'from-pink-400 to-rose-500'
+              color: 'from-slate-500 to-slate-600'
             },
           ].map((item, index) => (
             <motion.div
@@ -305,14 +353,22 @@ export default function Home() {
               whileHover={{ scale: 1.05, y: -5 }}
               className="group"
             >
-              <div className="card h-full hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-primary-200">
-                <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center text-3xl mb-6 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                  {item.icon}
+              <div className="card h-full hover:shadow-2xl transition-all duration-300 border border-gray-200 hover:border-gray-300 overflow-hidden">
+                <div className="w-full h-40 overflow-hidden bg-gray-100 mb-4">
+                  <img 
+                    src={item.image} 
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.src = 'https://via.placeholder.com/400x300?text=' + item.title
+                    }}
+                  />
                 </div>
                 <h3 className="text-xl font-bold mb-3 group-hover:text-primary-600 transition-colors">
                   {item.title}
                 </h3>
-                <p className="text-gray-600 leading-relaxed">{item.desc}</p>
+                <p className="text-gray-600 text-sm leading-relaxed">{item.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -320,7 +376,7 @@ export default function Home() {
       </section>
 
       {/* Proceso de Trabajo */}
-      <section className="bg-gradient-to-br from-primary-50 to-white py-20">
+      <section className="bg-gradient-to-br from-gray-50 to-white py-20">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -350,7 +406,7 @@ export default function Home() {
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="flex items-start gap-6 mb-8 last:mb-0"
               >
-                <div className="flex-shrink-0 w-16 h-16 bg-primary-600 text-white rounded-full flex items-center justify-center font-bold text-xl">
+                <div className="flex-shrink-0 w-16 h-16 bg-slate-700 text-white rounded-full flex items-center justify-center font-bold text-xl">
                   {phase.step}
                 </div>
                 <div className="flex-1">
@@ -366,7 +422,7 @@ export default function Home() {
       {/* CTA Section */}
       <section 
         data-section="cta"
-        className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-20"
+        className="bg-gradient-to-r from-slate-700 to-slate-800 text-white py-20"
       >
         <div className="container mx-auto px-4 text-center">
           <motion.div
@@ -377,10 +433,10 @@ export default function Home() {
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               ¿Listo para llevar tu negocio al siguiente nivel?
             </h2>
-            <p className="text-xl mb-8 text-primary-100 max-w-2xl mx-auto">
+            <p className="text-xl mb-8 text-gray-200 max-w-2xl mx-auto">
               Trabajemos juntos para crear la solución digital perfecta para tu empresa
             </p>
-            <Link to="/contacto" className="inline-block bg-white text-primary-600 font-semibold px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors">
+            <Link to="/contacto" className="inline-block bg-white text-slate-700 font-semibold px-8 py-4 rounded-lg hover:bg-gray-100 transition-colors">
               Comenzar Proyecto
             </Link>
           </motion.div>
