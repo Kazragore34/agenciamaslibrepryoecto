@@ -6,7 +6,7 @@ export default function Home() {
   useEffect(() => {
     console.log('🏠 ==========================================')
     console.log('🏠 HOME COMPONENT CARGADO - VERSIÓN MEJORADA')
-    console.log('🏠 Build: index.W54KtfCS.js')
+    console.log('🏠 Build: index.Btof3l-3.js')
     console.log('🏠 Fecha:', new Date().toISOString())
     console.log('🏠 ==========================================')
     
@@ -27,7 +27,7 @@ export default function Home() {
       z-index: 99999;
       border: 5px solid yellow;
     `
-    indicator.textContent = '✅ BUILD BgctxsMH CARGADO - VERSIÓN MEJORADA CON ESTADÍSTICAS Y CTA'
+    indicator.textContent = '✅ BUILD Btof3l-3 CARGADO - VERSIÓN MEJORADA CON ESTADÍSTICAS Y CTA'
     document.body.insertBefore(indicator, document.body.firstChild)
     
     setTimeout(() => {
@@ -70,7 +70,7 @@ export default function Home() {
         textAlign: 'center'
       }}>
         <div style={{ marginBottom: '20px' }}>
-          ✅ BUILD BTmT0Hvd FUNCIONANDO
+          ✅ BUILD Btof3l-3 FUNCIONANDO
         </div>
         <div style={{ fontSize: '18px' }}>
           Si ves este botón, los cambios SÍ se están aplicando
