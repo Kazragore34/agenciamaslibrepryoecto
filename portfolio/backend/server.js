@@ -1,9 +1,10 @@
 import express from 'express'
 import cors from 'cors'
-import pkg from 'retell-sdk'
 import dotenv from 'dotenv'
+import { createRequire } from 'module'
 
-const { Retell } = pkg
+const require = createRequire(import.meta.url)
+const { Retell } = require('retell-sdk')
 
 dotenv.config()
 
