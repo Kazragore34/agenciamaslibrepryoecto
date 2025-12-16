@@ -480,7 +480,7 @@ async function obtenerTicketsPendientesVendedor(vendedorId) {
 }
 
 /**
- * Obtiene el dinero entregado hoy por un vendedor
+ * Obtiene el dinero entregado hoy por un vendedor (tickets + depósitos)
  * @param {string} vendedorId - ID del vendedor
  * @returns {Promise<number>} - Monto total entregado hoy
  */
@@ -492,17 +492,33 @@ async function obtenerDineroEntregadoHoy(vendedorId) {
         const fechaInicio = new Date(fechaActual + 'T00:00:00-05:00');
         const fechaFin = new Date(fechaActual + 'T23:59:59-05:00');
         
-        const snapshot = await db.collection('tickets_dinero')
+        let total = 0;
+        
+        // Sumar tickets confirmados
+        const ticketsSnapshot = await db.collection('tickets_dinero')
             .where('vendedorId', '==', vendedorId)
             .where('estado', '==', 'confirmado')
             .get();
         
-        let total = 0;
-        snapshot.forEach(doc => {
+        ticketsSnapshot.forEach(doc => {
             const ticket = doc.data();
             const fechaConfirmacion = ticket.fechaConfirmacion?.toDate();
             if (fechaConfirmacion && fechaConfirmacion >= fechaInicio && fechaConfirmacion <= fechaFin) {
                 total += ticket.montoEntregado || 0;
+            }
+        });
+        
+        // Sumar depósitos aprobados
+        const depositosSnapshot = await db.collection('depositos_dinero_negro')
+            .where('usuarioId', '==', vendedorId)
+            .where('estado', '==', 'aprobado')
+            .get();
+        
+        depositosSnapshot.forEach(doc => {
+            const deposito = doc.data();
+            const fechaAprobacion = deposito.fechaAprobacion?.toDate();
+            if (fechaAprobacion && fechaAprobacion >= fechaInicio && fechaAprobacion <= fechaFin) {
+                total += deposito.montoTotal || 0;
             }
         });
         
@@ -514,7 +530,7 @@ async function obtenerDineroEntregadoHoy(vendedorId) {
 }
 
 /**
- * Obtiene el dinero entregado esta semana por un vendedor
+ * Obtiene el dinero entregado esta semana por un vendedor (tickets + depósitos)
  * @param {string} vendedorId - ID del vendedor
  * @returns {Promise<number>} - Monto total entregado esta semana
  */
@@ -529,17 +545,33 @@ async function obtenerDineroEntregadoSemana(vendedorId) {
         fechaFin.setDate(fechaFin.getDate() + 6);
         fechaFin.setHours(23, 59, 59, 999);
         
-        const snapshot = await db.collection('tickets_dinero')
+        let total = 0;
+        
+        // Sumar tickets confirmados
+        const ticketsSnapshot = await db.collection('tickets_dinero')
             .where('vendedorId', '==', vendedorId)
             .where('estado', '==', 'confirmado')
             .get();
         
-        let total = 0;
-        snapshot.forEach(doc => {
+        ticketsSnapshot.forEach(doc => {
             const ticket = doc.data();
             const fechaConfirmacion = ticket.fechaConfirmacion?.toDate();
             if (fechaConfirmacion && fechaConfirmacion >= fechaInicio && fechaConfirmacion <= fechaFin) {
                 total += ticket.montoEntregado || 0;
+            }
+        });
+        
+        // Sumar depósitos aprobados
+        const depositosSnapshot = await db.collection('depositos_dinero_negro')
+            .where('usuarioId', '==', vendedorId)
+            .where('estado', '==', 'aprobado')
+            .get();
+        
+        depositosSnapshot.forEach(doc => {
+            const deposito = doc.data();
+            const fechaAprobacion = deposito.fechaAprobacion?.toDate();
+            if (fechaAprobacion && fechaAprobacion >= fechaInicio && fechaAprobacion <= fechaFin) {
+                total += deposito.montoTotal || 0;
             }
         });
         
