@@ -1,13 +1,6 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import { createRequire } from 'module'
-
-const require = createRequire(import.meta.url)
-const retellSdk = require('retell-sdk')
-// retell-sdk exporta Retell como default y también como propiedad Retell
-// Usamos default primero, luego Retell como fallback
-const Retell = retellSdk.default || retellSdk.Retell || retellSdk
 
 dotenv.config()
 
@@ -21,14 +14,38 @@ app.use(cors({
 }))
 app.use(express.json())
 
-// Inicializar cliente de Retell.ai
-const retellClient = new Retell({
-  apiKey: process.env.RETELL_API_KEY || 'key_57585684f15a8c742487f38bdef5',
-})
+// Inicializar cliente de Retell.ai usando import dinámico
+let retellClient = null
+const initRetell = async () => {
+  try {
+    // Usar import dinámico para módulos CommonJS
+    const retellModule = await import('retell-sdk')
+    const Retell = retellModule.default || retellModule.Retell || retellModule
+    retellClient = new Retell({
+      apiKey: process.env.RETELL_API_KEY || 'key_57585684f15a8c742487f38bdef5',
+    })
+    console.log('✅ Retell.ai cliente inicializado correctamente')
+  } catch (error) {
+    console.error('❌ Error inicializando Retell.ai:', error)
+    // No lanzamos el error para que el servidor pueda iniciar sin Retell
+  }
+}
+
+// Inicializar Retell al arrancar
+initRetell()
 
 // Endpoint para crear una llamada
 app.post('/api/retell/create-call', async (req, res) => {
   try {
+    // Si Retell no está inicializado, intentar inicializarlo ahora
+    if (!retellClient) {
+      await initRetell()
+    }
+    
+    if (!retellClient) {
+      throw new Error('Retell.ai no está disponible. Por favor, verifica la configuración.')
+    }
+    
     const agentId = process.env.RETELL_AGENT_ID || 'agent_b3d667fee19fd64018b0257518'
     
     const response = await retellClient.call.createCall({
