@@ -6,29 +6,30 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:hostinger": "vite build && echo '✅ Build completado. Archivos listos para subir a Hostinger.'",
+    "build:hostinger": "vite build && node scripts/copy-to-root.js",
     "preview": "vite preview",
     "test": "vitest",
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "axios": "^1.6.2",
+    "framer-motion": "^10.16.16",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0",
-    "axios": "^1.6.2",
-    "framer-motion": "^10.16.16",
     "retell-client-js-sdk": "^1.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.1",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
+    "terser": "^5.44.1",
     "typescript": "^5.3.3",
     "vite": "^5.0.8",
-    "vitest": "^1.0.4",
-    "@playwright/test": "^1.40.1"
+    "vitest": "^1.0.4"
   }
 }
