@@ -16,8 +16,10 @@ function AppContent() {
   const location = useLocation()
 
   useEffect(() => {
-    // Trackear cambio de página
-    trackPageView(location.pathname)
+    // Trackear cambio de página de forma asíncrona
+    setTimeout(() => {
+      trackPageView(location.pathname)
+    }, 100)
   }, [location])
 
   return (

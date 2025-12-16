@@ -28,26 +28,35 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Cargar historial desde localStorage al montar
+  // Cargar historial desde localStorage al montar (de forma asíncrona para no bloquear)
   useEffect(() => {
-    const savedMessages = localStorage.getItem(STORAGE_KEY)
-    if (savedMessages) {
-      try {
-        const parsed = JSON.parse(savedMessages)
-        setMessages(parsed.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        })))
-      } catch (error) {
-        console.error('Error loading chat history:', error)
+    // Usar requestIdleCallback o setTimeout para no bloquear el render inicial
+    const loadData = () => {
+      const savedMessages = localStorage.getItem(STORAGE_KEY)
+      if (savedMessages) {
+        try {
+          const parsed = JSON.parse(savedMessages)
+          setMessages(parsed.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          })))
+        } catch (error) {
+          console.error('Error loading chat history:', error)
+        }
+      }
+
+      // Generar o recuperar sessionId
+      let sessionId = localStorage.getItem(SESSION_KEY)
+      if (!sessionId) {
+        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        localStorage.setItem(SESSION_KEY, sessionId)
       }
     }
 
-    // Generar o recuperar sessionId
-    let sessionId = localStorage.getItem(SESSION_KEY)
-    if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      localStorage.setItem(SESSION_KEY, sessionId)
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(loadData)
+    } else {
+      setTimeout(loadData, 0)
     }
   }, [])
 
