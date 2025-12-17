@@ -157,6 +157,7 @@ export default function RetellCallButton() {
                 <p className="text-yellow-700 text-sm mt-1">
                   {errorMessage || 'Por favor, habilita los permisos del micrófono desde la configuración de tu navegador para usar esta función.'}
                 </p>
+                <p className="text-xs text-yellow-600 mt-2">v0.1</p>
                 {errorMessage?.includes('backend') && (
                   <div className="mt-3 p-3 bg-yellow-100 rounded text-xs">
                     <p className="font-semibold mb-1 text-yellow-800">El backend de Retell.ai necesita estar configurado en el servidor.</p>

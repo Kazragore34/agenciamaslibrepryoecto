@@ -38,6 +38,7 @@ export default function IADemo() {
             <p className="text-sm text-yellow-800">
               Por favor, habilita los permisos de micrófono desde la configuración de tu navegador para usar las funciones de voz.
             </p>
+            <p className="text-xs text-yellow-600 mt-2">v0.1</p>
           </div>
         </div>
       </motion.div>
