@@ -143,62 +143,37 @@ app.post('/api/retell/create-call', async (req, res) => {
     
     const agentId = process.env.RETELL_AGENT_ID || 'agent_b3d667fee19fd64018b0257518'
     
-    // Intentar diferentes formas de crear la llamada según la documentación oficial
+    // Crear la llamada usando createWebCall (método oficial según documentación)
     let response
     try {
-      // Método 1: retellClient.call.createWebCall (método oficial según docs)
-      if (retellClient.call && typeof retellClient.call.createWebCall === 'function') {
-        console.log('📞 Usando retellClient.call.createWebCall')
+      // Verificar que call existe y tiene el método
+      if (!retellClient.call) {
+        throw new Error('El cliente no tiene la propiedad call. Propiedades disponibles: ' + JSON.stringify(Object.keys(retellClient)))
+      }
+      
+      // Verificar métodos disponibles en call
+      const callMethods = Object.getOwnPropertyNames(Object.getPrototypeOf(retellClient.call))
+      console.log('📞 Métodos disponibles en call:', callMethods)
+      
+      // Usar createWebCall directamente (método oficial)
+      if (typeof retellClient.call.createWebCall === 'function') {
+        console.log('📞 Usando retellClient.call.createWebCall con agent_id:', agentId)
         response = await retellClient.call.createWebCall({
           agent_id: agentId
         })
-      }
-      // Método 2: retellClient.call.createCall (método alternativo)
-      else if (retellClient.call && typeof retellClient.call.createCall === 'function') {
-        console.log('📞 Usando retellClient.call.createCall')
-        response = await retellClient.call.createCall({
-          agent_id: agentId,
-          metadata: {
-            userId: req.body.userId || 'anonymous',
-            source: 'portfolio-demo'
-          }
-        })
-      }
-      // Método 3: retellClient.Call.createWebCall (acceso directo a la clase Call)
-      else if (retellClient.Call && typeof retellClient.Call.createWebCall === 'function') {
-        console.log('📞 Usando retellClient.Call.createWebCall')
-        response = await retellClient.Call.createWebCall({
-          agent_id: agentId
-        })
-      }
-      // Método 4: Usar el módulo Call directamente
-      else {
-        console.log('📞 Intentando usar módulo Call directamente')
-        const retellModule = await import('retell-sdk')
-        
-        // El módulo tiene Call como clase, pero necesita el cliente
-        if (retellModule.Call && retellClient) {
-          // Crear una instancia de Call usando el cliente
-          const callInstance = new retellModule.Call(retellClient)
-          if (callInstance && typeof callInstance.createWebCall === 'function') {
-            console.log('📞 Usando Call instance createWebCall')
-            response = await callInstance.createWebCall({
-              agent_id: agentId
-            })
-          } else if (callInstance && typeof callInstance.create === 'function') {
-            console.log('📞 Usando Call instance create')
-            response = await callInstance.create({
-              agent_id: agentId
-            })
-          } else {
-            throw new Error('Call instance no tiene métodos createWebCall o create')
-          }
+        console.log('✅ Llamada creada exitosamente')
+      } else {
+        // Fallback: intentar createPhoneCall o otros métodos
+        if (typeof retellClient.call.createPhoneCall === 'function') {
+          console.log('⚠️ createWebCall no disponible, usando createPhoneCall (no recomendado para web)')
+          throw new Error('createWebCall no está disponible. Por favor, verifica la versión del SDK.')
         } else {
-          throw new Error('No se pudo encontrar el método para crear llamadas. Cliente keys: ' + JSON.stringify(Object.keys(retellClient)) + ', Módulo keys: ' + JSON.stringify(Object.keys(retellModule || {})))
+          throw new Error('No se encontró el método createWebCall. Métodos disponibles: ' + JSON.stringify(callMethods))
         }
       }
     } catch (callError) {
       console.error('❌ Error en método de creación de llamada:', callError)
+      console.error('📊 Stack:', callError.stack)
       throw callError
     }
 
