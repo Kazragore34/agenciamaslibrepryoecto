@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "build:hostinger": "vite build && node scripts/copy-to-root.js",
+    "deploy": "node scripts/build-and-deploy.js",
     "preview": "vite preview",
     "test": "vitest",
     "test:e2e": "playwright test"
