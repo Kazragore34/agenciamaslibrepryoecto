@@ -72,32 +72,47 @@ const initRetell = async () => {
     
     // Crear el cliente con la API key
     const apiKey = process.env.RETELL_API_KEY || 'key_57585684f15a8c742487f38bdef5'
+    console.log('🔑 Creando cliente con API key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'NO CONFIGURADA')
+    
     retellClient = new Retell({
       apiKey: apiKey,
     })
     
     // Esperar un momento para que el cliente se inicialice completamente
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 200))
     
     // Verificar que el cliente se inicializó correctamente
     console.log('✅ Retell.ai cliente creado')
     console.log('🔍 Estructura del cliente:', Object.keys(retellClient))
     console.log('📞 Tiene call?', !!retellClient.call)
+    console.log('📞 Tiene Call?', !!retellClient.Call)
     console.log('📞 Tipo de call:', typeof retellClient.call)
+    console.log('📞 Tipo de Call:', typeof retellClient.Call)
     
     // Verificar que call tiene los métodos necesarios
     if (retellClient.call) {
       console.log('📞 Métodos de call:', Object.keys(retellClient.call))
       console.log('📞 Tiene createWebCall?', typeof retellClient.call.createWebCall)
       console.log('📞 Tiene createCall?', typeof retellClient.call.createCall)
-      console.log('✅ Retell.ai cliente inicializado correctamente')
+      console.log('✅ Retell.ai cliente inicializado correctamente con call')
+    } else if (retellClient.Call) {
+      console.log('📞 Call es una clase:', typeof retellClient.Call)
+      console.log('📞 Métodos de Call:', Object.keys(retellClient.Call))
+      console.log('✅ Retell.ai cliente inicializado correctamente con Call')
     } else {
-      console.error('❌ El cliente no tiene la propiedad call')
-      console.error('🔍 Propiedades disponibles:', Object.keys(retellClient))
+      console.warn('⚠️ El cliente no tiene call ni Call')
+      console.log('🔍 Propiedades disponibles:', Object.keys(retellClient))
       // Intentar acceder a call de otra forma
       if (retellClient['call']) {
         console.log('📞 call encontrado con bracket notation')
         retellClient.call = retellClient['call']
+      }
+      // Verificar si hay propiedades que contengan 'call' o 'Call'
+      const callProps = Object.keys(retellClient).filter(key => 
+        key.toLowerCase().includes('call')
+      )
+      if (callProps.length > 0) {
+        console.log('📞 Propiedades relacionadas con call:', callProps)
       }
     }
   } catch (error) {
