@@ -124,44 +124,67 @@ app.post('/api/retell/create-call', async (req, res) => {
     
     console.log('🔍 Cliente disponible. Propiedades:', Object.keys(retellClient))
     console.log('📞 retellClient.call existe?', !!retellClient.call)
+    console.log('📞 retellClient.Call existe?', !!retellClient.Call)
     
     const agentId = process.env.RETELL_AGENT_ID || 'agent_b3d667fee19fd64018b0257518'
     
-    // Intentar diferentes formas de crear la llamada
+    // Intentar diferentes formas de crear la llamada según la documentación oficial
     let response
-    if (retellClient.call && retellClient.call.createCall) {
-      // Método estándar
-      response = await retellClient.call.createCall({
-        agentId: agentId,
-        metadata: {
-          userId: req.body.userId || 'anonymous',
-          source: 'portfolio-demo'
-        }
-      })
-    } else if (retellClient.call && retellClient.call.create) {
-      // Método alternativo
-      response = await retellClient.call.create({
-        agentId: agentId,
-        metadata: {
-          userId: req.body.userId || 'anonymous',
-          source: 'portfolio-demo'
-        }
-      })
-    } else {
-      // Usar directamente el módulo Call si está disponible
-      const retellModule = await import('retell-sdk')
-      if (retellModule.Call) {
-        const Call = retellModule.Call
-        response = await Call.create({
-          agentId: agentId,
+    try {
+      // Método 1: retellClient.call.createWebCall (método oficial según docs)
+      if (retellClient.call && typeof retellClient.call.createWebCall === 'function') {
+        console.log('📞 Usando retellClient.call.createWebCall')
+        response = await retellClient.call.createWebCall({
+          agent_id: agentId
+        })
+      }
+      // Método 2: retellClient.call.createCall (método alternativo)
+      else if (retellClient.call && typeof retellClient.call.createCall === 'function') {
+        console.log('📞 Usando retellClient.call.createCall')
+        response = await retellClient.call.createCall({
+          agent_id: agentId,
           metadata: {
             userId: req.body.userId || 'anonymous',
             source: 'portfolio-demo'
           }
         })
-      } else {
-        throw new Error('No se pudo encontrar el método para crear llamadas. Estructura del cliente: ' + JSON.stringify(Object.keys(retellClient)))
       }
+      // Método 3: retellClient.Call.createWebCall (acceso directo a la clase Call)
+      else if (retellClient.Call && typeof retellClient.Call.createWebCall === 'function') {
+        console.log('📞 Usando retellClient.Call.createWebCall')
+        response = await retellClient.Call.createWebCall({
+          agent_id: agentId
+        })
+      }
+      // Método 4: Usar el módulo Call directamente
+      else {
+        console.log('📞 Intentando usar módulo Call directamente')
+        const retellModule = await import('retell-sdk')
+        
+        // El módulo tiene Call como clase, pero necesita el cliente
+        if (retellModule.Call && retellClient) {
+          // Crear una instancia de Call usando el cliente
+          const callInstance = new retellModule.Call(retellClient)
+          if (callInstance && typeof callInstance.createWebCall === 'function') {
+            console.log('📞 Usando Call instance createWebCall')
+            response = await callInstance.createWebCall({
+              agent_id: agentId
+            })
+          } else if (callInstance && typeof callInstance.create === 'function') {
+            console.log('📞 Usando Call instance create')
+            response = await callInstance.create({
+              agent_id: agentId
+            })
+          } else {
+            throw new Error('Call instance no tiene métodos createWebCall o create')
+          }
+        } else {
+          throw new Error('No se pudo encontrar el método para crear llamadas. Cliente keys: ' + JSON.stringify(Object.keys(retellClient)) + ', Módulo keys: ' + JSON.stringify(Object.keys(retellModule || {})))
+        }
+      }
+    } catch (callError) {
+      console.error('❌ Error en método de creación de llamada:', callError)
+      throw callError
     }
 
     // La respuesta de createWebCall tiene access_token directamente
