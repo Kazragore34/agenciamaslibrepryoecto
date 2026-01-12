@@ -897,8 +897,9 @@ html {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     border-radius: 1.5rem;
     background: white;
-    overflow: hidden;
+    overflow: visible;
     border: 1px solid rgba(37, 99, 235, 0.1);
+    width: 100%;
 }
 
 /* Tabla de Presupuestos - Sin min-width, se adapta al ancho */
@@ -907,6 +908,7 @@ html {
     border-collapse: separate;
     border-spacing: 0;
     font-size: 1rem;
+    table-layout: fixed;
 }
 
 .presupuestos-table thead {
@@ -919,13 +921,18 @@ html {
 
 .presupuestos-table th {
     padding: 1.5rem 1.25rem;
-    text-align: left;
+    text-align: center;
     font-weight: 700;
     font-size: 0.95rem;
     letter-spacing: 0.5px;
-    vertical-align: top;
+    vertical-align: middle;
     background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
     border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.presupuestos-table th:first-child,
+.presupuestos-table th:nth-child(2) {
+    text-align: left;
 }
 
 .presupuestos-table th:last-child {
@@ -963,12 +970,37 @@ html {
 
 .presupuestos-table td {
     padding: 1.75rem 1.25rem;
-    vertical-align: top;
+    vertical-align: middle;
     border-right: 1px solid #f3f4f6;
 }
 
 .presupuestos-table td:last-child {
     border-right: none;
+}
+
+.price-cell {
+    text-align: center !important;
+}
+
+.service-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.service-thumbnail {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: 2px solid #e5e7eb;
+}
+
+.service-cell strong {
+    text-align: center;
+    margin: 0;
 }
 
 .presupuestos-table td strong {
@@ -1035,21 +1067,21 @@ html {
     line-height: 1.6;
 }
 
-.condiciones-list li:before {
-    content: "✓";
-    position: absolute;
-    left: 0;
+.condiciones-list li i {
     color: var(--primary-color);
-    font-weight: bold;
-    font-size: 1rem;
-    background: #eff6ff;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
+    margin-right: 0.5rem;
+    width: 20px;
+    text-align: center;
+}
+
+.condiciones-list li:before {
+    display: none;
+}
+
+.condiciones-list li {
+    padding-left: 0;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
+    align-items: flex-start;
 }
 
 .condiciones-list li:not(:last-child) {
