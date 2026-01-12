@@ -1319,6 +1319,38 @@ html {
     padding: 1.5rem;
     border-radius: 0.75rem;
     border-left: 4px solid var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.btn-solicitar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #25d366;
+    color: white;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-solicitar:hover {
+    background: #20ba5a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+}
+
+.btn-solicitar i {
+    font-size: 1.1rem;
+}
+
+.service-card-action {
+    margin-top: 1rem;
+    text-align: center;
 }
 
 .service-card-conditions h4 {
