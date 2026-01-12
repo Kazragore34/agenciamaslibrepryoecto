@@ -982,6 +982,13 @@ html {
     text-align: center !important;
 }
 
+.price-cell small {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
 .service-cell {
     display: flex;
     flex-direction: column;
