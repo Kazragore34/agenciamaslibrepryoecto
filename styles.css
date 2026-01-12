@@ -32,6 +32,13 @@ body {
     padding: 0 20px;
 }
 
+/* Container más ancho para presupuestos */
+.container-wide {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 30px;
+}
+
 /* Header */
 .header {
     background: var(--bg-white);
@@ -884,35 +891,45 @@ html {
     display: block;
 }
 
-/* Table Wrapper para Scroll Horizontal */
+/* Table Wrapper - Sin scroll, diseño mejorado */
 .table-wrapper {
-    overflow-x: auto;
     margin: 2rem 0;
-    box-shadow: var(--shadow-lg);
-    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-radius: 1.5rem;
     background: white;
+    overflow: hidden;
+    border: 1px solid rgba(37, 99, 235, 0.1);
 }
 
-/* Tabla de Presupuestos */
+/* Tabla de Presupuestos - Sin min-width, se adapta al ancho */
 .presupuestos-table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 0.95rem;
-    min-width: 1200px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 1rem;
 }
 
 .presupuestos-table thead {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
     color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .presupuestos-table th {
-    padding: 1.25rem 1rem;
+    padding: 1.5rem 1.25rem;
     text-align: left;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 0.95rem;
     letter-spacing: 0.5px;
     vertical-align: top;
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.presupuestos-table th:last-child {
+    border-right: none;
 }
 
 .badge-subtitle {
@@ -925,12 +942,19 @@ html {
 }
 
 .presupuestos-table tbody tr {
-    border-bottom: 1px solid var(--border-color);
-    transition: background-color 0.2s;
+    border-bottom: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.presupuestos-table tbody tr:nth-child(even) {
+    background: #f9fafb;
 }
 
 .presupuestos-table tbody tr:hover {
-    background-color: #f9fafb;
+    background: linear-gradient(90deg, #eff6ff 0%, #dbeafe 100%);
+    transform: scale(1.01);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
 .presupuestos-table tbody tr:last-child {
@@ -938,8 +962,13 @@ html {
 }
 
 .presupuestos-table td {
-    padding: 1.5rem 1rem;
+    padding: 1.75rem 1.25rem;
     vertical-align: top;
+    border-right: 1px solid #f3f4f6;
+}
+
+.presupuestos-table td:last-child {
+    border-right: none;
 }
 
 .presupuestos-table td strong {
@@ -956,28 +985,39 @@ html {
     margin-top: 0.25rem;
 }
 
-/* Precios */
+/* Precios - Diseño mejorado */
 .precio {
     display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.precio:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .precio.opcion-a {
-    background: #fef3c7;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     color: #92400e;
+    border-color: #f59e0b;
 }
 
 .precio.opcion-b {
-    background: #dbeafe;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     color: #1e40af;
+    border-color: #3b82f6;
 }
 
 .precio.opcion-c {
-    background: #d1fae5;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
     color: #065f46;
+    border-color: #10b981;
 }
 
 /* Lista de Condiciones */
@@ -996,12 +1036,20 @@ html {
 }
 
 .condiciones-list li:before {
-    content: "•";
+    content: "✓";
     position: absolute;
     left: 0;
     color: var(--primary-color);
     font-weight: bold;
-    font-size: 1.2rem;
+    font-size: 1rem;
+    background: #eff6ff;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
 }
 
 .condiciones-list li:not(:last-child) {
@@ -1173,15 +1221,134 @@ html {
     flex-shrink: 0;
 }
 
+/* Versión móvil: Cards en lugar de tablas */
+.presupuestos-cards {
+    display: none;
+}
+
+.service-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.service-card-header {
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.service-card-header h3 {
+    color: var(--text-dark);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.service-card-description {
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.service-card-prices {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.price-option {
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.price-option.opcion-a {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-color: #f59e0b;
+}
+
+.price-option.opcion-b {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-color: #3b82f6;
+}
+
+.price-option.opcion-c {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border-color: #10b981;
+}
+
+.price-option:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.price-option-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.price-option.opcion-a .price-option-label {
+    color: #92400e;
+}
+
+.price-option.opcion-b .price-option-label {
+    color: #1e40af;
+}
+
+.price-option.opcion-c .price-option-label {
+    color: #065f46;
+}
+
+.service-card-conditions {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+.service-card-conditions h4 {
+    color: var(--text-dark);
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.service-card-conditions ul {
+    margin: 0;
+    padding-left: 0;
+}
+
 /* Responsive Design para Presupuestos */
 @media (max-width: 1024px) {
+    .container-wide {
+        max-width: 100%;
+        padding: 0 20px;
+    }
+    
     .presupuestos-table {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
     }
     
     .presupuestos-table th,
     .presupuestos-table td {
-        padding: 1rem 0.75rem;
+        padding: 1.25rem 1rem;
     }
 }
 
@@ -1212,6 +1379,38 @@ html {
     .section-header-img {
         height: 200px;
     }
+    
+    /* Ocultar tabla, mostrar cards en móvil */
+    .table-wrapper {
+        display: none;
+    }
+    
+    .presupuestos-cards {
+        display: block;
+    }
+    
+    .service-card-prices {
+        grid-template-columns: 1fr;
+    }
+    
+    .price-option {
+        padding: 1rem;
+    }
+    
+    .presupuestos-table td strong {
+        font-size: 1rem;
+    }
+    
+    .presupuestos-table td {
+        padding: 1.25rem 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .precio {
+        font-size: 1.1rem;
+        padding: 0.6rem 1rem;
+    }
+}
     
     .costos-nota {
         padding: 2rem 1.5rem;
